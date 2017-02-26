@@ -3,7 +3,6 @@ DEV_HOME=$HOME/Developer
 REPO_HOME=${DEV_HOME}/repositories
 DEVTOOLS_HOME=${REPO_HOME}/devtools
 TOOLS_HOME=${DEV_HOME}/tools/
-source ${DEVTOOLS_HOME}/bash/_env-settings.sh
 
 
 # Do not edit these
