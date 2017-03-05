@@ -24,11 +24,11 @@ IS_WIN=0
 [ -f ${DEVTOOLS_HOME}/bash/git.sh ] && source ${DEVTOOLS_HOME}/bash/git.sh
 [ -f ${DEVTOOLS_HOME}/bash/ssh-env.sh ] && source ${DEVTOOLS_HOME}/bash/ssh-env.sh
 
-function prj() {
+function proj() {
   cd ${REPO_HOME}/$1
 }
 
-function lprj() {
+function projs() {
   if ! [ -z "$1" ]; then
     ls ${REPO_HOME} | grep "$1"
   else
