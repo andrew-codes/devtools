@@ -35,3 +35,6 @@ function projs() {
     ls ${REPO_HOME}
   fi
 }
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
