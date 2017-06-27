@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-DEV_HOME=$HOME/Developer
-REPO_HOME=${DEV_HOME}/repositories
+DEV_HOME=$HOME/developer
+REPO_HOME=${DEV_HOME}/repos
 DEVTOOLS_HOME=${REPO_HOME}/devtools
 TOOLS_HOME=${DEV_HOME}/tools/
 
