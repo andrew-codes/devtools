@@ -1,4 +1,4 @@
 # Webstorm Settings and Templates
 
 - [templates](templates.md)
-- [keymaps](keymaps.md)
+- [keyboard shortcuts](keymaps.md)
