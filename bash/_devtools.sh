@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-DEV_HOME=$HOME/developer
-REPO_HOME=${DEV_HOME}/repos
-DEVTOOLS_HOME=${REPO_HOME}/devtools
-TOOLS_HOME=${DEV_HOME}/tools/
 
+currentDir=$(dirname $BASH_SOURCE)
+source "$currentDir/_variables.sh"
 
 # Do not edit these
 # --------
@@ -13,16 +11,16 @@ IS_WIN=0
 [ "$OSTYPE" = "win" -o "$OSTYPE" = "msys" ] && IS_WIN=1 || IS_WIN=0
 # -------
 
-# # Aliases
-[ -f ${DEVTOOLS_HOME}/bash/alias.sh ] &&	source ${DEVTOOLS_HOME}/bash/alias.sh
-
 # # Git
-[ -f ${DEVTOOLS_HOME}/bash/git-completion.bash ] && source ${DEVTOOLS_HOME}/bash/git-completion.bash
-[ -f ${DEVTOOLS_HOME}/bash/hub-completion.sh ] && source ${DEVTOOLS_HOME}/bash/hub-completion.sh
-[ -f ${DEVTOOLS_HOME}/bash/git-prompt.sh ] && source ${DEVTOOLS_HOME}/bash/git-prompt.sh
-[ -f ${DEVTOOLS_HOME}/bash/git-prompt.sh ] && [ ${IS_WIN} ] && PS1='[\u@\h \W$(__git_ps1 " (%s)")]\$ '
-[ -f ${DEVTOOLS_HOME}/bash/git.sh ] && source ${DEVTOOLS_HOME}/bash/git.sh
-[ -f ${DEVTOOLS_HOME}/bash/ssh-env.sh ] && source ${DEVTOOLS_HOME}/bash/ssh-env.sh
+source ${DEVTOOLS_HOME}/bash/features/ssh-credentials/index.sh
+source ${DEVTOOLS_HOME}/bash/features/git-alias/index.sh
+source ${DEVTOOLS_HOME}/bash/features/additional-git-functionality/index.sh
+source ${DEVTOOLS_HOME}/bash/features/git-completion/index.sh
+source ${DEVTOOLS_HOME}/bash/features/git-prompt/index.sh
+source ${DEVTOOLS_HOME}/bash/features/hub/index.sh
+
+# [GitX](http://gitx.frim.nl/user_manual.html); OSX only
+[ ${IS_OSX} ] && [ -f /usr/local/bin/gitx ] && alias gui=gitx
 
 function proj() {
   cd ${REPO_HOME}/$1

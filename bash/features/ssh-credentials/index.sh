@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+if [ $SSH_CREDENTIALS -ne 1 ]; then
+  return 0;
+fi
+
 SSH_ENV=$HOME/.ssh/environment
 
 function start_agent {

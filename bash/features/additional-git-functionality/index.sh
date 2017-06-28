@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [ $ADDITIONAL_GIT_FUNCTIONALITY -ne 1 ]; then
+  return 0;
+fi
+
 function rh() {
   if ! [ -z "$1" ]; then
     if ! [ -z "$2" ]; then
