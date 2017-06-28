@@ -10,7 +10,7 @@ TOOLS_HOME=${DEV_HOME}/tools/
 
 # Enable/Disable Features
 # =======================
-# comment out to disable a feature.
+# set to 0 to disable.
 
 SSH_CREDENTIALS=1
 ADDITIONAL_GIT_FUNCTIONALITY=1
