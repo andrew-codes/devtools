@@ -13,11 +13,11 @@ source $devtools/bash/_devtools.sh
 # Features
 Features can be enabled or disabled in the `./_variables.sh` file.
 
-1. [SSH Credentials](/features/ssh-credentials)
+1. [SSH Credentials](features/ssh-credentials)
 1. [Additional git features](features/additional-git-functionality)
 1. [Hub integration](features/hub) (learn more about [Hub](https://hub.github.com/))
-1. [Git aliases](/features/git-alias)
-1. [Git prompt](/features/git-prompt)
+1. [Git aliases](features/git-alias)
+1. [Git prompt](features/git-prompt)
 
 # Repo/Project searching
 
