@@ -18,23 +18,21 @@ source ${DEVTOOLS_HOME}/bash/features/additional-git-functionality/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-completion/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-prompt/index.sh
 source ${DEVTOOLS_HOME}/bash/features/hub/index.sh
+source ${DEVTOOLS_HOME}/bash/features/project-finder/index.sh
 
 # [GitX](http://gitx.frim.nl/user_manual.html); OSX only
 [ ${IS_OSX} ] && [ -f /usr/local/bin/gitx ] && alias gui=gitx
 
-function proj() {
-  cd ${REPO_HOME}/$1
-}
-
-function projs() {
-  if ! [ -z "$1" ]; then
-    ls ${REPO_HOME} | grep "$1"
-  else
-    ls ${REPO_HOME}
-  fi
-}
-
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+source $(brew --prefix nvm)/nvm.sh
 
 export PATH="/bin:$PATH"
+
+if test -f ~/.gnupg/.gpg-agent-info -a -n "$(pgrep gpg-agent)"; then
+  source ~/.gnupg/.gpg-agent-info
+  export GPG_AGENT_INFO
+  GPG_TTY=$(tty)
+  export GPG_TTY
+else
+  eval $(gpg-agent --daemon ~/.gnupg/.gpg-agent-info)
+fi
