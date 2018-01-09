@@ -16,6 +16,11 @@ function projs() {
   fi
 }
 
+function oproj() {
+  cd ${REPO_HOME}/$1
+  code .
+}
+
 _proj ()   {
     local currToken="${COMP_WORDS[COMP_CWORD]}" matches matchCount
     matches=$(ls ${REPO_HOME} | grep "${currToken}" | sed 's/^\(.*\)/\1/')
@@ -24,3 +29,4 @@ _proj ()   {
     COMPREPLY=($(compgen -W "${matches}" -- ${currToken}) )
     }
 complete -F _proj proj proj
+complete -F _proj oproj oproj
