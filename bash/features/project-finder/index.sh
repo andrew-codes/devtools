@@ -29,4 +29,5 @@ _proj ()   {
     COMPREPLY=($(compgen -W "${matches}" -- ${currToken}) )
     }
 complete -F _proj proj proj
+complete -F _proj projs projs
 complete -F _proj oproj oproj
