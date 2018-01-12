@@ -61,7 +61,6 @@
 | Extract parameter             | cmd + alt + p    |
 | Extract method                | cmd + alt + m    |
 | Extract constant              | cmd + alt + e    |
-| Extract constant              | cmd + alt + e    |
 | Extract interface             | cmd + alt + i    |
 | Inline                        | cmd + r, i       |
 | Change signature              | cmd + r, s       |
