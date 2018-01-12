@@ -8,6 +8,7 @@ Thumbs.db
 # IDE
 .idea
 *.suo
+.vscode
 
 # Dependencies
 node_modules
