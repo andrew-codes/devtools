@@ -20,7 +20,7 @@
 
 [core]
   autocrlf = true
-  editor = atom --wait
+  editor = nano
 
 [filter "media"]
   clean = git-media-clean %f
