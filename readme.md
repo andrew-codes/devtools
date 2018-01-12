@@ -4,6 +4,7 @@ This is my personal collection of dotfiles, configuration settings, templates, a
 the readme in each of the directories for specific information and usage.**
 
 * [Bash Features and Setup](bash)
-* [VS Code keyboard shortcuts](keymaps/vscode)
-* [VS Code Snippets](https://github.com/andrew-codes)
+* [Keymaps for vscode and JetBrains](keymaps)
+* [VS Code Snippets](templates/vscode.md)
+* [PHPStorm Snippets](templates/jetbrains.md)
 * [Writing BDD specs with ease in C#](autohotkey)
