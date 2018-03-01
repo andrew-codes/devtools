@@ -8,9 +8,9 @@ currentDir=$(dirname $BASH_SOURCE)
 source "$currentDir/hub-completion.sh"
 
 # GitHub [Hub](https://github.com/github/hub); OSX and Windows
-if [ ${IS_OSX} ] && [ -f /usr/local/bin/hub ]; then
+if [ $IS_OSX -eq 1 ] && [ -f /usr/local/bin/hub ]; then
   alias git=hub
-elif [ ${IS_WIN} ] && [ -f ${TOOLS_HOME}/hub/bin/hub.exe ]; then
+elif [ $IS_WIN -eq 1 ] && [ -f ${TOOLS_HOME}/hub/bin/hub.exe ]; then
   export PATH=$PATH:${TOOLS_HOME}/hub/bin
-  eval "$(hub alias -s)"
+  eval "$(hub alias -s bash)"
 fi
