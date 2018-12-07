@@ -70,14 +70,6 @@ function stash() {
 	git stash "$@"
 }
 
-function commit() {
-  if ! [ -z "$1" ]; then
-    git commit -m "$1"
-  else
-    echo "You did not specific a commit message"
-  fi
-}
-
 function sb() {
   if ! [ -z "$1" ]; then
     if ! [ -z "$2" ]; then
