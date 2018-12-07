@@ -90,3 +90,7 @@ function sb() {
     git branch --set-upstream-to=origin/${currentBranch}
   fi
 }
+
+function pmb() {
+  git branch --merged master --no-color  | grep -v '^[ *]*master$' | xargs git branch -d
+}
