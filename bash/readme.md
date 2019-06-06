@@ -20,3 +20,4 @@ Features can be enabled or disabled in the `./_variables.sh` file.
 1. [Git aliases](features/git-alias)
 1. [Git prompt](features/git-prompt)
 1. [Repo/Project Search](features/project-finder)
+1. [Docker](features/docker)
