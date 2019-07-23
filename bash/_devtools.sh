@@ -21,6 +21,7 @@ source ${DEVTOOLS_HOME}/bash/features/hub/index.sh
 source ${DEVTOOLS_HOME}/bash/features/project-finder/index.sh
 source ${DEVTOOLS_HOME}/bash/features/gpg/index.sh
 source ${DEVTOOLS_HOME}/bash/features/docker/index.sh
+source ${DEVTOOLS_HOME}/bash/features/commands/index.sh
 
 # [GitX](http://gitx.frim.nl/user_manual.html); OSX only
 [ $IS_OSX -eq 1 ] && [ -f /usr/local/bin/gitx ] && alias gui=gitx
