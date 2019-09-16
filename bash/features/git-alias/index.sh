@@ -11,7 +11,7 @@ alias mt='git mergetool'
 alias df='git difftool'
 alias fa='git fetch --all'
 alias st='git status'
-alias glg="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+alias tree="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
 alias rbi='git rebase -i'
 alias rbc='git rebase --continue'
 alias rbs='git rebase --skip'
