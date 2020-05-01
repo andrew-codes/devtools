@@ -17,7 +17,6 @@ source ${DEVTOOLS_HOME}/bash/features/git-alias/index.sh
 source ${DEVTOOLS_HOME}/bash/features/additional-git-functionality/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-completion/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-prompt/index.sh
-source ${DEVTOOLS_HOME}/bash/features/hub/index.sh
 source ${DEVTOOLS_HOME}/bash/features/project-finder/index.sh
 source ${DEVTOOLS_HOME}/bash/features/gpg/index.sh
 source ${DEVTOOLS_HOME}/bash/features/docker/index.sh
