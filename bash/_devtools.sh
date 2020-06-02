@@ -21,6 +21,18 @@ source ${DEVTOOLS_HOME}/bash/features/project-finder/index.sh
 source ${DEVTOOLS_HOME}/bash/features/gpg/index.sh
 source ${DEVTOOLS_HOME}/bash/features/docker/index.sh
 source ${DEVTOOLS_HOME}/bash/features/commands/index.sh
+source ${DEVTOOLS_HOME}/bash/features/github-cli/index.sh
+
+if type brew &>/dev/null; then
+  HOMEBREW_PREFIX="$(brew --prefix)"
+  if [[ -r "${HOMEBREW_PREFIX}/etc/profile.d/bash_completion.sh" ]]; then
+    source "${HOMEBREW_PREFIX}/etc/profile.d/bash_completion.sh"
+  else
+    for COMPLETION in "${HOMEBREW_PREFIX}/etc/bash_completion.d/"*; do
+      [[ -r "$COMPLETION" ]] && source "$COMPLETION"
+    done
+  fi
+fi
 
 # [GitX](http://gitx.frim.nl/user_manual.html); OSX only
 [ $IS_OSX -eq 1 ] && [ -f /usr/local/bin/gitx ] && alias gui=gitx
