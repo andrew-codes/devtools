@@ -30,3 +30,7 @@ brew cask install parsec
 
 echo "Setting up vscode extenions..."
 source ./vscode.extensions.sh
+
+echo "Installing balena tools"
+brew install balena-cli
+brew cask install balenaetcher
