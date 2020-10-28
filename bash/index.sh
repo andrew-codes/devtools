@@ -20,7 +20,6 @@ source ${DEVTOOLS_HOME}/bash/features/project-finder/index.sh
 source ${DEVTOOLS_HOME}/bash/features/gpg/index.sh
 source ${DEVTOOLS_HOME}/bash/features/docker/index.sh
 source ${DEVTOOLS_HOME}/bash/features/commands/index.sh
-source ${DEVTOOLS_HOME}/bash/features/github-cli/index.sh
 
 if type brew &>/dev/null; then
   HOMEBREW_PREFIX="$(brew --prefix)"
