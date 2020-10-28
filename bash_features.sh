@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+# <DEVTOOLS>
 # Path variables
 # ==============
 DEV_HOME=$HOME/developer
@@ -20,3 +19,4 @@ GIT_ALIAS=1
 PROJECT_FINDER=1
 DOCKER=1
 COMMANDS=1
+# </DEVTOOLS>

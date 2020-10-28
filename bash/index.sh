@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 
-currentDir=$(dirname $BASH_SOURCE)
-source "$currentDir/_variables.sh"
+# READ BEFORE EDITING THIS FILE
+# =============================
+# If the objective is to enable or disable a feature, refer to the `_variables.sh` file and set each feature to either `1` or `0`.
+# Setting a feature to 0 will disable the feature.
 
-# Do not edit these
-# --------
 IS_OSX=0
 IS_WIN=0
 [[ "$OSTYPE" == *"darwin"* ]] && IS_OSX=1 || IS_OSX=0
 [[ "$OSTYPE" == *"win"* ]] && IS_WIN=1 || IS_WIN=0
 [[ "$OSTYPE" == *"msys"* ]] && IS_WIN=1 || IS_WIN=0
-# -------
 
 source ${DEVTOOLS_HOME}/bash/features/ssh-credentials/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-alias/index.sh
