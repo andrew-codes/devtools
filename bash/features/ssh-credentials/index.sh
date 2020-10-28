@@ -5,7 +5,7 @@ if [ $SSH_CREDENTIALS -ne 1 ]; then
 fi
 
 if [ $IS_OSX -eq 1 ]; then
-  find ~/.ssh -maxdepth 1 -type f ! -name "*.*" ! -name "*known_hosts" -exec ssh-add -K {} \;
+  find ~/.ssh -maxdepth 1 -type f ! -name "*.*" ! -name "*known_hosts" ! -name "*config" -exec keychain --eval --agents ssh --inherit any {} \;
 fi
 
 if [ $IS_OSX -ne 1 ]; then
