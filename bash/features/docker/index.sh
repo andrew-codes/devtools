@@ -6,7 +6,7 @@ fi
 
 function denv() {
   if ! [ -z "$1" ]; then
-    eval $(docker-machine env $1)
+    export DOCKER_HOST="$1"
   fi
 }
 
