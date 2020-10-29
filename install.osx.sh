@@ -11,6 +11,7 @@ brew cask install docker
 brew cask install firefox
 brew cask install google-chrome
 brew cask install grammarly
+brew cask install hazel
 brew cask install iterm2
 brew cask install keybase
 brew cask install kindle
