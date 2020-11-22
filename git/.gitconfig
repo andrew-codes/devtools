@@ -36,3 +36,9 @@
 
 [difftool]
   prompt = false
+
+[gpg]
+	program = /usr/local/bin/gpg
+
+[commit]
+	gpgsign = true
