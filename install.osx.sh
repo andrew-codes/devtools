@@ -19,6 +19,7 @@ brew cask install logitech-presentation
 brew cask install microsoft-office
 brew cask install microsoft-teams
 brew cask install parsec
+ brew install pinentry-mac
 brew cask install pdf-expert
 brew cask install pliim
 brew cask install rowanj-gitx

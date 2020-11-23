@@ -5,6 +5,8 @@
 # If the objective is to enable or disable a feature, refer to the `_variables.sh` file and set each feature to either `1` or `0`.
 # Setting a feature to 0 will disable the feature.
 
+export GPG_TTY=$(tty)
+
 IS_OSX=0
 IS_WIN=0
 [[ "$OSTYPE" == *"darwin"* ]] && IS_OSX=1 || IS_OSX=0
