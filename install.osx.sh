@@ -36,3 +36,6 @@ brew install nvm
 source ./add-devtools-to-bash_profile.sh
 
 source ./vscode.extensions.sh
+
+# Setup GPG keys from keybase
+source ./gpg-keybase.sh
