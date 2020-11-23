@@ -33,7 +33,7 @@ COMMANDS=1
 
 ### Extensions
 
-See the list of extensions I use found in the[vscode.extensions.sh](vscode.extenions.sh) file. Optionally, running the shell file will install all mentioned extensions.
+See the list of extensions I use found in the [vscode.extensions.sh](vscode.extenions.sh) file. Optionally, running the shell file will install all mentioned extensions.
 
 ### Templates/Snippets
 
