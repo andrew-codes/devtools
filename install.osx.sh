@@ -6,6 +6,7 @@ xcode-select --install
 
 brew cask install 1password
 brew cask install alfred
+brew cask install balenaetcher
 brew cask install bettertouchtool
 brew cask install dash
 brew cask install discord
