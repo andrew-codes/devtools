@@ -6,7 +6,6 @@ xcode-select --install
 
 brew cask install 1password
 brew cask install alfred
-brew cask install balenaetcher
 brew cask install bettertouchtool
 brew cask install dash
 brew cask install discord
@@ -30,6 +29,7 @@ brew cask install slack
 brew cask install snagit
 brew cask install spotify
 brew cask install visual-studio-code
+brew install cdrtools
 brew install gh
 brew install gpg
 brew install keychain
