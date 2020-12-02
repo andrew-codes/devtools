@@ -30,11 +30,11 @@ brew cask install snagit
 brew cask install spotify
 brew cask install visual-studio-code
 brew install cdrtools
+brew install gcc
 brew install gh
 brew install gpg
 brew install keychain
 brew install nvm
-brew install gcc
 brew install yarn
 
 ## Setup devtools for bash.
