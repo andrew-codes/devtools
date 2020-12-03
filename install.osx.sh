@@ -36,6 +36,7 @@ brew install gh
 brew install gpg
 brew install keychain
 brew install kubectl
+brew install kubeseal
 brew install nvm
 brew install python@3.9
 brew install yarn
