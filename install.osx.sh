@@ -35,6 +35,7 @@ brew install cdrtools
 brew install gcc
 brew install gh
 brew install gpg
+brew install jq
 brew install keychain
 brew install kubectl
 brew install kubeseal
