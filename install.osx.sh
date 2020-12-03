@@ -29,12 +29,15 @@ brew cask install slack
 brew cask install snagit
 brew cask install spotify
 brew cask install visual-studio-code
+brew install ansible
 brew install cdrtools
 brew install gcc
 brew install gh
 brew install gpg
 brew install keychain
+brew install kubectl
 brew install nvm
+brew install python@3.9
 brew install yarn
 
 ## Setup devtools for bash.
