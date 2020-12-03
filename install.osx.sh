@@ -30,6 +30,7 @@ brew cask install snagit
 brew cask install spotify
 brew cask install visual-studio-code
 brew install ansible
+brew install azure-cli
 brew install cdrtools
 brew install gcc
 brew install gh
