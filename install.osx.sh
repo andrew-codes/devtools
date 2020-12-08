@@ -32,6 +32,7 @@ brew cask install visual-studio-code
 brew install ansible
 brew install azure-cli
 brew install cdrtools
+brew install dos2unix
 brew install gcc
 brew install gh
 brew install gpg
