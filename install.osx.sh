@@ -2,47 +2,53 @@
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
+brew update
+
 xcode-select --install
 
-brew cask install 1password
-brew cask install alfred
-brew cask install bettertouchtool
-brew cask install dash
-brew cask install discord
-brew cask install docker
-brew cask install firefox
-brew cask install google-chrome
-brew cask install grammarly
-brew cask install hazel
-brew cask install iterm2
-brew cask install keybase
-brew cask install kindle
-brew cask install logitech-presentation
-brew cask install microsoft-office
-brew cask install microsoft-teams
-brew cask install parsec
-brew install pinentry-mac
-brew cask install pdf-expert
-brew cask install pliim
-brew cask install rowanj-gitx
-brew cask install slack
-brew cask install snagit
-brew cask install spotify
-brew cask install visual-studio-code
+brew install 1password
+brew install alfred
+brew install altair-graphql-client
 brew install ansible
 brew install azure-cli
+brew install backblaze
+brew install bettertouchtool
 brew install cdrtools
+brew install dash
+brew install discord
+brew install docker
 brew install dos2unix
 brew install gcc
 brew install gh
-brew install gpg
+brew install gpg-suite
+brew install hazel
+brew install iterm2
 brew install jq
+brew install keybase
 brew install keychain
+brew install kindle
 brew install kubectl
 brew install kubeseal
+brew install lens
+brew install logitech-presentation
+brew install microsoft-edge
+brew install microsoft-office
+brew install microsoft-teams
+brew install moonlight
 brew install nvm
+brew install parsec
+brew install pdf-expert
+brew install pinentry-mac
+brew install pliim
 brew install python@3.9
+brew install rowanj-gitx
+brew install slack
+brew install snagit
+brew install spotify
+brew install tunnelblick
+brew install visual-studio-code
 brew install yarn
+brew install yq
 
 ## Setup devtools for bash.
 source ./add-devtools-to-bash_profile.sh
