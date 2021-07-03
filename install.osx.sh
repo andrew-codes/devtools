@@ -45,7 +45,6 @@ brew install rowanj-gitx
 brew install slack
 brew install snagit
 brew install spotify
-brew install tunnelblick
 brew install visual-studio-code
 brew install yarn
 brew install yq
