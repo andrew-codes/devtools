@@ -22,12 +22,12 @@ fi
 echo "Modifying .bash_profile with devtools"
 echo "$BASH_PROFILE_CONTENTS" >"$PROFILE_FILE_PATH"
 echo -e "\n" >>"$PROFILE_FILE_PATH"
-cat $DEVTOOLS_HOME/bash_features.sh >>"$PROFILE_FILE_PATH"
+cat ${DEVTOOLS_HOME}/bash_features.sh >>"$PROFILE_FILE_PATH"
 echo -e "\n" >>"$PROFILE_FILE_PATH"
 echo -e "$(
     cat <<END
 # <DEVTOOLS>
-source $DEVTOOLS_HOME/bash/index.sh
+source ${DEVTOOLS_HOME}/bash/index.sh
 # </DEVTOOLS>
 END
 )" >>"$PROFILE_FILE_PATH"
