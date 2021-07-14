@@ -22,7 +22,32 @@ fi
 echo "Modifying .bash_profile with devtools"
 echo "$BASH_PROFILE_CONTENTS" >"$PROFILE_FILE_PATH"
 echo -e "\n" >>"$PROFILE_FILE_PATH"
-cat ${DEVTOOLS_HOME}/bash_features.sh >>"$PROFILE_FILE_PATH"
+echo -e "$(
+    cat <<END
+# <DEVTOOLS>
+# Path variables
+# ==============
+export DEV_HOME=\$HOME/developer
+export REPO_HOME=\${DEV_HOME}/repos
+export DEVTOOLS_HOME=\${REPO_HOME}/devtools
+export TOOLS_HOME=\${DEV_HOME}/tools/
+
+
+# Enable/Disable Features
+# =======================
+# set to 0 to disable.
+
+export SSH_CREDENTIALS=1
+export GPG=1
+export ADDITIONAL_GIT_FUNCTIONALITY=1
+export GIT_PROMPT=1
+export GIT_ALIAS=1
+export PROJECT_FINDER=1
+export DOCKER=1
+export COMMANDS=1
+# </DEVTOOLS>
+END
+)" >>"$PROFILE_FILE_PATH"
 echo -e "\n" >>"$PROFILE_FILE_PATH"
 echo -e "$(
     cat <<END
@@ -36,7 +61,7 @@ BASHRC_PATH=~/.bashrc
 if [ -f $BASHRC_PATH ]; then
     echo "Found a .bashrc file."
     echo "Removing any pre-exisitng sourcing of bash_profile"
-    BASHRC_CONTENTS=$(cat "$BASHRC_PATH" | tr '\n' '\r' | sed -e "s;source \.bash_profile;;g" | tr '\r' '\n')
+    BASHRC_CONTENTS=$(cat "$BASHRC_PATH" | tr '\n' '\r' | sed -e "s;source \~/\.bash_profile;;g" | tr '\r' '\n')
     echo "$BASHRC_CONTENTS"
 else
     echo "No .bashrc file found. Adding one."
@@ -58,4 +83,4 @@ echo -e "$(
     cat <<END
 source ~/.bash_profile
 END
-)" >>"$PROFILE_FILE_PATH"
+)" >>"$BASHRC_PATH"
