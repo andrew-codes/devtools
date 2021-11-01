@@ -27,24 +27,24 @@ echo -e "$(
 # <DEVTOOLS>
 # Path variables
 # ==============
-export DEV_HOME=\$HOME/developer
-export REPO_HOME=\${DEV_HOME}/repos
-export DEVTOOLS_HOME=\${REPO_HOME}/devtools
-export TOOLS_HOME=\${DEV_HOME}/tools/
+export DEV_HOME=$DEV_HOME
+export REPO_HOME=$REPO_HOME
+export DEVTOOLS_HOME=$DEVTOOLS_HOME
+export TOOLS_HOME=$TOOLS_HOME
 
 
 # Enable/Disable Features
 # =======================
 # set to 0 to disable.
 
-export SSH_CREDENTIALS=1
-export GPG=1
-export ADDITIONAL_GIT_FUNCTIONALITY=1
-export GIT_PROMPT=1
-export GIT_ALIAS=1
-export PROJECT_FINDER=1
-export DOCKER=1
-export COMMANDS=1
+export SSH_CREDENTIALS=$SSH_CREDENTIALS
+export GPG=$GPG
+export ADDITIONAL_GIT_FUNCTIONALITY=$ADDITIONAL_GIT_FUNCTIONALITY
+export GIT_PROMPT=$GIT_PROMPT
+export GIT_ALIAS=$GIT_ALIAS
+export PROJECT_FINDER=$PROJECT_FINDER
+export DOCKER=$DOCKER
+export COMMANDS=$COMMANDS
 # </DEVTOOLS>
 END
 )" >>"$PROFILE_FILE_PATH"
@@ -52,7 +52,7 @@ echo -e "\n" >>"$PROFILE_FILE_PATH"
 echo -e "$(
     cat <<END
 # <DEVTOOLS>
-source ${DEVTOOLS_HOME}/bash/index.sh
+source $DEVTOOLS_HOME/bash/index.sh
 # </DEVTOOLS>
 END
 )" >>"$PROFILE_FILE_PATH"
