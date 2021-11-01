@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-DEV_HOME=$HOME/developer
-REPO_HOME=${DEV_HOME}/repos
+DEV_HOME=$HOME
+REPO_HOME=${DEV_HOME}
 DEVTOOLS_HOME=${REPO_HOME}/devtools
 TOOLS_HOME=${DEV_HOME}/tools/
 
