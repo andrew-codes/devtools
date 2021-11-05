@@ -9,9 +9,11 @@ export GPG_TTY=$(tty)
 
 IS_OSX=0
 IS_WIN=0
+IS_LINUX=0
 [[ "$OSTYPE" == *"darwin"* ]] && IS_OSX=1 || IS_OSX=0
 [[ "$OSTYPE" == *"win"* ]] && IS_WIN=1 || IS_WIN=0
 [[ "$OSTYPE" == *"msys"* ]] && IS_WIN=1 || IS_WIN=0
+[[ "$OSTYPE" == *"linux"* ]] && IS_LINUX=1 || IS_LINUX=0
 
 source ${DEVTOOLS_HOME}/bash/features/ssh-credentials/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-alias/index.sh
