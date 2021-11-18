@@ -51,3 +51,13 @@ sb
 sb branch_name
 sb remote_name branch_name
 ```
+
+**Go to next, future commit**: allows you to navigate one commit in the future from your current ref and a branch ref.
+
+```bash
+# sha1 (HEAD) -> sha2 -> sha3 -> master
+
+gnxt master
+
+# Will checkout sha2
+```

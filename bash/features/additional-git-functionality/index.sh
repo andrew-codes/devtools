@@ -86,3 +86,11 @@ function sb() {
 function pmb() {
   git branch --merged master --no-color  | grep -v '^[ *]*master$' | xargs git branch -d
 }
+
+function gnxt() {
+  if ! [ -z "$1" ]; then
+    git checkout $1~$[ $(git rev-list HEAD..$1 | wc -l) -1 ]
+  else
+    echo "No branch ref provided; e.g., `gnxt master`."
+  fi
+}
