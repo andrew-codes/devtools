@@ -2,7 +2,7 @@
 
 DEV_HOME=$HOME
 REPO_HOME=$DEV_HOME
-DEVTOOLS_HOME=$REPO_HOME/devtools
+DEVTOOLS_HOME=/workspaces/.codespaces/.persistedshare/dotfiles
 TOOLS_HOME=$DEV_HOME/tools/
 
 SSH_CREDENTIALS=1
