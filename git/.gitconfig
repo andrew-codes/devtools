@@ -45,5 +45,6 @@ format = ssh
 [commit]
 gpgsign = true
 program = /usr/local/bin/gpg
+
 [init]
 defaultBranch = main

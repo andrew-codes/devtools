@@ -25,6 +25,8 @@ source ${DEVTOOLS_HOME}/bash/features/gpg/index.sh
 source ${DEVTOOLS_HOME}/bash/features/docker/index.sh
 source ${DEVTOOLS_HOME}/bash/features/commands/index.sh
 
+export SSH_AUTH_SOCK=~/.1password/agent.sock
+
 if type brew &>/dev/null; then
   HOMEBREW_PREFIX="$(brew --prefix)"
   if [[ -r "${HOMEBREW_PREFIX}/etc/profile.d/bash_completion.sh" ]]; then
@@ -36,9 +38,10 @@ if type brew &>/dev/null; then
   fi
 fi
 
-# [GitX](http://gitx.frim.nl/user_manual.html); OSX only
-[ $IS_OSX -eq 1 ] && [ -f /usr/local/bin/gitx ] && alias gui=gitx
-
+# nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 export NVM_DIR="$HOME/.nvm"
 if [ $IS_OSX -eq 1 ]; then
   source $(brew --prefix nvm)/nvm.sh
