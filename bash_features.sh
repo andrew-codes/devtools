@@ -10,7 +10,7 @@ TOOLS_HOME=$DEV_HOME/tools/
 # =======================
 # set to 0 to disable.
 
-SSH_CREDENTIALS=1
+SSH_CREDENTIALS=0
 GPG=1
 ADDITIONAL_GIT_FUNCTIONALITY=1
 GIT_PROMPT=1
