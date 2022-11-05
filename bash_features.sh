@@ -3,7 +3,7 @@
 # ==============
 DEV_HOME=$HOME/developer
 REPO_HOME=$DEV_HOME/repos
-DEVTOOLS_HOME=$REPO_HOME/devtools
+DEVTOOLS_HOME=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TOOLS_HOME=$DEV_HOME/tools/
 
 # Enable/Disable Features

@@ -2,7 +2,7 @@
 
 DEV_HOME=$HOME
 REPO_HOME=$DEV_HOME
-DEVTOOLS_HOME=/workspaces/.codespaces/.persistedshare/dotfiles
+DEVTOOLS_HOME=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TOOLS_HOME=$DEV_HOME/tools/
 
 SSH_CREDENTIALS=0
