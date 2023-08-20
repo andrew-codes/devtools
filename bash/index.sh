@@ -16,6 +16,7 @@ IS_LINUX=0
 [[ "$OSTYPE" == *"linux"* ]] && IS_LINUX=1 || IS_LINUX=0
 
 source ${DEVTOOLS_HOME}/bash/features/ssh-credentials/index.sh
+source ${DEVTOOLS_HOME}/bash/features/1password-ssh-credentials/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-alias/index.sh
 source ${DEVTOOLS_HOME}/bash/features/additional-git-functionality/index.sh
 source ${DEVTOOLS_HOME}/bash/features/git-completion/index.sh
@@ -46,9 +47,3 @@ if [ $IS_OSX -eq 1 ]; then
 fi
 
 export PATH="$HOME/developer/tools/bin:/bin:$PATH"
-
-if [ $IS_WIN -eq 1 ]; then
-  export SSH_AUTH_SOCK=\\\\.\\pipe\\openssh-ssh-agent
-else
-  export SSH_AUTH_SOCK=$HOME/.1password/agent.sock
-fi
