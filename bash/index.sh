@@ -25,8 +25,6 @@ source ${DEVTOOLS_HOME}/bash/features/gpg/index.sh
 source ${DEVTOOLS_HOME}/bash/features/docker/index.sh
 source ${DEVTOOLS_HOME}/bash/features/commands/index.sh
 
-export SSH_AUTH_SOCK=~/.1password/agent.sock
-
 if type brew &>/dev/null; then
   HOMEBREW_PREFIX="$(brew --prefix)"
   if [[ -r "${HOMEBREW_PREFIX}/etc/profile.d/bash_completion.sh" ]]; then
@@ -47,4 +45,10 @@ if [ $IS_OSX -eq 1 ]; then
   source $(brew --prefix nvm)/nvm.sh
 fi
 
-export PATH="/bin:$PATH"
+export PATH="$HOME/developer/tools/bin:/bin:$PATH"
+
+if [ $IS_WIN -eq 1 ]; then
+  export SSH_AUTH_SOCK=\\\\.\\pipe\\openssh-ssh-agent
+else
+  export SSH_AUTH_SOCK=$HOME/.1password/agent.sock
+fi
