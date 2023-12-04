@@ -17,5 +17,5 @@ function brewInstall() {
 function wingetInstall() {
   echo -e "Installing $1"
 
-  winget list $1 2 >/dev/null 2>&1 || winget install --accept-package-agreements --accept-source-agreements --exact --silent -q $1
+  winget list $1 >/dev/null 2>&1 || winget install --accept-package-agreements --accept-source-agreements --exact --silent -q $1
 }
