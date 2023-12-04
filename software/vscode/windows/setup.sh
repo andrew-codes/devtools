@@ -1,3 +1,3 @@
 wingetInstall Microsoft.VisualStudioCode
 
-cp ./key-bindings.json ~/AppData/Roaming/Code/User/keybindings.json
+cp ./key-bindings.jsonc ~/AppData/Roaming/Code/User/keybindings.json
