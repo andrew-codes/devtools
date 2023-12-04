@@ -2,6 +2,8 @@
 
 Auto-complete search of your projects (repos). Each of the following commands will tab auto-complete.
 
+> Repos searched are those found at `$REPO_HOME/*`.
+
 1. `oproj some-repo` will open `some-repo` in Visual Studio Code
 1. `proj` will change directory to your repo directory
 1. `proj some-repo` will change directory to `some-repo` directory
