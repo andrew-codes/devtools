@@ -9,5 +9,4 @@ cat ./README.md >../../.tmp/docs/bash.md
 
 runInDir ./$os/setup.sh
 
-echo -e "
-"
+echo -e ""

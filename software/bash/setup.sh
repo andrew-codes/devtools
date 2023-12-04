@@ -19,7 +19,7 @@ for dir in ./features/*/; do
   featureToggle="DEVTOOLS_BASH_FEATURES_$(echo "$dir" | tr a-z A-Z | sed s/-/_/g)"
 
   if [ "${!featureToggle}" == "true" ]; then
-    echo -e "Enabling feature $dir"
+    echo "Enabling feature $dir"
     impl=$(cat ./features/$dir/implementation.sh)
     echo -e "# <DEVTOOLS>
 # $(echo $featureToggle | sed s/_/-/g)
@@ -31,5 +31,4 @@ $impl
   fi
 done
 
-echo -e "
-"
+echo -e ""

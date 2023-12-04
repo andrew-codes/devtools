@@ -33,7 +33,8 @@ runInDir ./software/settings/setup.sh
 runInDir ./software/bash/setup.sh
 runInDir ./software/vscode/setup.sh
 
-echo -e "Generating dev tooling docs to $DEVTOOLS_BASH_DEV_HOME/devtools-docs"
+printH1 "Generating dev tooling docs"
+echo -e "Docs located at $DEVTOOLS_BASH_DEV_HOME/devtools-docs"
 mv .tmp/docs/* $DEVTOOLS_BASH_DEV_HOME/devtools-docs
 
 echo -e ""
