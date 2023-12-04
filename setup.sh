@@ -27,6 +27,7 @@ esac
 source setup-utils/utils.sh
 
 mkdir -p .tmp/docs
+mkdir -p .tmp/docs/assets
 mkdir -p $DEVTOOLS_BASH_DEV_HOME/docs
 
 runInDir ./software/settings/setup.sh

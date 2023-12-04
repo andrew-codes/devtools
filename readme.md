@@ -26,4 +26,4 @@ Configuration of devtool installation is controlled by env variables. By default
 
 ## What's Included?
 
-All configured software is located under `./software/*`. All features of software are located under the software's features directory. For OS specific configuration, there will be a `osx` or `windows` directory parent to the features. See the `README.md` for each software and feature for more details.
+All configured software is located under `./software/*`. All features of software are located under the software's features directory. For OS specific configuration, see feature's sub-directory by OS name, e.g., `osx` or `windows`. See the `README.md` for each software and feature for more details.

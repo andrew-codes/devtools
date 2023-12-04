@@ -1,1 +1,1 @@
-brewInstall visual-studio-code
+brewInstall visual-studio-code --cask

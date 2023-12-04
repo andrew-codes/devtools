@@ -1,4 +1,18 @@
-# Additional Git Functionality
+## Extended Git
+
+### Commands
+
+- `fa` => `git fetch --all` (fetch history from all remotes)
+- `st` => `git status`
+- `rbi` => `git rebase -i`
+- `rbc` => `git rebase --continue`
+- `rbs` => `git rebase --skip`
+- `rba` => `git rebase --abort`
+- `co` => `git checkout`
+
+**glg**: Prints git history in the terminal in a meaningful way.
+
+![glg example usage screenshot](assets/../glg-example.png)
 
 **Reset Hard**: hard reset and a clean; removes all uncommitted changes and any untracked files. Can optionally provide a branch or origin and branch in which to reset your current working branch `HEAD`.
 
@@ -55,9 +69,9 @@ sb remote_name branch_name
 **Go to next, future commit**: allows you to navigate one commit in the future from your current ref and a branch ref.
 
 ```bash
-# sha1 (HEAD) -> sha2 -> sha3 -> master
+# main <- sha2 <- sha1 (HEAD)
 
-gnxt master
+gnxt main
 
 # Will checkout sha2
 ```

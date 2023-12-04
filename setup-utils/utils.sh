@@ -11,6 +11,11 @@ function runInDir() {
 function brewInstall() {
   echo -e "Ensuring $1 is installed."
 
+  if [ -z "$2" ]; then
+    brew list $1 >/dev/null 2>&1 || brew install $2 $1
+    return
+  fi
+
   brew list $1 >/dev/null 2>&1 || brew install $1
 }
 
