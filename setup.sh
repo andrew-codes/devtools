@@ -1,9 +1,11 @@
+set -o allexport
 if [ -n "$1" ]; then
   echo "Usage: $1 environment configuration"
-  set -o allexport
   source $1
-  set +o allexport
+else
+  source sample.env
 fi
+set +o allexport
 
 export os=${OSTYPE//[0-9.]/}
 
