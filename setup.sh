@@ -1,4 +1,4 @@
-if [ -n"$1" ]; then
+if [ -n "$1" ]; then
   echo "Usage: $1 environment configuration"
   set -o allexport
   source $1
@@ -7,20 +7,24 @@ fi
 
 export os=${OSTYPE//[0-9.]/}
 
-. setup-utils/run-in-dir.sh ./setup-utils/test/software/setup.sh
-
 case $os in
 darwin*)
-  if [ "$DEVTOOLS_VSCODE" == "true" ]; then
-    . setup-utils/run-in-dir.sh ./software/vscode/osx/setup.sh
-  fi
-
+  os="osx"
   ;;
 msys*)
-  source ./software/vscode/windows/setup.sh
+  os="windows"
 
   ;;
 *)
   echo "Unsupported OS: $OSTYPE"
+
+  exit 1
   ;;
 esac
+
+source setup-utils/utils.sh
+
+runInDir ./software/settings/setup.sh
+runInDir ./software/vscode/setup.sh
+
+echo -e ""

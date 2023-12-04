@@ -1,1 +1,1 @@
-brew install visual-studio-code
+brewInstall visual-studio-code
