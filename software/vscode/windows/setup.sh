@@ -1,7 +1,14 @@
 wingetInstall Microsoft.VisualStudioCode
 
-if [ "$DEVTOOLS_VSCODE_OSX_KEYBINDINGS" == "true" ]; then
-  wingetInstall Microsoft.PowerToys
-  echo -e "Remember to map the left Windows key to Left Control in PowerToys Keyboard Manager. See https://learn.microsoft.com/en-us/windows/powertoys/keyboard-manager for more information."
-  cp ./key-bindings.jsonc ~/AppData/Roaming/Code/User/keybindings.json
-fi
+cat ./README.md >../../.tmp/docs/vscode.md
+for dir in ./features/*/; do
+  dir=${dir%*/} # remove the trailing "/"
+  dir=${dir##*/}
+  featureToggle="DEVTOOLS_VSCODE_FEATURES_$(echo "$dir" | tr a-z A-Z | sed s/-/_/g)"
+
+  if [ "${!featureToggle}" == "true" ]; then
+    runInDir ./features/$dir/setup.sh
+
+    cat ./features/$dir/README.md >>../../.tmp/docs/vscode.md
+  fi
+done

@@ -26,7 +26,14 @@ esac
 
 source setup-utils/utils.sh
 
+mkdir -p .tmp/docs
+mkdir -p $DEVTOOLS_BASH_DEV_HOME/devtools-docs
+
 runInDir ./software/settings/setup.sh
+runInDir ./software/bash/setup.sh
 runInDir ./software/vscode/setup.sh
+
+echo -e "Generating dev tooling docs to $DEVTOOLS_BASH_DEV_HOME/devtools-docs"
+mv .tmp/docs/* $DEVTOOLS_BASH_DEV_HOME/devtools-docs
 
 echo -e ""
