@@ -1,9 +1,7 @@
-echo -e "
-## VS Code
-"
+printH2 "VS Code"
 
 if [ "$DEVTOOLS_VSCODE" == "true" ]; then
   runInDir ./$os/setup.sh
 else
-  echo "Skipping"
+  echo -e "Skipping"
 fi

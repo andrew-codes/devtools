@@ -19,3 +19,15 @@ function wingetInstall() {
 
   winget list $1 >/dev/null 2>&1 || winget install --accept-package-agreements --accept-source-agreements --exact --silent -q $1
 }
+
+function printH1() {
+  echo -e "$1
+$(echo $1 | sed "s/./=/"g)
+"
+}
+
+function printH2() {
+  echo -e "$1
+$(echo $1 | sed "s/./-/"g)
+"
+}
