@@ -22,7 +22,7 @@ ls $DEVTOOLS_HOME/docs
 
 ## Configuration
 
-Configuration of devtool installation is controlled by env variables. By default, `sample.env` file will be used which disables all tools and features. Tools may be enabled and additionally features of the tool via the environment variables found in `ample.env`.
+Configuration of devtool installation is controlled by env variables. By default, `sample.env` file will be used which disables all tools and features. Tools may be enabled and additionally features of the tool via the environment variables found in `sample.env`.
 
 ## What's Included?
 
