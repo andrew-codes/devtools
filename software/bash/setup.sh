@@ -19,6 +19,7 @@ for featureDir in ./features/*/; do
   featureToggle="DEVTOOLS_BASH_FEATURES_$(echo "$featureName" | tr a-z A-Z | sed s/-/_/g)"
 
   if [ ! "${featureToggle}" == "true" ]; then
+    echo "Skipping feature $featureName due to $featureToggle not being set to true."
     continue
   fi
 
@@ -37,6 +38,7 @@ for featureDir in ./features/*/; do
 # $(echo $featureToggle | sed s/_/-/g)
 # $(echo $featureToggle | sed "s/./=/"g)
 $impl
+# </DEVTOOLS>
 " >>~/.bash_profile
   fi
 
@@ -46,6 +48,7 @@ $impl
 # $(echo $featureToggle | sed s/_/-/g)
 # $(echo $featureToggle | sed "s/./=/"g)
 $impl
+# </DEVTOOLS>
 " >>~/.bash_profile
   fi
 
