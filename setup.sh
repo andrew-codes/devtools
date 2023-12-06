@@ -1,4 +1,4 @@
-if [ $IGNORE_ENV_FILE == "true" ]; then
+if [ "$IGNORE_ENV_FILE" == "true" ]; then
   set -o allexport
   if [ -n "$1" ]; then
     echo "Usage: $1 environment configuration"
