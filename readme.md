@@ -28,4 +28,4 @@ Configuration of devtool installation is controlled by env variables. By default
 
 All configured software is located under `./software/*`. All features of software are located under the software's features directory. For OS specific configuration, see feature's sub-directory by OS name, e.g., `osx` or `windows`. See the `README.md` for each software and feature for more details.
 
-For example, to see informatoin about VS Codes's keybindings feature, you can view the [./software/vscode/features/keybindings/README.md](./software/vscode/features/keybindings/README.md) for more information.
+For example, to see information about VS Codes's keybindings feature, you can view the [./software/vscode/features/keybindings/README.md](./software/vscode/features/keybindings/README.md) for more information.

@@ -12,7 +12,7 @@
 
 **glg**: Prints git history in the terminal in a meaningful way.
 
-![glg example usage screenshot](assets/../glg-example.png)
+![glg example usage screenshot](./assets/glg-example.png)
 
 **Reset Hard**: hard reset and a clean; removes all uncommitted changes and any untracked files. Can optionally provide a branch or origin and branch in which to reset your current working branch `HEAD`.
 
