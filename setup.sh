@@ -15,7 +15,6 @@ darwin*)
   ;;
 msys*)
   os="windows"
-
   ;;
 *)
   echo "Unsupported OS: $OSTYPE"
@@ -37,5 +36,6 @@ runInDir ./software/vscode/setup.sh
 printH1 "Generating dev tooling docs"
 echo -e "Docs located at $DEVTOOLS_BASH_DEV_HOME/docs"
 mv .tmp/docs/* $DEVTOOLS_BASH_DEV_HOME/docs
+rm -rf .tmp
 
 echo -e ""
