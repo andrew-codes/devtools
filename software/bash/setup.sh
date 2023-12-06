@@ -9,7 +9,7 @@ fi
 cat ./README.md >../../.tmp/docs/bash.md
 
 . ensureBashProfile.sh
-. ensureBashrc.sh
+. ensureBashRc.sh
 . devToolsEnvVars.sh
 . toolsBinPath.sh
 
