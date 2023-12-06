@@ -17,8 +17,7 @@ for featureDir in ./features/*/; do
   featureName=${featureDir%*/} # remove the trailing "/"
   featureName=${featureName##*/}
   featureToggle="DEVTOOLS_BASH_FEATURES_$(echo "$featureName" | tr a-z A-Z | sed s/-/_/g)"
-
-  if [ ! "${featureToggle}" == "true" ]; then
+  if [ ! "${!featureToggle}" == "true" ]; then
     echo "Skipping feature $featureName due to $featureToggle not being set to true."
     continue
   fi
