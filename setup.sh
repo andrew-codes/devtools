@@ -1,11 +1,13 @@
-set -o allexport
-if [ -n "$1" ]; then
-  echo "Usage: $1 environment configuration"
-  source $1
-else
-  source sample.env
+if [ $IGNORE_ENV_FILE == "true" ]; then
+  set -o allexport
+  if [ -n "$1" ]; then
+    echo "Usage: $1 environment configuration"
+    source $1
+  else
+    source sample.env
+  fi
+  set +o allexport
 fi
-set +o allexport
 
 export os=${OSTYPE//[0-9.]/}
 
@@ -17,9 +19,7 @@ msys*)
   os="windows"
   ;;
 *)
-  echo "Unsupported OS: $OSTYPE"
-
-  exit 1
+  os=$(cat /etc/*-release | grep "^ID" | sed s/^ID=//)
   ;;
 esac
 
