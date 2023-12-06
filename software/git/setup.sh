@@ -26,15 +26,15 @@ for featureDir in ./features/*/; do
   fi
 
   echo "Enabling feature $featureName"
-  if [ -z ./features/$featureName/setup.sh ]; then
+  if [ -f ./features/$featureName/setup.sh ]; then
     . ./features/$featureName/setup.sh
   fi
 
-  if [ -z ./features/$featureName/$os/setup.sh ]; then
+  if [ -f ./features/$featureName/$os/setup.sh ]; then
     . ./features/$featureName/$os/setup.sh
   fi
 
-  if [ -z ./features/$featureName/implementation.sh ]; then
+  if [ -f ./features/$featureName/implementation.sh ]; then
     impl=$(cat ./features/$featureName/implementation.sh)
     echo -e "# <DEVTOOLS>
 # $(echo $featureToggle | sed s/_/-/g)
@@ -43,7 +43,7 @@ $impl
 " >>~/.bash_profile
   fi
 
-  if [ -z ./features/$featureName/$os/implementation.sh ]; then
+  if [ -f ./features/$featureName/$os/implementation.sh ]; then
     impl=$(cat ./features/$featureName/$os/implementation.sh)
     echo -e "# <DEVTOOLS>
 # $(echo $featureToggle | sed s/_/-/g)
@@ -54,7 +54,7 @@ $impl
 
   # Aggregate docs
   cat ./features/$featureName/README.md >>../../.tmp/docs/git.md
-  if [ -z ./features/$featureName/assets ]; then
+  if [ -f ./features/$featureName/assets ]; then
     cp ./features/$featureName/assets/* ../../.tmp/docs/assets
   fi
 done

@@ -40,17 +40,17 @@ for featureDir in ./features/*/; do
   fi
 
   echo "Enabling feature $featureName"
-  if [ -z ./features/$featureName/setup.sh ]; then
+  if [ -f ./features/$featureName/setup.sh ]; then
     runInDir ./features/$featureName/setup.sh
   fi
 
-  if [ -z ./features/$featureName/$os/setup.sh ]; then
+  if [ -f ./features/$featureName/$os/setup.sh ]; then
     runInDir ./features/$featureName/$os/setup.sh
   fi
 
   # Aggregate docs
   cat ./features/$featureName/README.md >>../../.tmp/docs/$doc
-  if [ -z ./features/$featureName/assets ]; then
+  if [ -f ./features/$featureName/assets ]; then
     cp ./features/$featureName/assets/* ../../.tmp/docs/assets
   fi
 done
