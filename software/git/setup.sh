@@ -40,6 +40,7 @@ for featureDir in ./features/*/; do
 # $(echo $featureToggle | sed s/_/-/g)
 # $(echo $featureToggle | sed "s/./=/"g)
 $impl
+# </DEVTOOLS>
 " >>~/.bash_profile
   fi
 
@@ -49,6 +50,7 @@ $impl
 # $(echo $featureToggle | sed s/_/-/g)
 # $(echo $featureToggle | sed "s/./=/"g)
 $impl
+# </DEVTOOLS>
 " >>~/.bash_profile
   fi
 
