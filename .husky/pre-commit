@@ -2,7 +2,6 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 bash ./.husky/compileDocs.sh
+
 git add assets/*
 git add features.md
-
-git commit -m "Documemtation updates"
