@@ -2,6 +2,8 @@
 
 ### Commands
 
+> For more detailed usage of commands, see below this list.
+
 - `pull` => `git pull`
 - `fa` => `git fetch --all` (fetch history from all remotes)
 - `st` => `git status`
@@ -19,8 +21,6 @@
 - `sb` => set a branch to its upstream
 - `gnxt` => checkout the next, future, commit from your current ref
 
-
-> Usage of commands see below:
 
 **glg**: Prints git history in the terminal in a meaningful way.
 
