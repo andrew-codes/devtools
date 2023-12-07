@@ -1,0 +1,26 @@
+{
+  "name": "Devtools",
+  "dockerFile": "Dockerfile",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20.9.0"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          }
+        },
+        "workbench.colorTheme": "Dracula Pro"
+      },
+      "extensions": [],
+    }
+  },
+  "initializeCommand": "bash -c '.devcontainer/save-config.sh'",
+  "postAttachCommand": "bash -c '.devcontainer/start.sh'",
+  "remoteUser": "root"
+}
