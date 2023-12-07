@@ -20,7 +20,5 @@
       "extensions": [],
     }
   },
-  "initializeCommand": "bash -c '.devcontainer/save-config.sh'",
-  "postAttachCommand": "bash -c '.devcontainer/start.sh'",
   "remoteUser": "root"
 }

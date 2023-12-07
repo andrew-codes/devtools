@@ -43,7 +43,7 @@ const RAW_RUNTIME_STATE =
     ]],\
     ["husky", [\
       ["npm:8.0.3", {\
-        "packageLocation": "../../../.yarn/berry/cache/husky-npm-8.0.3-b0b59c5127-10c0.zip/node_modules/husky/",\
+        "packageLocation": "../../root/.yarn/berry/cache/husky-npm-8.0.3-b0b59c5127-10c0.zip/node_modules/husky/",\
         "packageDependencies": [\
           ["husky", "npm:8.0.3"]\
         ],\
