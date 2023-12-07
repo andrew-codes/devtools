@@ -1,0 +1,10 @@
+{
+  "name": "@andrew-codes/devtools",
+  "packageManager": "yarn@4.0.2",
+  "devDependencies": {
+    "husky": "^8.0.0"
+  },
+  "scripts": {
+    "prepare": "husky install"
+  }
+}
