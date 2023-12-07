@@ -50,7 +50,7 @@ for featureDir in ./features/*/; do
 
   # Aggregate docs
   cat ./features/$featureName/README.md >>../../.tmp/docs/$doc
-  if [ -f ./features/$featureName/assets ]; then
+  if [ -d ./features/$featureName/assets ]; then
     cp ./features/$featureName/assets/* ../../.tmp/docs/assets
   fi
 done
