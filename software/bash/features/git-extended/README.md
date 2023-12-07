@@ -2,6 +2,7 @@
 
 ### Commands
 
+- `pull` => `git pull`
 - `fa` => `git fetch --all` (fetch history from all remotes)
 - `st` => `git status`
 - `rbi` => `git rebase -i`
