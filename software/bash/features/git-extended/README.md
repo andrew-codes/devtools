@@ -10,6 +10,17 @@
 - `rbs` => `git rebase --skip`
 - `rba` => `git rebase --abort`
 - `co` => `git checkout`
+- `glg` => print history in a meaningful way
+- `rh` => reset hard (parameterized)
+- `rs` => reset soft (parameterized)
+- `lb` => list or search all branches (including remotes)
+- `nb` => create a new branch, push, and set its upstream
+- `pull` => pull via rebase; ensure rebase is used
+- `sb` => set a branch to its upstream
+- `gnxt` => checkout the next, future, commit from your current ref
+
+
+> Usage of commands see below:
 
 **glg**: Prints git history in the terminal in a meaningful way.
 
@@ -56,7 +67,7 @@ db branch_name
 ```bash
 pull
 pull branch_name
-pull remtoe_name branch_name
+pull remote branch_name
 ```
 
 **Set Branch**: sets a local branch's upstream to a remote branch of the same name. If called with no parameters, will the current working branch name and the origin remote.
