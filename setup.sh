@@ -19,7 +19,7 @@ msys*)
   os="windows"
   ;;
 *)
-  os=$(cat /etc/*-release | grep "^ID" | sed s/^ID=//)
+  os=$(cat /etc/*-release | grep "^ID_LIKE" | sed s/^ID_LIKE=//)
   ;;
 esac
 
