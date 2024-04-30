@@ -41,6 +41,7 @@ Enable tabbing in bash to auto-complete git commands.
 - `sb` => set a branch to its upstream
 - `gnxt` => checkout the next, future, commit from your current ref
 
+
 **glg**: Prints git history in the terminal in a meaningful way.
 
 ![glg example usage screenshot](./assets/glg-example.png)
@@ -139,9 +140,11 @@ Enables entering your SSH pass phrase only once, at the start of a shell, instea
 
 Automatically setup your `.gitconfig` file.
 
+
 # Mouse Gestures
 
 Enable navigation of OSX spaces via mouse gestures. See the [software's website](https://mousefix.org/about/) for more details on giving input permissions.
+
 
 # VS Code
 
@@ -163,3 +166,4 @@ When using Windows from a remote desktop client on OSX, this feature will ensure
 
 1. Ensure Microsoft Windows PowerToys's Keyboard Manager is enabled.
 2. Ensure Left-Windows key is mapped to Left-Ctrl in Keyboard Manager.
+
