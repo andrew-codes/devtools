@@ -3,3 +3,4 @@
 *.env
 !sample.env
 .tmp
+.devcontainer/.devpod-internal/
