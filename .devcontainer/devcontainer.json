@@ -7,6 +7,9 @@
     }
   },
   "customizations": {
+    "devpod": {
+      "prebuildRepository": "ghcr.io/andrew-codes/devtools"
+    },
     "vscode": {
       "settings": {
         "terminal.integrated.profiles.linux": {
