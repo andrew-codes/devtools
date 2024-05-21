@@ -3,6 +3,7 @@
 - Ensure devtool environment variables are available in bash instances.
 - Ensure `$TOOLS_BIN_HOME` is found in the environment path.
 
+## 1Password CLI tool
 ## Commands
 
 ### General
@@ -14,6 +15,25 @@
 1. Docker kill all containers: `dka`
 2. Docker environment; `denv $HOST` will set `DOCKER_HOST=$HOST`
 
+## Devpod
+
+Client application that creates codespaces on a variety of providers. Using for dev containers spun up on self-hosted Kubernetes cluster.
+
+### Commands
+
+**devbuild**: Build dev container image to be used with devpod as a prebuild image.
+
+> Note, must be authenticated with ghcr.io for this to work. Ensure you set the GITHUB_TOKEN environment variable.
+
+```bash
+devbuild repo_name
+```
+
+**devup**: Bring up a dev environment on a K8s cluster.
+
+```bash
+devup repo_name
+```
 ## Git Shell Auto-Completion
 
 Enable tabbing in bash to auto-complete git commands.
