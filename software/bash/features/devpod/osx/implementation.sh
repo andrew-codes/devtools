@@ -3,6 +3,11 @@ function devup() {
 }
 
 function devbuild() {
-  echo "$(op read "op://Home Automation Secrets/github-cr-token/password")" | docker login ghcr.io -u $GITHUB_USER --password-stdin
+  if [ ! "$DEVTOOLS_BASH_FEATURES_1PASSWORD_CLI" == "true" ]; then
+    echo "$GITHUB_TOKEN" | docker login ghcr.io -u $GITHUB_USER --password-stdin
+  else
+    echo "$(op read "op://Home Automation Secrets/github-cr-token/password")" | docker login ghcr.io -u $GITHUB_USER --password-stdin
+  fi
+
   devpod build github.com/$GITHUB_USER/$1 --provider docker --repository ghcr.io/$GITHUB_USER/$1 --debug
 }
