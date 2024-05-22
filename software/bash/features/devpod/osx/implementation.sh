@@ -9,5 +9,5 @@ function devbuild() {
     echo "$(op read "op://Home Automation Secrets/github-cr-token/password")" | docker login ghcr.io -u $GITHUB_USER --password-stdin
   fi
 
-  devpod build github.com/$GITHUB_USER/$1 --provider docker --repository ghcr.io/$GITHUB_USER/$1 --debug
+  devpod build github.com/$GITHUB_USER/$1 --provider docker --repository ghcr.io/$GITHUB_USER/$($1 | sed s/\./__/) --debug
 }
