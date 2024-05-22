@@ -2,5 +2,5 @@ brewInstall devpod --cask
 brewInstall kubectl
 brewInstall docker --cask
 
-devpod providers add docker
-devpod providers add kubernetes
+devpod provider add docker
+devpod provider add kubernetes
