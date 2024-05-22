@@ -4,6 +4,8 @@
 - Ensure `$TOOLS_BIN_HOME` is found in the environment path.
 
 ## 1Password CLI tool
+
+Use 1Password CLI to access secrets for other devtool CLI tooling.
 ## Commands
 
 ### General
