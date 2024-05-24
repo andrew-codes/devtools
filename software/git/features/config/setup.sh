@@ -61,7 +61,7 @@ echo -e "
   smudge = git-media-smudge %f
 
 [gpg]
-  $(gpgPgrogram)
+  $(echo "$gpgProgram")
   format = ssh
 
 [init]
