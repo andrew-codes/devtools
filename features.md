@@ -160,8 +160,9 @@ Enables entering your SSH pass phrase only once, at the start of a shell, instea
 
 # Git
 
-Automatically setup your `.gitconfig` file.
+## Git Config
 
+Automatically setup your `.gitconfig` file.
 
 # Mouse Gestures
 
