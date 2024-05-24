@@ -5,9 +5,8 @@ fi
 
 echo -e "
 [user]
-  name = $(DEVTOOLS_BASH_FEAUTURES_GIT_CONFIG_NAME)
-  email = $(DEVTOOLS_BASH_FEAUTURES_GIT_CONFIG_EMAIL)
-  signingkey = $(DEVTOOLS_BASH_FEAUTURES_GIT_CONFIG_SIGNING_KEY)
+  name = $(DEVTOOLS_GIT_FEAUTURES_CONFIG_NAME)
+  email = $(DEVTOOLS_GIT_FEAUTURES_CONFIG_EMAIL)
 
 [push]
   default = simple
@@ -24,11 +23,7 @@ echo -e "
   smudge = git-media-smudge %f
 
 [gpg]
-  format = ssh
   $(gpgPgrogram)
-
-[commit]
-  gpgsign = true
 
 [init]
   defaultBranch = main

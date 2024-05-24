@@ -19,4 +19,10 @@ export DEVTOOLS_BASH_FEATURES_USE_1PASSWORD_AGENT=false
 export DEVTOOLS_BASH_FEATURES_USE_SSH_AGENT=false
 # ---
 
+# Git
+export DEVTOOLS_GIT=true
+# Feature toggles
+export DEVTOOLS_GIT_FEATURES_CONFIG=true
+# ---
+
 IGNORE_ENV_FILE=true . $DEVTOOLS_BASH_DEVTOOLS_HOME/setup.sh
