@@ -13,11 +13,10 @@ if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY" == "" ]; then
   git config --global user.signingkey "$(DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY)"
 fi
 
-git config --global push.default = simple
-git config --global branch.autosetuprebase = always
-git config --global core.autocrlf = false
-git config --global core.editor = "code --wait"
-git config --global gpg.format = ssh
-git config --global commit.gpgsign = true
-git config --global init.defaultBranch = main
-git config --global gpg.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+git config --global push.default simple
+git config --global branch.autosetuprebase always
+git config --global core.autocrlf false
+git config --global core.editor "code --wait"
+git config --global gpg.format ssh
+git config --global commit.gpgsign true
+git config --global init.defaultBranch main
