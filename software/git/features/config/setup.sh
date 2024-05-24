@@ -25,10 +25,6 @@ $config
   autocrlf = false
   editor = code --wait
 
-[filter "media"]
-  clean = git-media-clean %f
-  smudge = git-media-smudge %f
-
 [gpg]
   $(echo "$gpgProgram")
   format = ssh
