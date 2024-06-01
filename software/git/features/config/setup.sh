@@ -10,7 +10,7 @@ if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_NAME" == "" ]; then
   git config --global user.name "$(DEVTOOLS_GIT_FEATURES_CONFIG_NAME)"
 fi
 if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY" == "" ]; then
-  git config --global user.signingkey "$(DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY)"
+  git config --global user.signingkey "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY"
 fi
 
 git config --global push.default simple
