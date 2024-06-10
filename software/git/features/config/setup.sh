@@ -1,7 +1,3 @@
-if [ "$DEVTOOLS_BASH_FEATURES_USE_1PASSWORD_AGENT" == "true" ]; then
-  git config --global gpg.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-fi
-
 if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_EMAIL" == "" ]; then
   git config --global user.email "$(DEVTOOLS_GIT_FEATURES_CONFIG_EMAIL)"
 fi
@@ -13,11 +9,18 @@ fi
 if [ -z "$CODESPACES" ]; then
   git config --global commit.gpgsign true
   git config --global gpg.format ssh
-  git config --global core.editor "$DEVTOOLS_GIT_FEATURES_CONFIG_EDITOR_COMMAND"
+
+  if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_EDITOR_COMMAND" == "" ]; then
+    git config --global core.editor "$DEVTOOLS_GIT_FEATURES_CONFIG_EDITOR_COMMAND"
+  fi
 
   if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY" == "" ]; then
     git config --global user.signingkey "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY"
   fi
+
+  if [ "$DEVTOOLS_BASH_FEATURES_USE_1PASSWORD_AGENT" == "true" ]; then
+  git config --global gpg.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+fi
 fi
 
 git config --global push.default simple
