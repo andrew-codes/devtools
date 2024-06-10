@@ -9,14 +9,18 @@ fi
 if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_NAME" == "" ]; then
   git config --global user.name "$(DEVTOOLS_GIT_FEATURES_CONFIG_NAME)"
 fi
-if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY" == "" ]; then
-  git config --global user.signingkey "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY"
+
+if [ -z "$CODESPACES" ]; then
+  git config --global commit.gpgsign true
+  git config --global gpg.format ssh
+  git config --global core.editor "$DEVTOOLS_GIT_FEATURES_CONFIG_EDITOR_COMMAND"
+
+  if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY" == "" ]; then
+    git config --global user.signingkey "$DEVTOOLS_GIT_FEATURES_CONFIG_SIGNINGKEY"
+  fi
 fi
 
 git config --global push.default simple
 git config --global branch.autosetuprebase always
 git config --global core.autocrlf false
-git config --global core.editor "code --wait"
-git config --global gpg.format ssh
-git config --global commit.gpgsign true
 git config --global init.defaultBranch main
