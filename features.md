@@ -169,6 +169,8 @@ Automatically setup your `.gitconfig` file.
 Enable navigation of OSX spaces via mouse gestures. See the [software's website](https://mousefix.org/about/) for more details on giving input permissions.
 
 
+
+
 # VS Code
 
 - Ensure VS Code is installed.
