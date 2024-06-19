@@ -19,8 +19,8 @@ if [ -z "$CODESPACES" ]; then
   fi
 
   if [ "$DEVTOOLS_BASH_FEATURES_USE_1PASSWORD_AGENT" == "true" ]; then
-  git config --global gpg.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
-fi
+    git config --global gpg.program "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
+  fi
 fi
 
 git config --global push.default simple
