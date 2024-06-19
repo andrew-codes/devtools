@@ -169,6 +169,9 @@ Automatically setup your `.gitconfig` file.
 Enable navigation of OSX spaces via mouse gestures. See the [software's website](https://mousefix.org/about/) for more details on giving input permissions.
 
 
+## Node.js
+
+Install and manage Node.js via `nvm` utility.
 
 
 # VS Code

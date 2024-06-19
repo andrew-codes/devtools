@@ -1,0 +1,1 @@
+brewInstall nvm
