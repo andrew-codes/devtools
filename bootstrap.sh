@@ -17,6 +17,7 @@ export DEVTOOLS_BASH_FEATURES_GIT_PROMPT=true
 # Use only one of the following: ---
 export DEVTOOLS_BASH_FEATURES_USE_1PASSWORD_AGENT=false
 export DEVTOOLS_BASH_FEATURES_USE_SSH_AGENT=false
+export DEVTOOLS_BASH_FEATURES_CODESPACES=true
 # ---
 
 # Git
