@@ -1,12 +1,12 @@
 if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_EMAIL" == "" ]; then
-  git config --global user.email "$(DEVTOOLS_GIT_FEATURES_CONFIG_EMAIL)"
+  git config --global user.email "$DEVTOOLS_GIT_FEATURES_CONFIG_EMAIL"
 fi
 
 if [ ! "$DEVTOOLS_GIT_FEATURES_CONFIG_NAME" == "" ]; then
-  git config --global user.name "$(DEVTOOLS_GIT_FEATURES_CONFIG_NAME)"
+  git config --global user.name "$DEVTOOLS_GIT_FEATURES_CONFIG_NAME"
 fi
 
-if [ -z "$CODESPACES" ]; then
+if [ -z "$CODESPACES" ] || [ "$CODESPACES" == "true" ]; then
   git config --global commit.gpgsign true
   git config --global gpg.format ssh
 
