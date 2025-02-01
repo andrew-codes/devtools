@@ -1,5 +1,5 @@
 echo -e "
 # <DEVTOOLS>
-export PATH="$DEVTOOLS_BASH_TOOLS_BIN_HOME:$PATH"
+export PATH="\$PATH:$DEVTOOLS_BASH_TOOLS_BIN_HOME"
 # </DEVTOOLS>
 " >>~/.bash_profile
