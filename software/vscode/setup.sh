@@ -28,12 +28,13 @@ fi
 
 if [ "$os" == 'windows' ]; then
   wingetInstall Microsoft.VisualStudioCode
+  wingetInstall Microsoft.VisualStudioCode.CLI
 fi
 
 for featureDir in ./features/*/; do
   featureName=${featureDir%*/} # remove the trailing "/"
   featureName=${featureName##*/}
-  featureToggle="DEVTOOLS_BASH_FEATURES_$(echo "$featureName" | tr a-z A-Z | sed s/-/_/g)"
+  featureToggle="DEVTOOLS_VSCODE_FEATURES_$(echo "$featureName" | tr a-z A-Z | sed s/-/_/g)"
 
   if [ ! "${!featureToggle}" == "true" ]; then
     continue
