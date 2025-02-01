@@ -1,4 +1,9 @@
 function runInDir() {
+  if [ ! -d "$(dirname "${1}")" ]; then
+    echo "Directory $(dirname "${1}") does not exist."
+    return 1
+  fi
+
   pushd "$(dirname "${1}")" >>/dev/null
 
   if [ -f $(basename $1) ]; then
