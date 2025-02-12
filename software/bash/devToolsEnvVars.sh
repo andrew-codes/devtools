@@ -1,4 +1,4 @@
-echo "Modifying .bash_profile with Dev Tools env vars."
+echo "Modifying .bashrc with Dev Tools env vars."
 echo -e "$(
   cat <<END
 # <DEVTOOLS>
@@ -13,7 +13,7 @@ export DEVTOOLS_REPO_NAME=$DEVTOOLS_BASH_REPO_NAME
 export GITHUB_USER=$DEVTOOLS_GITHUB_USER
 # </DEVTOOLS>
 END
-)" >>~/.bash_profile
+)" >>~/.bashrc
 
 mkdir -p $DEVTOOLS_BASH_DEV_HOME
 mkdir -p $DEVTOOLS_BASH_REPO_HOME

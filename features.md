@@ -6,6 +6,7 @@
 ## 1Password CLI tool
 
 Use 1Password CLI to access secrets for other devtool CLI tooling.
+
 ## Commands
 
 ### General
@@ -36,6 +37,10 @@ devbuild repo_name
 ```bash
 devup repo_name
 ```
+## GitHub CLI and autocompletion
+
+Enable tabbing in bash to auto-complete github CLI commands.
+
 ## Git Shell Auto-Completion
 
 Enable tabbing in bash to auto-complete git commands.

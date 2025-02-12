@@ -5,4 +5,4 @@ echo -e "# <DEVTOOLS>
 # ==========
 source $DEVTOOLS_BASH_TOOLS_HOME/git-prompt.sh
 # </DEVTOOLS>
-" >>~/.bash_profile
+" >>~/.bashrc
