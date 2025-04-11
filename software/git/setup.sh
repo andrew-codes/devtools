@@ -9,7 +9,7 @@ fi
 cat ./README.md >../../.tmp/docs/git.md
 
 if [ "$os" == 'osx' ]; then
-  brew ugrade git
+  brew install git || brew upgrade git
 fi
 
 if [ "$os" == 'windows' ]; then

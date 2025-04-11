@@ -17,7 +17,7 @@ This repo is my **personal** collection of dotfiles, configuration settings, tem
 cp sample.env .env
 
 # Will use .env file for configuration.
-./setup .env
+./setup.sh .env
 
 # Documentation will be output for each enabled tool/feature
 # View docs files via:
