@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+if ! [ -z "$1" ]; then
+  if ! [ -z "$2" ]; then
+    git branch --set-upstream-to=$1/$2
+  else
+    git branch --set-upstream-to=origin/$1
+  fi
+else
+  currentBranch="$(git rev-parse --abbrev-ref HEAD)"
+  git branch --set-upstream-to=origin/${currentBranch}
+fi

@@ -51,6 +51,18 @@ $impl
 " >>~/.bashrc
   fi
 
+  # Copy bin files if they exist (from feature root bin directory)
+  if [ -d ./features/$featureName/bin ] && [ -n "$(ls -A ./features/$featureName/bin 2>/dev/null)" ]; then
+    echo "Copying bin files from $featureName to $DEVTOOLS_BASH_TOOLS_BIN_HOME"
+    cp ./features/$featureName/bin/* "$DEVTOOLS_BASH_TOOLS_BIN_HOME/"
+  fi
+
+  # Copy OS-specific bin files if they exist
+  if [ -d ./features/$featureName/$os/bin ] && [ -n "$(ls -A ./features/$featureName/$os/bin 2>/dev/null)" ]; then
+    echo "Copying OS-specific bin files from $featureName/$os to $DEVTOOLS_BASH_TOOLS_BIN_HOME"
+    cp ./features/$featureName/$os/bin/* "$DEVTOOLS_BASH_TOOLS_BIN_HOME/"
+  fi
+
   # Aggregate docs
   cat ./features/$featureName/README.md >>../../.tmp/docs/bash.md
   if [ -d ./features/$featureName/assets ]; then

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+if ! [ -z "$1" ]; then
+  if ! [ -z "$2" ]; then
+    git reset --soft $1/$2
+  else
+    git reset --soft $1
+  fi
+else
+  git checkout .
+fi

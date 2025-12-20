@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+if ! [ -z "$2" ]; then
+  git stash
+  git checkout $2
+  git pull --rebase
+  git stash apply
+fi
+git checkout -b $1
+git push origin $1
+sb

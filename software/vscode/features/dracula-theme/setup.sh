@@ -1,1 +1,1 @@
-code --install-extension dracula.vsix
+code --install-extension dracula-pro.vsix

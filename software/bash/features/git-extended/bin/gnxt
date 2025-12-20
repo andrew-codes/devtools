@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if ! [ -z "$1" ]; then
+  git checkout $1~$(($(git rev-list HEAD..$1 | wc -l) - 1))
+else
+  echo "No branch ref provided; e.g., $(gnxt master)."
+fi

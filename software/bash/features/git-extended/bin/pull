@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+if ! [ -z "$1" ]; then
+  if ! [ -z "$2" ]; then
+    git pull --rebase $1 $2
+  else
+    git pull --rebase origin $1
+  fi
+else
+  git pull --rebase
+fi
