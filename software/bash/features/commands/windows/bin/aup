@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+netstat -aon | findstr ":$1" | findstr "LISTENING"

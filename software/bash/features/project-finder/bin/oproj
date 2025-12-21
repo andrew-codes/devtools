@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+cd ${REPO_HOME}/$1
+code .

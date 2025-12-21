@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Completion for proj, projs, and oproj
+_proj_complete() {
+  local currToken="${COMP_WORDS[COMP_CWORD]}" matches
+  matches=$(ls ${REPO_HOME} | grep "${currToken}" | sed 's/^\(.*\)/\1/')
+  cur=${COMP_WORDS[COMP_CWORD]}
+  COMPREPLY=()
+  COMPREPLY=($(compgen -W "${matches}" -- ${currToken}))
+}
+
+complete -F _proj_complete proj
+complete -F _proj_complete projs
+complete -F _proj_complete oproj

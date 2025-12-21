@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+if ! [ -z "$1" ]; then
+  export DOCKER_HOST="$1"
+fi

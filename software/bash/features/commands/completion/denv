@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Completion for denv (set Docker environment)
+_denv_complete() {
+    local cur common_hosts
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # Common Docker host patterns
+    common_hosts="tcp://localhost:2375 tcp://localhost:2376 unix:///var/run/docker.sock"
+
+    COMPREPLY=($(compgen -W "$common_hosts" -- "$cur"))
+}
+
+complete -F _denv_complete denv
