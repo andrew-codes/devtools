@@ -4,3 +4,4 @@
 !sample.env
 .tmp
 .devcontainer/.devpod-internal/
+.yarn/install-state.gz

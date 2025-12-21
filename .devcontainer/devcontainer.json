@@ -3,7 +3,7 @@
   "dockerFile": "Dockerfile",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "20.9.0"
+      "version": "24.12.0"
     }
   },
   "customizations": {
@@ -20,7 +20,7 @@
         },
         "workbench.colorTheme": "Dracula Pro"
       },
-      "extensions": [],
+      "extensions": []
     }
   },
   "remoteUser": "root"
