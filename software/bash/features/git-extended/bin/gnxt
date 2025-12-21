@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
+# @description Navigate to the next commit in git history relative to a given branch
+# @arg $1 string Branch reference to navigate from (e.g., main, branch1)
+# @example gnxt main
 if ! [ -z "$1" ]; then
   git checkout $1~$(($(git rev-list HEAD..$1 | wc -l) - 1))
 else
-  echo "No branch ref provided; e.g., $(gnxt master)."
+  echo "No branch ref provided; e.g., \$(gnxt main)."
 fi

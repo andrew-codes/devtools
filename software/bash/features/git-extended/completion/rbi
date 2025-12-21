@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Completion for rbi (git rebase -i)
+_rbi_complete() {
+    local cur branches
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # Complete with branches and common refs like HEAD~N
+    branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+
+    COMPREPLY=($(compgen -W "$branches HEAD~1 HEAD~2 HEAD~3 HEAD~4 HEAD~5" -- "$cur"))
+}
+
+complete -F _rbi_complete rbi

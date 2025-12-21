@@ -63,6 +63,22 @@ $impl
     cp ./features/$featureName/$os/bin/* "$DEVTOOLS_BASH_TOOLS_BIN_HOME/"
   fi
 
+  # Add completion scripts to ~/.bashrc
+  if [ -d ./features/$featureName/completion ] && [ -n "$(ls -A ./features/$featureName/completion 2>/dev/null)" ]; then
+    echo "Adding completion scripts from $featureName to ~/.bashrc"
+    for completionFile in ./features/$featureName/completion/*; do
+      if [ -f "$completionFile" ]; then
+        completionContent=$(cat "$completionFile")
+        echo -e "# <DEVTOOLS>
+# $(echo $featureToggle | sed s/_/-/g) - completion
+# $(echo $featureToggle | sed "s/./=/"g)
+$completionContent
+# </DEVTOOLS>
+" >>~/.bashrc
+      fi
+    done
+  fi
+
   # Aggregate docs
   cat ./features/$featureName/README.md >>../../.tmp/docs/bash.md
   if [ -d ./features/$featureName/assets ]; then

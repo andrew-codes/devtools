@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Completion for rs (git reset --soft)
+_rs_complete() {
+    local cur remotes branches combined
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # First argument: can be branch or remote/branch
+    if [ ${COMP_CWORD} -eq 1 ]; then
+        remotes=$(git remote 2>/dev/null)
+        branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+        combined="$remotes $branches"
+        COMPREPLY=($(compgen -W "$combined" -- "$cur"))
+    # Second argument: branch name (when first arg is remote)
+    elif [ ${COMP_CWORD} -eq 2 ]; then
+        branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+        COMPREPLY=($(compgen -W "$branches" -- "$cur"))
+    fi
+}
+
+complete -F _rs_complete rs

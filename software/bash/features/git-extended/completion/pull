@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Completion for pull (git pull --rebase wrapper)
+_pull_complete() {
+    local cur remotes branches
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # First argument: remote name
+    if [ ${COMP_CWORD} -eq 1 ]; then
+        remotes=$(git remote 2>/dev/null)
+        COMPREPLY=($(compgen -W "$remotes" -- "$cur"))
+    # Second argument: branch name
+    elif [ ${COMP_CWORD} -eq 2 ]; then
+        branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+        COMPREPLY=($(compgen -W "$branches" -- "$cur"))
+    fi
+}
+
+complete -F _pull_complete pull

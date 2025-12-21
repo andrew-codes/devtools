@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Completion for nb (new branch)
+_nb_complete() {
+    local cur branches
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # Only complete second argument with existing branches
+    if [ ${COMP_CWORD} -eq 2 ]; then
+        branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+        COMPREPLY=($(compgen -W "$branches" -- "$cur"))
+    fi
+}
+
+complete -F _nb_complete nb

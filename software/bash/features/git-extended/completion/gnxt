@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Completion for gnxt
+_gnxt_complete() {
+    local cur branches
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+    COMPREPLY=($(compgen -W "$branches" -- "$cur"))
+}
+
+complete -F _gnxt_complete gnxt
