@@ -1,5 +1,5 @@
 echo -e "
 # <DEVTOOLS>
-export PATH="\$PATH:$DEVTOOLS_BASH_TOOLS_BIN_HOME"
+export PATH="$DEVTOOLS_BASH_TOOLS_BIN_HOME:\$PATH"
 # </DEVTOOLS>
 " >>~/.bashrc
