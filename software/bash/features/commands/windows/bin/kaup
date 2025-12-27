@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+PID=$(netstat -aon | findstr ":$1" | findstr "LISTENING" | awk '{print $5}' | head -n 1)
+if [ -z "$PID" ]; then
+  echo "No process listening on port $1"
+  exit 1
+fi
+taskkill //PID $PID //F
+echo "Killed process $PID listening on port $1"

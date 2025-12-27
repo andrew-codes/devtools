@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+PID=$(lsof -nP -i4TCP:$1 | grep LISTEN | awk '{print $2}')
+if [ -z "$PID" ]; then
+  echo "No process listening on port $1"
+  exit 1
+fi
+kill -9 $PID
+echo "Killed process $PID listening on port $1"

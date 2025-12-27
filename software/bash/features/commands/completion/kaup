@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Completion for killport (kill process on port)
+_killport_complete() {
+    local cur common_ports
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # Common port numbers
+    common_ports="80 443 3000 3001 4200 5000 5432 5500 8000 8080 8081 8888 9000 27017"
+
+    COMPREPLY=($(compgen -W "$common_ports" -- "$cur"))
+}
+
+complete -F _killport_complete killport
