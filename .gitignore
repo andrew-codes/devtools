@@ -5,3 +5,4 @@
 .tmp
 .devcontainer/.devpod-internal/
 .yarn/install-state.gz
+default.profraw
