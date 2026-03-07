@@ -169,11 +169,6 @@ Enables entering your SSH pass phrase only once, at the start of a shell, instea
 
 Automatically setup your `.gitconfig` file.
 
-# Mouse Gestures
-
-Enable navigation of OSX spaces via mouse gestures. See the [software's website](https://mousefix.org/about/) for more details on giving input permissions.
-
-
 ## Node.js
 
 Install and manage Node.js via `nvm` utility.
