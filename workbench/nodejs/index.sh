@@ -5,7 +5,7 @@ function macNvmBashrc() {
 }
 
 function installMac() {
-  if ! command -v nvm &> /dev/null; then
+  if ! command -v nvm &>/dev/null; then
     brew install nvm
   fi
 
@@ -20,7 +20,7 @@ function _installWindows() {
 }
 
 function installWindows() {
-    runElevated _installWindows
+  runElevated _installWindows
 }
 
 runIf isMac installMac

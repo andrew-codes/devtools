@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function installMac() {
-  if ! command -v jq > /dev/null 2>&1; then
+  if ! command -v jq >/dev/null 2>&1; then
     brew install jq
   fi
 }

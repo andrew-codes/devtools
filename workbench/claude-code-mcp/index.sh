@@ -4,18 +4,18 @@ function addMcpServer() {
   local claude_config="$HOME/.claude.json"
 
   if [ ! -f "$claude_config" ]; then
-    echo '{}' > "$claude_config"
+    echo '{}' >"$claude_config"
   fi
 
   local tmp
   tmp=$(mktemp)
-  jq --arg name "$name" --argjson config "$config" '.mcpServers[$name] //= $config' "$claude_config" > "$tmp" && mv "$tmp" "$claude_config"
+  jq --arg name "$name" --argjson config "$config" '.mcpServers[$name] //= $config' "$claude_config" >"$tmp" && mv "$tmp" "$claude_config"
   echo "MCP server '$name' configured."
 }
 
 function install() {
   addMcpServer "context7" "$(
-    cat << EOF
+    cat <<EOF
 {
   "type": "http",
   "url": "https://mcp.context7.com/mcp",
@@ -32,7 +32,7 @@ EOF
 }'
 
   addMcpServer "github" "$(
-    cat << EOF
+    cat <<EOF
 {
   "type": "http",
   "url": "https://api.githubcopilot.com/mcp",

@@ -46,7 +46,7 @@ function addToBashrc() {
   local fn_or_block="$2"
 
   local block
-  if declare -f "$fn_or_block" > /dev/null 2>&1; then
+  if declare -f "$fn_or_block" >/dev/null 2>&1; then
     block=$(declare -f "$fn_or_block" | tail -n +3 | sed '$d')
   else
     block="$fn_or_block"
@@ -57,13 +57,13 @@ function addToBashrc() {
   # Remove existing block with this ID, then strip trailing blank lines
   local tmpfile
   tmpfile=$(mktemp)
-  sed "/# BEGIN devtools:${id}/,/# END devtools:${id}/d" ~/.bashrc \
-    | awk '/^[[:space:]]*$/{blank++; next} {for(i=0;i<blank;i++) print ""; blank=0; print}' \
-    > "$tmpfile"
+  sed "/# BEGIN devtools:${id}/,/# END devtools:${id}/d" ~/.bashrc |
+    awk '/^[[:space:]]*$/{blank++; next} {for(i=0;i<blank;i++) print ""; blank=0; print}' \
+      >"$tmpfile"
   mv "$tmpfile" ~/.bashrc
 
   # Append new block wrapped in ID markers
-  printf '\n# BEGIN devtools:%s\n%s\n# END devtools:%s\n' "$id" "$block" "$id" >> ~/.bashrc
+  printf '\n# BEGIN devtools:%s\n%s\n# END devtools:%s\n' "$id" "$block" "$id" >>~/.bashrc
 }
 
 function refreshEnvWindows() {
@@ -92,22 +92,22 @@ function refreshEnvWindows() {
 
   while IFS= read -r _line; do
     case "$_line" in
-      V:*)
-        _line="${_line#V:}"
-        _key="${_line%%=*}"
-        _val="${_line#*=}"
-        [ -n "$_key" ] && export "${_key}=${_val}"
-        ;;
-      P:*)
-        _raw_path="${_line#P:}"
-        IFS=';' read -ra _reg_entries <<< "$_raw_path"
-        for _entry in "${_reg_entries[@]}"; do
-          [ -n "$_entry" ] || continue
-          _unix=$(cygpath -u "$_entry" 2>/dev/null) && _unix_entries+=":$_unix"
-        done
-        ;;
+    V:*)
+      _line="${_line#V:}"
+      _key="${_line%%=*}"
+      _val="${_line#*=}"
+      [ -n "$_key" ] && export "${_key}=${_val}"
+      ;;
+    P:*)
+      _raw_path="${_line#P:}"
+      IFS=';' read -ra _reg_entries <<<"$_raw_path"
+      for _entry in "${_reg_entries[@]}"; do
+        [ -n "$_entry" ] || continue
+        _unix=$(cygpath -u "$_entry" 2>/dev/null) && _unix_entries+=":$_unix"
+      done
+      ;;
     esac
-  done <<< "$_out"
+  done <<<"$_out"
 
   [ -n "$_unix_entries" ] && export PATH="${_unix_entries#:}:$PATH"
 }
@@ -180,7 +180,7 @@ function runElevated() {
   shift || true
 
   local _run
-  if declare -f "$fn_or_block" > /dev/null 2>&1; then
+  if declare -f "$fn_or_block" >/dev/null 2>&1; then
     _run() { "$fn_or_block" "$@"; }
   else
     _run() { eval "$fn_or_block"; }
@@ -188,10 +188,12 @@ function runElevated() {
 
   # Already elevated — run directly without spawning a new process
   if isMac && [ "$(id -u)" = "0" ]; then
-    _run "$@"; return $?
+    _run "$@"
+    return $?
   fi
-  if isWindows && net session > /dev/null 2>&1; then
-    _run "$@"; return $?
+  if isWindows && net session >/dev/null 2>&1; then
+    _run "$@"
+    return $?
   fi
 
   # Build a self-contained temp script: re-export env, source utils, define + call the function
@@ -208,7 +210,7 @@ function runElevated() {
     else
       echo "$fn_or_block"
     fi
-  } > "$tmp_script"
+  } >"$tmp_script"
 
   local result=0
 
@@ -220,7 +222,10 @@ function runElevated() {
     win_bash=$(cygpath -w "$BASH")
     out_file=$(mktemp)
     tmp_with_log=$(mktemp)
-    { printf "exec > '%s' 2>&1\n" "$out_file"; cat "$tmp_script"; } > "$tmp_with_log"
+    {
+      printf "exec > '%s' 2>&1\n" "$out_file"
+      cat "$tmp_script"
+    } >"$tmp_with_log"
     win_script=$(cygpath -w "$tmp_with_log")
     powershell.exe -NoProfile -Command "
       try {

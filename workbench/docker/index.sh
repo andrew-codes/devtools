@@ -1,5 +1,5 @@
 function installMac() {
-  if ! command -v docker &> /dev/null; then
+  if ! command -v docker &>/dev/null; then
     brew install --cask docker-desktop
   fi
 }
@@ -9,10 +9,10 @@ function _installWindows() {
 }
 
 function installWindows() {
-  if ! command -v docker &> /dev/null; then
+  if ! command -v docker &>/dev/null; then
     runElevated _installWindows
 
-     wingetInstall --id Docker.DockerCLI --accept-package-agreements --accept-source-agreements
+    wingetInstall --id Docker.DockerCLI --accept-package-agreements --accept-source-agreements
   fi
 }
 

@@ -21,4 +21,4 @@ extensions=$(sed -n '/"extensions"/,/\]/p' "$MANIFEST_FILE" | grep -o '"[^"]*"' 
 
 while IFS= read -r extension; do
   code --install-extension "$extension" --force
-done <<< "$extensions"
+done <<<"$extensions"

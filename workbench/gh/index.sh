@@ -5,7 +5,7 @@ function bashRcContents() {
 function installMac() {
   addToBashrc 'gh' bashRcContents
 
-  if ! command -v gh > /dev/null 2>&1; then
+  if ! command -v gh >/dev/null 2>&1; then
     brew install gh
   fi
 }
