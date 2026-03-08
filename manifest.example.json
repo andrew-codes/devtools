@@ -9,7 +9,9 @@
     "GIT_EMAIL": "",
     "GIT_NAME": "",
     "GIT_SIGNING_KEY": "",
-    "GIT_SSH_AGENT": "1p"
+    "GIT_SSH_AGENT": "1p",
+    "CONTEXT7_API_KEY": "",
+    "GITHUB_TOKEN": ""
   },
   "steps": [
     "devtools-bash-env",
@@ -28,6 +30,7 @@
     "docker",
     "1p-ssh-agent",
     "nodejs",
+    "claude-code",
     "vscode"
   ],
   "extensions": [

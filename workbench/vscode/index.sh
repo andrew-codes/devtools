@@ -10,6 +10,8 @@ function installWindows() {
 runIf isMac installMac
 runIf isWindows installWindows
 
+refreshEnv
+
 extensions=$(sed -n '/"extensions"/,/\]/p' "$MANIFEST_FILE" | grep -o '"[^"]*"' | tr -d '"' | grep -v '^extensions$' | grep -v '^$')
 
 while IFS= read -r extension; do

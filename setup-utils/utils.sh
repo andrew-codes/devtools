@@ -62,6 +62,40 @@ function addToBashrc() {
   printf '\n# BEGIN devtools:%s\n%s\n# END devtools:%s\n' "$id" "$block" "$id" >> ~/.bashrc
 }
 
+function refreshEnvWindows() {
+  local _reg_path
+  _reg_path=$(powershell.exe -NoProfile -Command \
+    '[System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")' \
+    2> /dev/null | tr -d '\r')
+
+  if [ -n "$_reg_path" ]; then
+    local _unix_entries="" _reg_entries _entry _unix
+    IFS=';' read -ra _reg_entries <<< "$_reg_path"
+    for _entry in "${_reg_entries[@]}"; do
+      [ -n "$_entry" ] || continue
+      _unix=$(cygpath -u "$_entry" 2> /dev/null) && _unix_entries+=":$_unix"
+    done
+    [ -n "$_unix_entries" ] && export PATH="${_unix_entries#:}:$PATH"
+  fi
+}
+
+function refreshEnvMac() {
+  local brew_bin
+  if [ -x /opt/homebrew/bin/brew ]; then
+    brew_bin=/opt/homebrew/bin/brew
+  elif [ -x /usr/local/bin/brew ]; then
+    brew_bin=/usr/local/bin/brew
+  else
+    return
+  fi
+  eval "$("$brew_bin" shellenv)"
+}
+
+function refreshEnv() {
+  runIf isMac refreshEnvMac
+  runIf isWindows refreshEnvWindows
+}
+
 function installBinFiles() {
   mkdir -p "$TOOLS_BIN_HOME"
 

@@ -44,6 +44,9 @@ done < <(sed -n '/"env"/,/\}/p' "$manifest_file" | grep ':')
 
 export MANIFEST_FILE="$manifest_file"
 
+# shellcheck source=setup-utils/utils.sh
+source "$UTILS_FILE"
+
 # Parse steps array from manifest
 steps=$(sed -n '/"steps"/,/\]/p' "$manifest_file" | grep -o '"[^"]*"' | tr -d '"' | grep -v '^steps$' | grep -v '^$')
 
@@ -75,10 +78,7 @@ while IFS= read -r step; do
     exit 1
   }
 
-  if [[ $OSTYPE == msys* ]]; then
-    # shellcheck source=setup-utils/refresh-env.sh
-    source "$SCRIPT_DIR/setup-utils/refresh-env.sh"
-  fi
+  refreshEnv
 
 done <<< "$steps"
 

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+function brewBashrc() {
+  export PATH="/opt/homebrew/bin:$PATH"
+}
+
 function installMac() {
-  if command -v brew > /dev/null 2>&1; then
-    echo "brew already installed, skipping."
-    return
+  if ! command -v brew > /dev/null 2>&1; then
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
 
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  addToBashrc brewBashrc
 }
 
 runIf isMac installMac

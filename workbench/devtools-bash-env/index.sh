@@ -1,4 +1,4 @@
-function bashRcContentsI() {
+function bashRcContents() {
   export DEV_HOME=$DEV_HOME
   export REPO_HOME=$REPO_HOME
   export DEVTOOLS_HOME=$DEVTOOLS_HOME
