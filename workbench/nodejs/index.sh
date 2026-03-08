@@ -15,9 +15,13 @@ function installMac() {
   [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 }
 
+function _installWindows() {
+  winget install --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements
+}
+
 function installWindows() {
   if ! command -v nvm &> /dev/null; then
-    winget install --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements
+    runElevated _installWindows
   fi
 }
 

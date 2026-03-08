@@ -18,20 +18,10 @@ if [ ! -f "$manifest_file" ]; then
   exit 1
 fi
 
-# Resolve to absolute path before elevation changes the working context
 manifest_file="$(cd "$(dirname "$manifest_file")" && pwd)/$(basename "$manifest_file")"
 
-# Elevate if not already privileged
-if [[ $OSTYPE == msys* ]]; then
-  if ! net session > /dev/null 2>&1; then
-    echo "Elevating to Administrator..."
-    win_bash=$(cygpath -w "$BASH")
-    win_script=$(cygpath -w "$SCRIPT_DIR/setup.sh")
-    win_manifest=$(cygpath -w "$manifest_file")
-    powershell -Command "Start-Process -FilePath '${win_bash}' -ArgumentList '${win_script}', '${win_manifest}' -Verb RunAs -Wait"
-    exit
-  fi
-else
+# Cache sudo credentials upfront on Mac so steps can call runElevated without prompting mid-run
+if [[ $OSTYPE == darwin* ]]; then
   sudo -v
 fi
 

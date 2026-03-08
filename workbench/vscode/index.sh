@@ -2,8 +2,13 @@ function installMac() {
   brew install --cask visual-studio-code
 }
 
-function installWindows() {
+function _installWindows() {
   winget install --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements
+
+}
+
+function installWindows() {
+  runElevated _installWindows
   winget install --id Microsoft.VisualStudioCode.CLI --accept-package-agreements --accept-source-agreements
 }
 

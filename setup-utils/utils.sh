@@ -1,3 +1,5 @@
+_DEVTOOLS_UTILS_FILE="${BASH_SOURCE[0]}"
+
 function isMac() {
   [[ $OSTYPE == darwin* ]]
 }
@@ -160,4 +162,60 @@ function installBinFiles() {
       fi
     done
   done
+}
+
+function runElevated() {
+  local fn_or_block="$1"
+  shift || true
+
+  local _run
+  if declare -f "$fn_or_block" > /dev/null 2>&1; then
+    _run() { "$fn_or_block" "$@"; }
+  else
+    _run() { eval "$fn_or_block"; }
+  fi
+
+  # Already elevated — run directly without spawning a new process
+  if isMac && [ "$(id -u)" = "0" ]; then
+    _run "$@"; return $?
+  fi
+  if isWindows && net session > /dev/null 2>&1; then
+    _run "$@"; return $?
+  fi
+
+  # Build a self-contained temp script: re-export env, source utils, define + call the function
+  local tmp_script
+  tmp_script=$(mktemp)
+
+  {
+    echo 'set -euo pipefail'
+    export -p
+    printf "source '%s'\n" "$_DEVTOOLS_UTILS_FILE"
+    declare -f "$fn_or_block" 2>/dev/null || true
+    if [ $# -gt 0 ]; then
+      echo "$fn_or_block $(printf '%q ' "$@")"
+    else
+      echo "$fn_or_block"
+    fi
+  } > "$tmp_script"
+
+  local result=0
+
+  if isMac; then
+    sudo -E bash "$tmp_script" || result=$?
+
+  elif isWindows; then
+    local win_bash win_script
+    win_bash=$(cygpath -w "$BASH")
+    win_script=$(cygpath -w "$tmp_script")
+    powershell.exe -NoProfile -Command "
+      try {
+        \$p = Start-Process -FilePath '${win_bash}' -ArgumentList '${win_script}' -Verb RunAs -Wait -PassThru
+        exit \$p.ExitCode
+      } catch { exit 1 }
+    " || result=$?
+  fi
+
+  rm -f "$tmp_script"
+  return $result
 }

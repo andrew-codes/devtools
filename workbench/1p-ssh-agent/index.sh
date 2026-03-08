@@ -6,8 +6,12 @@ function windowsBashrc() {
   export SSH_AUTH_SOCK=\\\\.\\pipe\\openssh-ssh-agent
 }
 
-function installWindows() {
+function _installWindows() {
   winget install --id AgileBits.1Password --accept-package-agreements --accept-source-agreements
+}
+
+function installWindows() {
+  runElevated _installWindows
 }
 
 function installMac() {
@@ -16,3 +20,4 @@ function installMac() {
 }
 
 runIf isMac installMac
+runIf isWindows installWindows

@@ -8,7 +8,7 @@ A workbench is setup via a series of idempotent steps. The steps and their execu
 
 ## Install Your Workbench
 
-The only required software is bash (or git Bash for Windows). Everything else is installed and configured via the workbench.
+The only required software is bash (or Git Bash for Windows). Everything else is installed and configured via the workbench.
 
 > Note, manifest.json can possibly contain secrets, so keep this in mind when committing.
 
@@ -18,6 +18,8 @@ cp manifest.example.json manifest.json
 
 ./setup.sh manifest.json
 ```
+
+Setup runs as the current (non-elevated) user. Steps that require administrator rights — such as installing system-wide software via `winget` — call `runElevated` internally, which triggers a UAC prompt on Windows or uses cached `sudo` credentials on Mac for only that operation. You will not be asked to run the whole script as Administrator.
 
 ## Adding New Steps
 
@@ -69,6 +71,32 @@ Predicates can be chained with `and`, `or`, and `not`:
 runIf isMac and isArm    installMacArm
 runIf isMac and isIntel  installMacIntel
 runIf not isWindows      installUnix
+```
+
+#### Running a function with administrator rights using `runElevated`
+
+Use `runElevated` when a step needs to perform an operation that requires administrator privileges — for example, a system-wide `winget` install or writing to a protected directory.
+
+```bash
+runElevated <function>
+```
+
+On **Windows** it launches the function in a new elevated bash process via a UAC prompt (`Start-Process -Verb RunAs`). On **Mac** it runs the function under `sudo` (credentials are cached at the start of setup so you are not prompted mid-run). If setup is already running with elevated privileges the function is called directly with no extra prompt.
+
+The elevated process inherits the full environment of the calling step, including all manifest variables (`TOOLS_BIN_HOME`, `MANIFEST_FILE`, etc.) and all utility functions from `utils.sh`.
+
+```bash
+function _doInstall() {
+  winget install --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements
+}
+
+function installWindows() {
+  if ! command -v docker &> /dev/null; then
+    runElevated _doInstall
+  fi
+}
+
+runIf isWindows installWindows
 ```
 
 #### Copying bin files with `installBinFiles`
