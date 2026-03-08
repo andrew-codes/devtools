@@ -42,6 +42,11 @@ export MANIFEST_FILE="$manifest_file"
 # shellcheck source=setup-utils/utils.sh
 source "$UTILS_FILE"
 
+# Clear all devtools-managed bashrc blocks so steps re-add them in the correct order
+if [ -f ~/.bashrc ]; then
+  sed -i '/# BEGIN devtools:/,/# END devtools:/d' ~/.bashrc
+fi
+
 # Parse steps array from manifest
 steps=$(sed -n '/"steps"/,/\]/p' "$manifest_file" | grep -o '"[^"]*"' | tr -d '"' | grep -v '^steps$' | grep -v '^$')
 
@@ -76,6 +81,9 @@ while IFS= read -r step; do
   refreshEnv
 
 done <<< "$steps"
+
+
+refreshEnv
 
 echo ""
 echo "Setup complete."

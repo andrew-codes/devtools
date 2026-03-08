@@ -5,9 +5,7 @@ function installMac() {
 }
 
 function installWindows() {
-    if ! command -v uvx &> /dev/null; then
-        winget install --id astral-sh.uv --accept-package-agreements --accept-source-agreements
-    fi
+        wingetInstall --id astral-sh.uv --accept-package-agreements --accept-source-agreements
 }
 
 runIf isMac installMac

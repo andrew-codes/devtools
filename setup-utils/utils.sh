@@ -164,6 +164,17 @@ function installBinFiles() {
   done
 }
 
+function wingetInstall() {
+  local out exit_code=0
+  out=$(winget install "$@" 2>&1) || exit_code=$?
+  printf '%s\n' "$out"
+  if [ "$exit_code" -ne 0 ]; then
+    # Winget returns non-zero for "already installed, no upgrade available" on some packages.
+    # Treat that as success; propagate everything else as a real failure.
+    printf '%s\n' "$out" | grep -qi "already installed\|no available upgrade\|no newer package" || return "$exit_code"
+  fi
+}
+
 function runElevated() {
   local fn_or_block="$1"
   shift || true

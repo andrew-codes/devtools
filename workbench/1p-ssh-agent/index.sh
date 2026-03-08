@@ -7,7 +7,7 @@ function windowsBashrc() {
 }
 
 function _installWindows() {
-  winget install --id AgileBits.1Password --accept-package-agreements --accept-source-agreements
+  wingetInstall --id AgileBits.1Password --accept-package-agreements --accept-source-agreements
 }
 
 function installWindows() {

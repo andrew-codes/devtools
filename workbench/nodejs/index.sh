@@ -16,13 +16,11 @@ function installMac() {
 }
 
 function _installWindows() {
-  winget install --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements
+  wingetInstall --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements
 }
 
 function installWindows() {
-  if ! command -v nvm &> /dev/null; then
     runElevated _installWindows
-  fi
 }
 
 runIf isMac installMac
