@@ -52,10 +52,12 @@ function addToBashrc() {
 
   touch ~/.bashrc
 
-  # Remove existing block with this ID
+  # Remove existing block with this ID, then strip trailing blank lines
   local tmpfile
   tmpfile=$(mktemp)
-  sed "/# BEGIN devtools:${id}/,/# END devtools:${id}/d" ~/.bashrc > "$tmpfile"
+  sed "/# BEGIN devtools:${id}/,/# END devtools:${id}/d" ~/.bashrc \
+    | awk '/^[[:space:]]*$/{blank++; next} {for(i=0;i<blank;i++) print ""; blank=0; print}' \
+    > "$tmpfile"
   mv "$tmpfile" ~/.bashrc
 
   # Append new block wrapped in ID markers
@@ -63,20 +65,49 @@ function addToBashrc() {
 }
 
 function refreshEnvWindows() {
-  local _reg_path
-  _reg_path=$(powershell.exe -NoProfile -Command \
-    '[System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")' \
-    2> /dev/null | tr -d '\r')
+  local _line _key _val _raw_path _unix_entries="" _reg_entries _entry _unix
 
-  if [ -n "$_reg_path" ]; then
-    local _unix_entries="" _reg_entries _entry _unix
-    IFS=';' read -ra _reg_entries <<< "$_reg_path"
-    for _entry in "${_reg_entries[@]}"; do
-      [ -n "$_entry" ] || continue
-      _unix=$(cygpath -u "$_entry" 2> /dev/null) && _unix_entries+=":$_unix"
-    done
-    [ -n "$_unix_entries" ] && export PATH="${_unix_entries#:}:$PATH"
-  fi
+  # One PowerShell call: collect all Machine+User non-PATH vars, manually expand
+  # %VAR% references in PATH using those registry values, then ExpandEnvironmentVariables
+  # for any remaining system references. Non-PATH vars are prefixed "V:", PATH is "P:".
+  local _out
+  _out=$(powershell.exe -NoProfile -Command '
+    $v = @{}
+    foreach ($scope in "Machine","User") {
+      [System.Environment]::GetEnvironmentVariables($scope).GetEnumerator() |
+        Where-Object { $_.Key -ine "PATH" } |
+        ForEach-Object { $v[$_.Key] = $_.Value }
+    }
+    $path = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" +
+            [System.Environment]::GetEnvironmentVariable("PATH","User")
+    foreach ($k in $v.Keys) {
+      $path = $path -ireplace [regex]::Escape("%$k%"), $v[$k]
+    }
+    $path = [System.Environment]::ExpandEnvironmentVariables($path)
+    foreach ($k in $v.Keys) { Write-Output "V:$k=$($v[$k])" }
+    Write-Output "P:$path"
+  ' 2>/dev/null | tr -d '\r')
+
+  while IFS= read -r _line; do
+    case "$_line" in
+      V:*)
+        _line="${_line#V:}"
+        _key="${_line%%=*}"
+        _val="${_line#*=}"
+        [ -n "$_key" ] && export "${_key}=${_val}"
+        ;;
+      P:*)
+        _raw_path="${_line#P:}"
+        IFS=';' read -ra _reg_entries <<< "$_raw_path"
+        for _entry in "${_reg_entries[@]}"; do
+          [ -n "$_entry" ] || continue
+          _unix=$(cygpath -u "$_entry" 2>/dev/null) && _unix_entries+=":$_unix"
+        done
+        ;;
+    esac
+  done <<< "$_out"
+
+  [ -n "$_unix_entries" ] && export PATH="${_unix_entries#:}:$PATH"
 }
 
 function refreshEnvMac() {

@@ -10,11 +10,12 @@ A workbench is setup via a series of idempotent steps. The steps and their execu
 
 The only required software is bash (or git Bash for Windows). Everything else is installed and configured via the workbench.
 
+> Note, manifest.json can possibly contain secrets, so keep this in mind when committing.
+
 ```bash
 # Copy configuration file, make updates to it to enable software and features.
 cp manifest.example.json manifest.json
 
-# Will use .env file for configuration.
 ./setup.sh manifest.json
 ```
 
