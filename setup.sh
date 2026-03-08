@@ -39,7 +39,10 @@ fi
 while IFS= read -r line; do
   key=$(echo "$line" | grep -o '"[^"]*"' | sed -n '1p' | tr -d '"')
   value=$(echo "$line" | grep -o '"[^"]*"' | sed -n '2p' | tr -d '"')
-  [ -n "$key" ] && [ -n "$value" ] && export "${key}=${value}"
+  if [ -n "$key" ] && [ -n "$value" ]; then
+    expanded=$(eval echo "$value")
+    export "${key}=${expanded}"
+  fi
 done < <(sed -n '/"env"/,/\}/p' "$manifest_file" | grep ':')
 
 export MANIFEST_FILE="$manifest_file"
