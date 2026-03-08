@@ -1,10 +1,15 @@
 function installMac() {
-  if command -v yq > /dev/null 2>&1; then
-    echo "yq already installed, skipping."
-    return
+  if ! command -v yq > /dev/null 2>&1; then
+    brew install yq
   fi
 
-  brew install yq
+}
+
+function installWindows() {
+  if ! command -v yq > /dev/null 2>&1; then
+    winget install --id mikefarah.yq
+  fi
 }
 
 runIf isMac installMac
+runIf isWindows installWindows

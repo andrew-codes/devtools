@@ -16,7 +16,9 @@ function installMac() {
 }
 
 function installWindows() {
-  winget install --id CoreyButler.NVMforWindows
+  if ! command -v nvm &> /dev/null; then
+    winget install --id CoreyButler.NVMforWindows
+  fi
 }
 
 runIf isMac installMac

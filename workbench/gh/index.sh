@@ -5,12 +5,16 @@ function bashRcContents() {
 function installMac() {
   addToBashrc 'gh' bashRcContents
 
-  if command -v gh > /dev/null 2>&1; then
-    echo "gh already installed, skipping."
-    return
+  if ! command -v gh > /dev/null 2>&1; then
+    brew install gh
   fi
+}
 
-  brew install gh
+function installWindows() {
+  if ! command -v gh > /dev/null 2>&1; then
+    winget install --id GitHub.cli
+  fi
 }
 
 runIf isMac installMac
+runIf isWindows installWindows

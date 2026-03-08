@@ -14,7 +14,8 @@ function addMcpServer() {
 }
 
 function install() {
-  addMcpServer "context7" "$(cat <<EOF
+  addMcpServer "context7" "$(
+    cat << EOF
 {
   "type": "http",
   "url": "https://mcp.context7.com/mcp",
@@ -23,14 +24,15 @@ function install() {
   }
 }
 EOF
-)"
+  )"
 
   addMcpServer "sequential-thinking" '{
   "command": "npx",
   "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
 }'
 
-  addMcpServer "github" "$(cat <<EOF
+  addMcpServer "github" "$(
+    cat << EOF
 {
   "type": "http",
   "url": "https://api.githubcopilot.com/mcp",
@@ -39,7 +41,7 @@ EOF
   }
 }
 EOF
-)"
+  )"
 
   addMcpServer "atlassian" '{
   "type": "http",
