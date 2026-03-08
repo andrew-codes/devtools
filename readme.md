@@ -9,25 +9,9 @@ This repo is my **personal** collection of dotfiles, configuration settings, tem
 > All commands are run in a bash terminal.
 
 ```bash
-# Will use sample.env file for configuration
-# Defaults to all options being disabled.
-./setup.sh
-
 # Copy configuration file, make updates to it to enable software and features.
-cp sample.env .env
+cp manifest.example.json manifest.json
 
 # Will use .env file for configuration.
-./setup.sh .env
-
-# Documentation will be output for each enabled tool/feature
-# View docs files via:
-ls $DEVTOOLS_HOME/docs
+./setup.sh manifest.json
 ```
-
-## Configuration
-
-All software and their features are configurable via environment variables. By default, `sample.env` file will be used which disables all tools and features. Tools may be enabled and additionally features of the tool via the environment variables found in `sample.env`.
-
-## What's Included?
-
-See the comprehensive [features documentation](./features.md) for more details. This is a compendium of all software and features into a single document.

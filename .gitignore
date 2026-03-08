@@ -6,3 +6,4 @@
 .devcontainer/.devpod-internal/
 .yarn/install-state.gz
 default.profraw
+manifest.json
