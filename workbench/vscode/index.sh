@@ -3,8 +3,8 @@ function installMac() {
 }
 
 function installWindows() {
-  winget install --id Microsoft.VisualStudioCode
-  winget install --id Microsoft.VisualStudioCode.CLI
+  winget install --id Microsoft.VisualStudioCode --accept-package-agreements --accept-source-agreements
+  winget install --id Microsoft.VisualStudioCode.CLI --accept-package-agreements --accept-source-agreements
 }
 
 runIf isMac installMac

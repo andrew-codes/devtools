@@ -17,7 +17,7 @@ function installMac() {
 
 function installWindows() {
   if ! command -v nvm &> /dev/null; then
-    winget install --id CoreyButler.NVMforWindows
+    winget install --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements
   fi
 }
 

@@ -7,7 +7,7 @@ function installMac() {
 
 function installWindows() {
   if ! command -v yq > /dev/null 2>&1; then
-    winget install --id mikefarah.yq
+    winget install --id mikefarah.yq --accept-package-agreements --accept-source-agreements
   fi
 }
 

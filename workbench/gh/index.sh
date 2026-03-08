@@ -12,7 +12,7 @@ function installMac() {
 
 function installWindows() {
   if ! command -v gh > /dev/null 2>&1; then
-    winget install --id GitHub.cli
+    winget install --id GitHub.cli --accept-package-agreements --accept-source-agreements
   fi
 }
 

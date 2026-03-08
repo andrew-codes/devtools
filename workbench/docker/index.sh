@@ -6,7 +6,7 @@ function installMac() {
 
 function installWindows() {
   if ! command -v docker &> /dev/null; then
-    winget install --id Docker.DockerDesktop
+    winget install --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements
   fi
 }
 

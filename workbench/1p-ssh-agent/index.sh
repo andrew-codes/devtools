@@ -7,7 +7,7 @@ function windowsBashrc() {
 }
 
 function installWindows() {
-  winget install --id AgileBits.1Password
+  winget install --id AgileBits.1Password --accept-package-agreements --accept-source-agreements
 }
 
 function installMac() {
