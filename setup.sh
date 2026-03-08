@@ -28,7 +28,7 @@ if [[ $OSTYPE == msys* ]]; then
     win_bash=$(cygpath -w "$BASH")
     win_script=$(cygpath -w "$SCRIPT_DIR/setup.sh")
     win_manifest=$(cygpath -w "$manifest_file")
-    powershell -Command "Start-Process -FilePath '${win_bash}' -ArgumentList '-c', '\"${win_script}\" \"${win_manifest}\"' -Verb RunAs -Wait"
+    powershell -Command "Start-Process -FilePath '${win_bash}' -ArgumentList '${win_script}', '${win_manifest}' -Verb RunAs -Wait"
     exit
   fi
 else

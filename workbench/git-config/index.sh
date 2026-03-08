@@ -14,10 +14,6 @@ fi
 git config --global commit.gpgsign true
 git config --global gpg.format ssh
 
-if [ -n "$GIT_EDITOR_COMMAND" ]; then
-  git config --global core.editor "$GIT_EDITOR_COMMAND"
-fi
-
 if [ -n "$GIT_SIGNING_KEY" ]; then
   git config --global user.signingkey "$GIT_SIGNING_KEY"
 fi
