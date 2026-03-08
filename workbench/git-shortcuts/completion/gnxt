@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for gnxt
 _gnxt_complete() {
     local cur branches

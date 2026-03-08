@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for rbi (git rebase -i)
 _rbi_complete() {
     local cur branches

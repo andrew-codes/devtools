@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for proj, projs, and oproj
 _proj_complete() {
   local currToken="${COMP_WORDS[COMP_CWORD]}" matches

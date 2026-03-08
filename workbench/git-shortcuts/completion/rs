@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for rs (git reset --soft)
 _rs_complete() {
     local cur remotes branches combined

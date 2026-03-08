@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for sb (set upstream branch)
 _sb_complete() {
     local cur remotes branches

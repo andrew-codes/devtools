@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for db (delete branch)
 _db_complete() {
     local cur branches

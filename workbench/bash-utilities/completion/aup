@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for aup (list processes on port)
 _aup_complete() {
     local cur common_ports

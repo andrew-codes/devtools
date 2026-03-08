@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for killport (kill process on port)
 _killport_complete() {
     local cur common_ports

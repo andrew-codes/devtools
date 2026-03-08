@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for pull (git pull --rebase wrapper)
 _pull_complete() {
     local cur remotes branches

@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Completion for denv (set Docker environment)
 _denv_complete() {
     local cur common_hosts
