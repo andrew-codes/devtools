@@ -26,5 +26,6 @@ runIf isWindows installWindows
 
 refreshEnv
 
-nvm install lts
-nvm use lts
+# Note, latest 24.x has issues with nvm not installing npm, npx, and corepack.
+nvm install 22.22.1
+nvm use 22.22.1
