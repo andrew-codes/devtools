@@ -7,3 +7,4 @@
 .yarn/install-state.gz
 default.profraw
 manifest.json
+*.log

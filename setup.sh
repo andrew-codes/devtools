@@ -35,6 +35,8 @@ else
   sudo -v
 fi
 
+exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
+
 # Export env vars from manifest so all steps can access them
 while IFS= read -r line; do
   key=$(echo "$line" | grep -o '"[^"]*"' | sed -n '1p' | tr -d '"')
