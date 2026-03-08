@@ -216,15 +216,20 @@ function runElevated() {
     sudo -E bash "$tmp_script" || result=$?
 
   elif isWindows; then
-    local win_bash win_script
+    local win_bash win_script out_file tmp_with_log
     win_bash=$(cygpath -w "$BASH")
-    win_script=$(cygpath -w "$tmp_script")
+    out_file=$(mktemp)
+    tmp_with_log=$(mktemp)
+    { printf "exec > '%s' 2>&1\n" "$out_file"; cat "$tmp_script"; } > "$tmp_with_log"
+    win_script=$(cygpath -w "$tmp_with_log")
     powershell.exe -NoProfile -Command "
       try {
         \$p = Start-Process -FilePath '${win_bash}' -ArgumentList '${win_script}' -Verb RunAs -Wait -PassThru
         exit \$p.ExitCode
       } catch { exit 1 }
     " || result=$?
+    cat "$out_file"
+    rm -f "$tmp_with_log" "$out_file"
   fi
 
   rm -f "$tmp_script"
