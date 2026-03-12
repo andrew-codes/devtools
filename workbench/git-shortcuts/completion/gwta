@@ -1,0 +1,22 @@
+# Completion for gwta (git worktree add wrapper)
+_gwta_complete() {
+  local cur refs
+  cur="${COMP_WORDS[COMP_CWORD]}"
+
+  # First argument: destination directory path
+  if [ ${COMP_CWORD} -eq 1 ]; then
+    COMPREPLY=($(compgen -d -- "$cur"))
+    return
+  fi
+
+  # Second argument: git ref (local/remote branch, tag, or HEAD)
+  if [ ${COMP_CWORD} -eq 2 ]; then
+    refs=$( (
+      printf '%s\n' HEAD
+      git for-each-ref --format='%(refname:short)' refs/heads refs/remotes refs/tags 2> /dev/null
+    ) | sort -u)
+    COMPREPLY=($(compgen -W "$refs" -- "$cur"))
+  fi
+}
+
+complete -F _gwta_complete gwta

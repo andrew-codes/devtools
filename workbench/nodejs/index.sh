@@ -5,11 +5,11 @@ function macNvmBashrc() {
 }
 
 function installMac() {
-  if ! command -v nvm &>/dev/null; then
+  if ! command -v nvm &> /dev/null; then
     brew install nvm
   fi
 
-  addToBashrc macNvmBashrc
+  addToBashrc "mac nvm" macNvmBashrc
 
   export NVM_DIR="$HOME/.nvm"
   [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"

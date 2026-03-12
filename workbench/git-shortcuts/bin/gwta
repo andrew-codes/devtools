@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+WORKTREE_DEST_DIR=$1
+WORKTREE_REF=$2
+
+if [ -z "$WORKTREE_DEST_DIR" ] || [ -z "$WORKTREE_REF" ]; then
+  echo "Usage: $0 <worktree-dest-dir> <worktree-ref>"
+  exit 1
+fi
+
+WORKTREE_SRC_DIR=$(git rev-parse --git-common-dir)
+
+git worktree add "$WORKTREE_DEST_DIR" "$WORKTREE_REF"
+
+if [ -d "$WORKTREE_SRC_DIR/.serena" ]; then
+  if [ -d "$WORKTREE_SRC_DIR/.serena/cache" ]; then
+    mkdir -p "$WORKTREE_DEST_DIR/.serena/cache"
+    cp -r "$WORKTREE_SRC_DIR/.serena/cache/"* "$WORKTREE_DEST_DIR/.serena/cache/"
+  else
+    (cd "$WORKTREE_DEST_DIR" && uvx --from git+https://github.com/oraios/serena serena project index)
+  fi
+fi

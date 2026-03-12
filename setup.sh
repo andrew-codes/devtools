@@ -31,7 +31,7 @@ exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
 while IFS= read -r line; do
   key=$(echo "$line" | grep -o '"[^"]*"' | sed -n '1p' | tr -d '"')
   value=$(echo "$line" | grep -o '"[^"]*"' | sed -n '2p' | tr -d '"')
-  if [ -n "$key" ] && [ -n "$value" ]; then
+  if [ -n "$key" ]; then
     expanded=$(eval echo "$value")
     export "${key}=${expanded}"
   fi
@@ -44,7 +44,9 @@ source "$UTILS_FILE"
 
 # Clear all devtools-managed bashrc blocks so steps re-add them in the correct order
 if [ -f ~/.bashrc ]; then
-  sed -i '/# BEGIN devtools:/,/# END devtools:/d' ~/.bashrc
+  tmpfile=$(mktemp)
+  sed '/# BEGIN devtools:/,/# END devtools:/d' ~/.bashrc > "$tmpfile"
+  mv "$tmpfile" ~/.bashrc
 fi
 
 # Parse steps array from manifest
@@ -81,7 +83,6 @@ while IFS= read -r step; do
   refreshEnv
 
 done <<< "$steps"
-
 
 refreshEnv
 
