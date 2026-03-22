@@ -16,7 +16,7 @@ function installMac() {
 }
 
 function _installWindows() {
-  wingetInstall --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements
+  wingetInstall --id CoreyButler.NVMforWindows --accept-package-agreements --accept-source-agreements --source winget
 }
 
 function installWindows() {

@@ -7,7 +7,7 @@ function installMac() {
 }
 
 function installWindows() {
-  wingetInstall --id jqlang.jq --accept-package-agreements --accept-source-agreements
+  wingetInstall --id jqlang.jq --accept-package-agreements --accept-source-agreements --source winget
 }
 
 runIf isMac installMac

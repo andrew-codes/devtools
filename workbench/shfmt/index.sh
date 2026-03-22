@@ -6,7 +6,7 @@ function installMac() {
 }
 
 function installWindows() {
-  wingetInstall --id mvdan.shfmt --accept-package-agreements --accept-source-agreements
+  wingetInstall --id mvdan.shfmt --accept-package-agreements --accept-source-agreements --source winget
 }
 
 runIf isMac installMac

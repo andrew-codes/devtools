@@ -5,14 +5,14 @@ function installMac() {
 }
 
 function _installWindows() {
-  wingetInstall --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements
+  wingetInstall --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements --source winget
 }
 
 function installWindows() {
   if ! command -v docker &>/dev/null; then
     runElevated _installWindows
 
-    wingetInstall --id Docker.DockerCLI --accept-package-agreements --accept-source-agreements
+    wingetInstall --id Docker.DockerCLI --accept-package-agreements --accept-source-agreements --source winget
   fi
 }
 
