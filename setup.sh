@@ -96,13 +96,11 @@ elif [[ "$os_type" == "windows" ]]; then
       --accept-package-agreements --accept-source-agreements --silent
     APPDATA_WIN="$(cmd.exe /c echo %LOCALAPPDATA% 2>/dev/null | tr -d '\r')"
     APPDATA_UNIX="$(cygpath -u "$APPDATA_WIN" 2>/dev/null || echo "")"
-    if [[ -n "$APPDATA_UNIX" ]]; then
+    # Probe the known install path directly to avoid the App Execution Alias
+    # stub (which opens the Microsoft Store and hangs when given arguments).
+    if [[ -n "$APPDATA_UNIX" ]] && _python_works "$APPDATA_UNIX/Programs/Python/Python312/python.exe"; then
+      PYTHON_CMD="$APPDATA_UNIX/Programs/Python/Python312/python.exe"
       export PATH="$APPDATA_UNIX/Programs/Python/Python312:$APPDATA_UNIX/Programs/Python/Python312/Scripts:$PATH"
-    fi
-    if command -v python3 &>/dev/null && _python_works python3; then
-      PYTHON_CMD="python3"
-    elif command -v python &>/dev/null && _python_works python; then
-      PYTHON_CMD="python"
     fi
   fi
 
