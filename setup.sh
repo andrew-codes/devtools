@@ -38,6 +38,7 @@ exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
 os_type=""
 arch_type=""
 
+running_in_wsl=false
 if [[ "$OSTYPE" == darwin* ]]; then
   os_type="macos"
   case "$(uname -m)" in
@@ -48,6 +49,11 @@ if [[ "$OSTYPE" == darwin* ]]; then
 elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
   os_type="windows"
   arch_type="amd64"
+elif grep -qi microsoft /proc/version 2>/dev/null; then
+  # Running inside WSL — act as the Windows control node.
+  os_type="windows"
+  arch_type="amd64"
+  running_in_wsl=true
 else
   echo "Error: Unsupported OS: $OSTYPE" >&2
   exit 1
@@ -81,33 +87,58 @@ if [[ "$os_type" == "macos" ]]; then
 # unavailable on Windows). WSL is used as the control node; it connects back
 # to Windows via WinRM.
 elif [[ "$os_type" == "windows" ]]; then
-  echo "==> Checking WSL availability..."
-  if ! wsl -- echo ok &>/dev/null 2>&1; then
-    echo "==> WSL not found or no distro installed. Installing WSL (requires elevation)..."
+  if [[ "$running_in_wsl" == true ]]; then
+    # ── Already inside WSL (e.g. re-running after restart when Git Bash broke) ──
+    echo "==> Running inside WSL."
+
+    echo "==> Installing Ansible and WinRM dependencies..."
+    pip3 install --quiet --upgrade ansible pywinrm 2>/dev/null \
+      || pip install --quiet --upgrade ansible pywinrm
+
+    echo "==> Configuring WinRM for Ansible connections (requires elevation)..."
     powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
       Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install'
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command',
+        'Enable-PSRemoting -Force -SkipNetworkProfileCheck; Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value \$true; Set-Item -Path WSMan:\localhost\Service\AllowUnencrypted -Value \$true; winrm quickconfig -quiet'
       )
     "
-    echo ""
-    echo "WSL installation complete. Please restart your computer and re-run setup."
-    exit 0
+
+    WSL_SCRIPT_DIR="$SCRIPT_DIR"
+
+  else
+    # ── Running from Git Bash / msys / cygwin ────────────────────────────────
+    echo "==> Checking WSL availability..."
+    if ! wsl -- echo ok &>/dev/null 2>&1; then
+      echo "==> WSL not found or no distro installed. Installing WSL (requires elevation)..."
+      powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+        Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install'
+        )
+      "
+      echo ""
+      echo "WSL installation complete. Please restart your computer, then re-run setup"
+      echo "by opening the Ubuntu app (or any WSL terminal) and running:"
+      echo "  bash $(cygpath -w "$SCRIPT_DIR")/setup.sh"
+      echo ""
+      echo "Note: Git Bash may not work after restart. Use the WSL/Ubuntu terminal instead."
+      exit 0
+    fi
+
+    echo "==> Installing Ansible and WinRM dependencies inside WSL..."
+    wsl -- bash -c "pip3 install --quiet --upgrade ansible pywinrm 2>/dev/null \
+      || pip install --quiet --upgrade ansible pywinrm"
+
+    echo "==> Configuring WinRM for Ansible connections (requires elevation)..."
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+      Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command',
+        'Enable-PSRemoting -Force -SkipNetworkProfileCheck; Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value \$true; Set-Item -Path WSMan:\localhost\Service\AllowUnencrypted -Value \$true; winrm quickconfig -quiet'
+      )
+    "
+
+    # Translate the Windows repo path to a WSL path for use in ansible commands.
+    WSL_SCRIPT_DIR="$(wsl wslpath -u "$(cygpath -w "$SCRIPT_DIR")")"
   fi
-
-  echo "==> Installing Ansible and WinRM dependencies inside WSL..."
-  wsl -- bash -c "pip3 install --quiet --upgrade ansible pywinrm 2>/dev/null \
-    || pip install --quiet --upgrade ansible pywinrm"
-
-  echo "==> Configuring WinRM for Ansible connections (requires elevation)..."
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-    Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
-      '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command',
-      'Enable-PSRemoting -Force -SkipNetworkProfileCheck; Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value \$true; Set-Item -Path WSMan:\localhost\Service\AllowUnencrypted -Value \$true; winrm quickconfig -quiet'
-    )
-  "
-
-  # Translate the Windows repo path to a WSL path for use in ansible commands.
-  WSL_SCRIPT_DIR="$(wsl wslpath -u "$(cygpath -w "$SCRIPT_DIR")")"
 fi
 
 # ── Validate Ansible is available ─────────────────────────────────────────────
@@ -139,14 +170,14 @@ if [[ "$os_type" != "windows" && ! -f "$playbook" ]]; then
 fi
 
 echo "==> Installing Ansible collections..."
-if [[ "$os_type" == "windows" ]]; then
+if [[ "$os_type" == "windows" && "$running_in_wsl" == false ]]; then
   wsl -- ansible-galaxy collection install -r "$WSL_SCRIPT_DIR/ansible/requirements.yml"
 else
   ansible-galaxy collection install -r "$SCRIPT_DIR/ansible/requirements.yml"
 fi
 
 echo "==> Running playbook: $(basename "$playbook")..."
-if [[ "$os_type" == "windows" ]]; then
+if [[ "$os_type" == "windows" && "$running_in_wsl" == false ]]; then
   wsl -- ansible-playbook \
     -i "$inventory" \
     "$playbook" \
