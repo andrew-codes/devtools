@@ -1,0 +1,22 @@
+---
+# Entry playbook for amd64 Windows 11.
+# Run via ansible/setup.sh — do not invoke directly.
+
+- import_playbook: playbooks/devtools-bash-env.yml
+- import_playbook: playbooks/bash-profile.yml
+- import_playbook: playbooks/git-config.yml
+- import_playbook: playbooks/uvx.yml
+- import_playbook: playbooks/shfmt.yml
+- import_playbook: playbooks/jq.yml
+- import_playbook: playbooks/git-completion.yml
+- import_playbook: playbooks/git-prompt.yml
+- import_playbook: playbooks/gh.yml
+- import_playbook: playbooks/yq.yml
+- import_playbook: playbooks/git-shortcuts.yml
+- import_playbook: playbooks/projects.yml
+- import_playbook: playbooks/bash-utilities.yml
+- import_playbook: playbooks/1p-ssh-agent.yml
+- import_playbook: playbooks/nodejs.yml
+- import_playbook: playbooks/claude-code.yml
+- import_playbook: playbooks/vscode.yml
+- import_playbook: playbooks/docker.yml

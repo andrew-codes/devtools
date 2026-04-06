@@ -1,0 +1,16 @@
+---
+- name: Install jq
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install jq (macOS via Homebrew)
+      community.general.homebrew:
+        name: jq
+        state: present
+      when: ansible_system == 'Darwin'
+
+    - name: Install jq (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: jq
+        state: present
+      when: ansible_os_family == 'Windows'

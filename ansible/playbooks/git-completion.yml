@@ -1,0 +1,22 @@
+---
+- name: Install and configure git bash completion
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Download git-completion.sh
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
+        dest: "{{ tools_home }}/git-completion.sh"
+        mode: "0755"
+        force: false
+
+    - name: Configure git-completion in ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:git-completion"
+        block: |
+          if [ -f {{ tools_home }}/git-completion.sh ]; then
+            . {{ tools_home }}/git-completion.sh
+          fi

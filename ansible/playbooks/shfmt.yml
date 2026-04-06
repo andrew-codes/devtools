@@ -1,0 +1,16 @@
+---
+- name: Install shfmt
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install shfmt (macOS via Homebrew)
+      community.general.homebrew:
+        name: shfmt
+        state: present
+      when: ansible_system == 'Darwin'
+
+    - name: Install shfmt (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: shfmt
+        state: present
+      when: ansible_os_family == 'Windows'

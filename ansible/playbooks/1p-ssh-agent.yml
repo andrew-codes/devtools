@@ -1,0 +1,36 @@
+---
+- name: Install and configure 1Password SSH agent
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install 1Password (macOS via Homebrew cask)
+      community.general.homebrew_cask:
+        name: 1password
+        state: present
+      when: ansible_system == 'Darwin' and git_ssh_agent == '1p'
+
+    - name: Configure 1Password SSH agent in ~/.bashrc (macOS)
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:1p-ssh-agent"
+        block: |
+          export SSH_AUTH_SOCK=$HOME/.1password/agent.sock
+      when: ansible_system == 'Darwin' and git_ssh_agent == '1p'
+
+    - name: Install 1Password (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: 1password
+        state: present
+      when: ansible_os_family == 'Windows' and git_ssh_agent == '1p'
+
+    - name: Configure 1Password SSH agent in ~/.bashrc (Windows)
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:1p-ssh-agent"
+        block: |
+          export SSH_AUTH_SOCK=\\.\pipe\openssh-ssh-agent
+      when: ansible_os_family == 'Windows' and git_ssh_agent == '1p'

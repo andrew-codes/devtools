@@ -1,109 +1,136 @@
 # Devtools
 
-My set of idempotent scripts to install and configure devtools on a new macOS or Windows machine.
+My personal collection of dotfiles, configuration settings, templates, and productivity tools. The setup is driven by Ansible playbooks with a single bash entry-point that bootstraps everything from scratch.
 
 ## Running Setup
 
 ```bash
-./setup.sh <manifest.json>
+# Set required environment variables
+export GITHUB_USERNAME="your-username"
+export GIT_EMAIL="you@example.com"
+export GIT_NAME="Your Name"
+export GIT_SIGNING_KEY="~/.ssh/id_ed25519.pub"
+
+# Run the setup script
+./setup.sh
 ```
 
-The script auto-elevates (sudo on macOS/Linux, UAC on Windows). On Windows, the environment is refreshed after each step so newly installed software is immediately available to subsequent steps.
+Setup logs are written to `workbench.log` in the repository root.
 
-## Manifest
+## Architecture
 
-The manifest is a JSON file that controls the run. See `manifest.example.json`.
+The setup is driven by Ansible playbooks. `setup.sh` is the single entry point:
 
-```json
-{
-  "env": {
-    "KEY": "value"
-  },
-  "steps": [
-    "step-name"
-  ],
-  "extensions": [
-    "publisher.extension-id"
-  ]
-}
+1. Detects OS and CPU architecture
+2. Bootstraps Python 3 and Ansible (via `pip`)
+3. On Windows: installs Chocolatey and configures WinRM for local connections
+4. Runs the appropriate site playbook for the detected platform
+
+### Supported Platforms
+
+| Platform | Site Playbook |
+| --- | --- |
+| macOS arm64 (Apple Silicon) | `ansible/site-macos-arm64.yml` |
+| Windows 11 amd64 | `ansible/site-windows-amd64.yml` |
+
+### Directory Structure
+
+```text
+ansible/
+  setup.sh                   # Bootstrap entry point
+  requirements.yml           # Ansible Galaxy collections
+  inventory-macos.yml        # macOS localhost inventory (connection: local)
+  inventory-windows.yml      # Windows localhost inventory (connection: winrm)
+  group_vars/
+    all.yml                  # Variables resolved from environment variables
+  site-macos-arm64.yml       # macOS arm64 entry playbook
+  site-windows-amd64.yml     # Windows amd64 entry playbook
+  playbooks/
+    devtools-bash-env.yml
+    bash-profile.yml
+    brew.yml
+    git-config.yml
+    uvx.yml
+    shfmt.yml
+    jq.yml
+    git-completion.yml
+    git-prompt.yml
+    gh.yml
+    yq.yml
+    git-shortcuts.yml
+    projects.yml
+    bash-utilities.yml
+    1p-ssh-agent.yml
+    nodejs.yml
+    claude-code.yml
+    vscode.yml
+    docker.yml
 ```
 
-- **`env`** — key/value pairs exported as environment variables available to all steps.
-- **`steps`** — ordered list of steps to run. Each entry is a subdirectory name under `workbench/`. Remove a step to skip it.
-- **`extensions`** — VS Code extension IDs installed by the `vscode` step.
+## Adding a New Tool
 
-## Workbench
+Create a new playbook in `ansible/playbooks/` following this pattern:
 
-Each step lives in `workbench/<step-name>/` and must contain an `index.sh`. Steps are executed as subshells with their own directory as the working directory.
+```yaml
+---
+- name: Install my-tool
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install my-tool (macOS via Homebrew)
+      community.general.homebrew:
+        name: my-tool
+        state: present
+      when: ansible_system == 'Darwin'
 
-```
-workbench/
-└── my-step/
-    ├── index.sh          # required — runs when step is executed
-    ├── bin/              # optional — copied to $TOOLS_BIN_HOME
-    │   ├── my-command
-    │   ├── osx/          # macOS-specific bin, takes priority over general
-    │   ├── windows/      # Windows-specific bin
-    │   └── linux/        # Linux-specific bin
-    └── completion/       # optional — added to ~/.bashrc per command name
-        └── my-command
-```
-
-`index.sh` is sourced (not executed), so `return` exits the step early without aborting setup.
-
-## Utility Functions
-
-All functions from `setup-utils/utils.sh` are automatically available inside every `index.sh`.
-
-### OS / Architecture predicates
-
-```bash
-isMac       # darwin
-isWindows   # msys (Git Bash)
-isLinux     # linux
-
-isArm       # arm64
-isIntel     # x86_64
+    - name: Install my-tool (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: my-tool
+        state: present
+      when: ansible_os_family == 'Windows'
 ```
 
-### Conditional execution
+Then add it to the appropriate site playbook(s):
 
-```bash
-runIf <predicate> [and|or|not <predicate> ...] <function>
-
-runIf isMac installMac
-runIf isMac and isArm installMacArm
-runIf not isWindows and isIntel install
-```
-
-### Copying bin files
-
-```bash
-installBinFiles
-```
-
-Copies `./bin/*` and `./bin/<os>/*` to `$TOOLS_BIN_HOME`. OS-specific files take priority over general ones on name collision. Registers any matching `./completion/<cmd>` file into `~/.bashrc`.
-
-### Writing to ~/.bashrc
-
-```bash
-addToBashrc <id> <function-name|string>
-```
-
-Writes a block into `~/.bashrc` wrapped in `# BEGIN devtools:<id>` / `# END devtools:<id>` markers. Re-running removes the old block before adding the new one (idempotent). Accepts either a function name (body is extracted) or a plain string.
-
-```bash
-function myBlock() {
-  export FOO="bar"
-}
-addToBashrc "my-id" myBlock
-
-addToBashrc "gh-completion" 'eval "$(gh completion --shell bash)"'
+```yaml
+# ansible/site-macos-arm64.yml
+- import_playbook: playbooks/my-tool.yml
 ```
 
 ## Conventions
 
-- All steps must be idempotent — safe to run multiple times.
-- Use `return` (not `exit`) for early exits inside `index.sh`.
-- OS-specific logic should use `runIf` rather than inline `if` checks where possible.
-- Bin files default to cross-platform; add an `osx/`, `windows/`, or `linux/` subdirectory only when behaviour differs by OS.
+- **All playbooks must be idempotent** — safe to run multiple times.
+- **Platform guards**: use `when: ansible_system == 'Darwin'` for macOS tasks and `when: ansible_os_family == 'Windows'` for Windows tasks.
+- **Package managers**: use `community.general.homebrew` / `homebrew_cask` for macOS; use `chocolatey.chocolatey.win_chocolatey` for Windows. Do not use winget — Ansible does not support it.
+- **Shell tasks on Windows**: use `ansible.windows.win_shell` instead of `ansible.builtin.shell` or `command`.
+- **File copy on Windows**: use `ansible.windows.win_copy` instead of `ansible.builtin.copy`.
+- **bashrc blocks**: use `ansible.builtin.blockinfile` with `marker: "# {mark} devtools:<id>"` to write to `~/.bashrc`. This is compatible with the existing `# BEGIN devtools:<id>` / `# END devtools:<id>` marker convention.
+- **Variables**: all configuration is sourced from environment variables via `group_vars/all.yml` using `lookup('env', 'VAR_NAME')`. Add new variables there with sensible defaults.
+- **Repo path**: the setup script passes `devtools_repo_root` as an Ansible extra var (`-e`). Use this variable in playbooks that need to reference files inside the repo (e.g. bin scripts, config files).
+- **Bin files**: bin files for git-shortcuts, projects, and bash-utilities live under `workbench/<tool>/bin/`. Playbooks use `ansible.builtin.find` + `ansible.builtin.copy` (with `remote_src: true`) to install them to `tools_bin_home`.
+
+## Environment Variables
+
+All variables are resolved in `ansible/group_vars/all.yml`. Variables without a default must be set before running `setup.sh`.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `DEV_HOME` | `~/developer` | Root developer directory |
+| `REPO_HOME` | `$DEV_HOME/repos` | Git repository directory |
+| `DEVTOOLS_HOME` | `$DEV_HOME/devtools` | Devtools installation directory |
+| `TOOLS_HOME` | `$DEV_HOME/tools` | Shared tools directory |
+| `TOOLS_BIN_HOME` | `$TOOLS_HOME/bin` | Tools binary directory (added to PATH) |
+| `GITHUB_USERNAME` | _(required)_ | Your GitHub username |
+| `GIT_EMAIL` | _(optional)_ | Git commit email |
+| `GIT_NAME` | _(optional)_ | Git commit display name |
+| `GIT_SIGNING_KEY` | _(optional)_ | SSH public key path for commit signing |
+| `GIT_SSH_AGENT` | `1p` | SSH agent type (`1p` for 1Password) |
+| `CONTEXT7_API_KEY` | _(optional)_ | Context7 API key |
+| `NODE_VERSION` | `22.22.1` | Node.js version to install via nvm |
+| `GITHUB_TOKEN` | _(optional)_ | GitHub personal access token |
+
+**Windows only:**
+
+| Variable | Description |
+| --- | --- |
+| `ANSIBLE_PASSWORD` | Windows user account password (required for WinRM authentication) |

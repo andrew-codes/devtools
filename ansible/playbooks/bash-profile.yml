@@ -1,0 +1,25 @@
+---
+- name: Configure bash profile
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Ensure ~/.bash_profile exists
+      ansible.builtin.copy:
+        content: ""
+        dest: "~/.bash_profile"
+        force: false
+        mode: "0644"
+
+    - name: Ensure ~/.bashrc exists
+      ansible.builtin.copy:
+        content: ""
+        dest: "~/.bashrc"
+        force: false
+        mode: "0644"
+
+    - name: Ensure ~/.bash_profile sources ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bash_profile"
+        marker: "# {mark} devtools:bash-profile"
+        block: |
+          source ~/.bashrc

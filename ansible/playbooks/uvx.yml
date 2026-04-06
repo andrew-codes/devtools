@@ -1,0 +1,16 @@
+---
+- name: Install uv / uvx
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install uv (macOS via Homebrew)
+      community.general.homebrew:
+        name: uv
+        state: present
+      when: ansible_system == 'Darwin'
+
+    - name: Install uv (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: uv
+        state: present
+      when: ansible_os_family == 'Windows'
