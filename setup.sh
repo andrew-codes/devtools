@@ -108,34 +108,51 @@ elif [[ "$os_type" == "windows" ]]; then
   else
     # ── Running from Git Bash / msys / cygwin ────────────────────────────────
     echo "==> Checking WSL availability..."
-    # Use --list to check if WSL + a distro are installed without invoking
-    # the distro (which fails if first-run setup hasn't been completed yet).
+    # Probe WSL state without invoking a distro (which fails before first-run).
+    # "no installed distributions" in the output means WSL2 kernel is present
+    # but no distro has been installed yet — distinct from WSL not installed.
+    _wsl_list_out="$(wsl --list 2>&1 || true)"
     _wsl_has_distro=false
+    _wsl_kernel=false
     if wsl --list --quiet 2>/dev/null | grep -q .; then
       _wsl_has_distro=true
+      _wsl_kernel=true
+    elif echo "$_wsl_list_out" | grep -qi "no installed distribution"; then
+      _wsl_kernel=true
     fi
 
-    if [[ "$_wsl_has_distro" == false ]]; then
-      echo "==> WSL not found or no distro installed. Installing WSL (requires elevation)..."
+    if [[ "$_wsl_kernel" == false ]]; then
+      echo "==> WSL2 not installed. Installing (requires elevation and a restart)..."
       powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
         Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
-          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install'
+          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install --no-distribution'
         )
       "
       echo ""
-      echo "WSL installation complete. Please restart your computer."
-      echo "After restart, open the Ubuntu app from the Start menu to finish distro setup,"
-      echo "then re-run setup from the Ubuntu terminal:"
-      echo "  bash \$(wslpath '$(cygpath -w "$SCRIPT_DIR")')/setup.sh"
+      echo "WSL2 kernel installed. Please restart your computer, then re-run setup."
+      echo "Note: Git Bash may not work after restart. Use PowerShell and run:"
+      echo "  wsl bash \$(wslpath -u '$(cygpath -w "$SCRIPT_DIR")')/setup.sh"
+      exit 0
+    fi
+
+    if [[ "$_wsl_has_distro" == false ]]; then
+      echo "==> WSL2 ready but no distro found. Installing Ubuntu..."
+      powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+        Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install -d Ubuntu --no-launch'
+        )
+      "
       echo ""
-      echo "Note: Git Bash may not work after restart. Use the WSL/Ubuntu terminal instead."
+      echo "Ubuntu installed. Open the Ubuntu app from the Start menu to complete first-run"
+      echo "setup (set a username and password), then re-run setup from that terminal:"
+      echo "  bash \$(wslpath '$(cygpath -w "$SCRIPT_DIR")')/setup.sh"
       exit 0
     fi
 
     # WSL + distro exist; check the distro is actually usable (first-run done).
     if ! wsl -- echo ok &>/dev/null 2>&1; then
-      echo "Error: WSL is installed but the distro is not ready." >&2
-      echo "Open the Ubuntu app from the Start menu to complete first-run setup," >&2
+      echo "Error: WSL distro is installed but first-run setup is not complete." >&2
+      echo "Open the Ubuntu app from the Start menu, set a username and password," >&2
       echo "then re-run setup from that terminal:" >&2
       echo "  bash \$(wslpath '$(cygpath -w "$SCRIPT_DIR")')/setup.sh" >&2
       exit 1
