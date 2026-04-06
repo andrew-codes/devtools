@@ -41,8 +41,11 @@ export GIT_EMAIL="you@example.com"
 export GIT_NAME="Your Name"
 export GIT_SIGNING_KEY="~/.ssh/id_ed25519.pub"
 
-# Run the setup script
+# Run directly from the repo
 ./setup.sh
+
+# Or bootstrap from scratch with curl (clones the repo automatically)
+bash <(curl -fsSL https://raw.githubusercontent.com/andrew-codes/devtools/main/setup.sh)
 ```
 
 Setup logs are written to `workbench.log` in the repository root.

@@ -7,6 +7,31 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ── Self-bootstrap: clone repo if not running from within it ──────────────────
+# Supports: bash <(curl -fsSL https://raw.githubusercontent.com/.../setup.sh)
+if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
+  if [[ -z "${GITHUB_USERNAME:-}" ]]; then
+    echo "Error: GITHUB_USERNAME must be set to clone the devtools repo." >&2
+    exit 1
+  fi
+
+  _dev_home="${DEV_HOME:-$HOME/developer}"
+  _repo_home="${REPO_HOME:-$_dev_home/repos}"
+  _devtools_dir="${DEVTOOLS_HOME:-$_repo_home/devtools}"
+
+  if [[ ! -d "$_devtools_dir" ]]; then
+    echo "==> Cloning devtools repo into $_devtools_dir..."
+    mkdir -p "$_repo_home"
+    git clone "https://github.com/$GITHUB_USERNAME/devtools.git" "$_devtools_dir"
+    chmod +x "$_devtools_dir/setup.sh"
+  else
+    echo "==> Devtools repo already exists at $_devtools_dir, skipping clone."
+  fi
+
+  echo "==> Re-running setup from cloned repo..."
+  exec "$_devtools_dir/setup.sh"
+fi
+
 exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
 
 # ── Detect OS and architecture ────────────────────────────────────────────────
