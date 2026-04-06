@@ -3,19 +3,20 @@
 # Set these env vars before running ansible/setup.sh.
 # Defaults are applied when a variable is empty or unset.
 
-dev_home: "{{ lookup('env', 'DEV_HOME') | default(ansible_user_dir + '/developer', true) }}"
+dev_home: "{{ lookup('env', 'DEV_HOME') | default(ansible_facts['user_dir'] + '/developer', true) }}"
 repo_home: "{{ lookup('env', 'REPO_HOME') | default(dev_home + '/repos', true) }}"
 devtools_home: "{{ lookup('env', 'DEVTOOLS_HOME') | default(dev_home + '/devtools', true) }}"
 tools_home: "{{ lookup('env', 'TOOLS_HOME') | default(dev_home + '/tools', true) }}"
 tools_bin_home: "{{ lookup('env', 'TOOLS_BIN_HOME') | default(tools_home + '/bin', true) }}"
 
-node_version: "{{ lookup('env', 'NODE_VERSION') | default('22.22.1', true) }}"
+node_version: "{{ lookup('env', 'NODE_VERSION') | default('24.14.1', true) }}"
 
 github_username: "{{ lookup('env', 'GITHUB_USERNAME') }}"
 git_email: "{{ lookup('env', 'GIT_EMAIL') }}"
 git_name: "{{ lookup('env', 'GIT_NAME') }}"
 git_signing_key: "{{ lookup('env', 'GIT_SIGNING_KEY') }}"
 git_ssh_agent: "{{ lookup('env', 'GIT_SSH_AGENT') | default('1p', true) }}"
+onepassword_ssh_key: "{{ lookup('env', 'ONEPASSWORD_SSH_KEY') | default(git_signing_key, true) }}"
 context7_api_key: "{{ lookup('env', 'CONTEXT7_API_KEY') }}"
 github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
 

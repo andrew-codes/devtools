@@ -7,7 +7,7 @@
       community.general.homebrew:
         name: gh
         state: present
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Configure gh completion in ~/.bashrc (macOS)
       ansible.builtin.blockinfile:
@@ -17,10 +17,10 @@
         marker: "# {mark} devtools:gh"
         block: |
           eval "$(gh completion --shell bash)"
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Install gh (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
         name: gh
         state: present
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'

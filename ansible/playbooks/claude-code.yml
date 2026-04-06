@@ -3,50 +3,101 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Install Claude Code via npm
+    - name: Install Claude Code via npm (macOS/Linux)
       community.general.npm:
         name: "@anthropic-ai/claude-code"
         global: true
         state: present
       environment:
         PATH: "{{ ansible_env.PATH }}"
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Install Claude Code via npm (Windows)
+      ansible.windows.win_shell: npm install -g @anthropic-ai/claude-code
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true
 
     - name: Configure Claude Code in ~/.bashrc (Windows)
-      ansible.builtin.blockinfile:
-        path: "~/.bashrc"
-        create: true
-        mode: "0644"
-        marker: "# {mark} devtools:claude-code"
-        block: |
-          export CLAUDE_CODE_GIT_BASH_PATH="C:\Program Files\Git\bin\bash.exe"
-      when: ansible_os_family == 'Windows'
+      ansible.windows.win_shell: |
+        $bashrc = "$env:USERPROFILE\.bashrc"
+        $begin  = "# BEGIN devtools:claude-code"
+        $end    = "# END devtools:claude-code"
+        $lines  = @(
+          "# BEGIN devtools:claude-code",
+          'export CLAUDE_CODE_GIT_BASH_PATH="C:\Program Files\Git\bin\bash.exe"',
+          "# END devtools:claude-code"
+        )
+        $block = $lines -join "`n"
+        if (-not (Test-Path $bashrc)) { New-Item -ItemType File -Path $bashrc -Force | Out-Null }
+        $content = Get-Content $bashrc -Raw -ErrorAction SilentlyContinue
+        if ($null -ne $content -and $content -match [regex]::Escape($begin)) {
+          $content = $content -replace "(?s)$([regex]::Escape($begin)).*?$([regex]::Escape($end))", $block
+        } else {
+          if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
+          $content = $base + "`n" + $block + "`n"
+        }
+        Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true
 
-    - name: Ensure ~/.claude.json exists
+    - name: Ensure ~/.claude.json exists (macOS/Linux)
       ansible.builtin.copy:
         content: "{}\n"
-        dest: "{{ ansible_user_dir }}/.claude.json"
+        dest: "{{ ansible_facts['user_dir'] }}/.claude.json"
         force: false
         mode: "0600"
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Ensure ~/.claude.json exists (Windows)
+      ansible.windows.win_shell: |
+        $f = "$env:USERPROFILE\.claude.json"
+        if (-not (Test-Path $f)) {
+          [System.IO.File]::WriteAllText($f, "{}", (New-Object System.Text.UTF8Encoding($false)))
+        }
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: false
 
     - name: Configure MCP servers (macOS)
       ansible.builtin.shell: |
-        tmp=$(mktemp)
-        jq --arg name "{{ item.key }}" \
-           --argjson config '{{ item.value | to_json }}' \
-           '.mcpServers[$name] //= $config' \
-           ~/.claude.json > "$tmp" && mv "$tmp" ~/.claude.json
+        patched=$(jq --arg name "{{ item.key }}" \
+          --argjson config '{{ item.value | to_json }}' \
+          '.mcpServers[$name] //= $config' \
+          ~/.claude.json)
+        printf '%s\n' "$patched" > ~/.claude.json
       args:
         executable: /bin/bash
       loop: "{{ claude_mcp_servers | dict2items }}"
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
       changed_when: true
+      no_log: true
 
     - name: Configure MCP servers (Windows)
       ansible.windows.win_shell: |
         $claude_json = "$env:USERPROFILE\.claude.json"
-        $tmp = [System.IO.Path]::GetTempFileName()
-        jq --arg name "{{ item.key }}" --argjson config '{{ item.value | to_json }}' '.mcpServers[$name] //= $config' $claude_json > $tmp
-        Move-Item -Force $tmp $claude_json
+        $patched = jq --arg name "{{ item.key }}" --argjson config '{{ item.value | to_json }}' '.mcpServers[$name] //= $config' $claude_json
+        if ($LASTEXITCODE -ne 0) {
+          throw "jq failed while updating $claude_json"
+        }
+        [System.IO.File]::WriteAllText($claude_json, ($patched + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
       loop: "{{ claude_mcp_servers | dict2items }}"
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'
       changed_when: true
+      no_log: true
+
+    - name: Disable Serena web dashboard on launch (macOS)
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_facts['user_dir'] }}/.serena/serena_config.yaml"
+        regexp: '^\s*web_dashboard_open_on_launch:'
+        line: 'web_dashboard_open_on_launch: false'
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Disable Serena web dashboard on launch (Windows)
+      ansible.windows.win_shell: |
+        $f = "$env:USERPROFILE\.serena\serena_config.yaml"
+        if (Test-Path $f) {
+          $content = Get-Content $f -Raw
+          $content = $content -replace '(?m)^\s*web_dashboard_open_on_launch:.*$', 'web_dashboard_open_on_launch: false'
+          Set-Content -Path $f -Value $content -NoNewline
+        }
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: false

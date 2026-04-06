@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Create development directories
+    - name: Create development directories (macOS/Linux)
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -14,8 +14,21 @@
         - "{{ devtools_home }}"
         - "{{ tools_home }}"
         - "{{ tools_bin_home }}"
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Configure devtools env in ~/.bashrc
+    - name: Create development directories (Windows)
+      ansible.windows.win_file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ dev_home }}"
+        - "{{ repo_home }}"
+        - "{{ devtools_home }}"
+        - "{{ tools_home }}"
+        - "{{ tools_bin_home }}"
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Configure devtools env in ~/.bashrc (macOS/Linux)
       ansible.builtin.blockinfile:
         path: "~/.bashrc"
         create: true
@@ -30,3 +43,34 @@
           export DEVTOOLS_REPO_NAME=devtools
           export GITHUB_USERNAME={{ github_username }}
           export PATH={{ tools_bin_home }}:$PATH
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Configure devtools env in ~/.bashrc (Windows)
+      ansible.windows.win_shell: |
+        $bashrc = "$env:USERPROFILE\.bashrc"
+        $begin  = "# BEGIN devtools:env"
+        $end    = "# END devtools:env"
+        $lines  = @(
+          "# BEGIN devtools:env",
+          "export DEV_HOME={{ dev_home }}",
+          "export REPO_HOME={{ repo_home }}",
+          "export DEVTOOLS_HOME={{ devtools_home }}",
+          "export TOOLS_HOME={{ tools_home }}",
+          "export TOOLS_BIN_HOME={{ tools_bin_home }}",
+          "export DEVTOOLS_REPO_NAME=devtools",
+          "export GITHUB_USERNAME={{ github_username }}",
+          "export PATH={{ tools_bin_home }}:`$PATH",
+          "# END devtools:env"
+        )
+        $block = $lines -join "`n"
+        if (-not (Test-Path $bashrc)) { New-Item -ItemType File -Path $bashrc -Force | Out-Null }
+        $content = Get-Content $bashrc -Raw -ErrorAction SilentlyContinue
+        if ($null -ne $content -and $content -match [regex]::Escape($begin)) {
+          $content = $content -replace "(?s)$([regex]::Escape($begin)).*?$([regex]::Escape($end))", $block
+        } else {
+          if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
+          $content = $base + "`n" + $block + "`n"
+        }
+        Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true

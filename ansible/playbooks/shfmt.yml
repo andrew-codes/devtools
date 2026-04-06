@@ -7,10 +7,10 @@
       community.general.homebrew:
         name: shfmt
         state: present
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Install shfmt (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
         name: shfmt
         state: present
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'

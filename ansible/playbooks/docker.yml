@@ -7,26 +7,26 @@
       community.general.homebrew_cask:
         name: docker-desktop
         state: present
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Install Docker Desktop (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
         name: docker-desktop
         state: present
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'
 
     - name: Install Docker CLI (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
         name: docker-cli
         state: present
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'
 
     - name: Find docker bin files
       ansible.builtin.find:
         paths: "{{ workbench_dir }}/docker/bin"
         file_type: file
       register: docker_bin_files
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Install docker bin files to tools_bin_home
       ansible.builtin.copy:
@@ -35,14 +35,14 @@
         mode: "0755"
         remote_src: true
       loop: "{{ docker_bin_files.files }}"
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Find docker completion files
       ansible.builtin.find:
         paths: "{{ workbench_dir }}/docker/completion"
         file_type: file
       register: docker_completion_files
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Add docker completions to ~/.bashrc
       ansible.builtin.blockinfile:
@@ -52,4 +52,4 @@
         marker: "# {mark} devtools:completion-{{ item.path | basename }}"
         block: "{{ lookup('file', item.path) }}"
       loop: "{{ docker_completion_files.files }}"
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'

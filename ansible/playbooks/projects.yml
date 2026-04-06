@@ -3,27 +3,44 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Find projects bin files
+    - name: Find projects bin files (macOS/Linux)
       ansible.builtin.find:
         paths: "{{ workbench_dir }}/projects/bin"
         file_type: file
       register: projects_bin_files
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Install projects bin files
+    - name: Install projects bin files (macOS/Linux)
       ansible.builtin.copy:
         src: "{{ item.path }}"
         dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
         mode: "0755"
         remote_src: true
       loop: "{{ projects_bin_files.files }}"
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Find projects completion files
+    - name: Find projects bin files (Windows)
+      ansible.windows.win_find:
+        paths: "{{ workbench_dir }}/projects/bin"
+        file_type: file
+      register: projects_bin_files_win
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Install projects bin files (Windows)
+      ansible.windows.win_copy:
+        src: "{{ item.path }}"
+        dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
+      loop: "{{ projects_bin_files_win.files }}"
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Find projects completion files (macOS/Linux)
       ansible.builtin.find:
         paths: "{{ workbench_dir }}/projects/completion"
         file_type: file
       register: projects_completion_files
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Add projects completions to ~/.bashrc
+    - name: Add projects completions to ~/.bashrc (macOS/Linux)
       ansible.builtin.blockinfile:
         path: "~/.bashrc"
         create: true
@@ -31,3 +48,32 @@
         marker: "# {mark} devtools:completion-{{ item.path | basename }}"
         block: "{{ lookup('file', item.path) }}"
       loop: "{{ projects_completion_files.files }}"
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Find projects completion files (Windows)
+      ansible.windows.win_find:
+        paths: "{{ workbench_dir }}/projects/completion"
+        file_type: file
+      register: projects_completion_files_win
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Add projects completions to ~/.bashrc (Windows)
+      ansible.windows.win_shell: |
+        $bashrc = "$env:USERPROFILE\.bashrc"
+        $begin  = "# BEGIN devtools:completion-{{ item.path | basename }}"
+        $end    = "# END devtools:completion-{{ item.path | basename }}"
+        $b64    = "{{ lookup('file', item.path) | b64encode }}"
+        $text   = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+        $block  = $begin + "`n" + $text.TrimEnd() + "`n" + $end
+        if (-not (Test-Path $bashrc)) { New-Item -ItemType File -Path $bashrc -Force | Out-Null }
+        $content = Get-Content $bashrc -Raw -ErrorAction SilentlyContinue
+        if ($null -ne $content -and $content -match [regex]::Escape($begin)) {
+          $content = $content -replace "(?s)$([regex]::Escape($begin)).*?$([regex]::Escape($end))", $block
+        } else {
+          if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
+          $content = $base + "`n" + $block + "`n"
+        }
+        Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
+      loop: "{{ projects_completion_files_win.files }}"
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true

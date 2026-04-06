@@ -8,7 +8,7 @@
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       args:
         creates: /opt/homebrew/bin/brew
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Configure Homebrew in ~/.bashrc
       ansible.builtin.blockinfile:
@@ -18,4 +18,4 @@
         marker: "# {mark} devtools:brew"
         block: |
           export PATH="/opt/homebrew/bin:$PATH"
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'

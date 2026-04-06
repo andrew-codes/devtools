@@ -125,8 +125,9 @@ All variables are resolved in `ansible/group_vars/all.yml`. Variables without a 
 | `GIT_NAME` | _(optional)_ | Git commit display name |
 | `GIT_SIGNING_KEY` | _(optional)_ | SSH public key path for commit signing |
 | `GIT_SSH_AGENT` | `1p` | SSH agent type (`1p` for 1Password) |
+| `ONEPASSWORD_SSH_KEY` | _(optional)_ | 1Password SSH key selector for `agent.toml` (`[[ssh-keys]].item`), defaults to `GIT_SIGNING_KEY` |
 | `CONTEXT7_API_KEY` | _(optional)_ | Context7 API key |
-| `NODE_VERSION` | `22.22.1` | Node.js version to install via nvm |
+| `NODE_VERSION` | `24.14.1` | Node.js version to install via nvm |
 | `GITHUB_TOKEN` | _(optional)_ | GitHub personal access token |
 
 **Windows only:**

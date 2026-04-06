@@ -3,27 +3,44 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Find git-shortcuts bin files
+    - name: Find git-shortcuts bin files (macOS/Linux)
       ansible.builtin.find:
         paths: "{{ workbench_dir }}/git-shortcuts/bin"
         file_type: file
       register: git_shortcuts_bin_files
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Install git-shortcuts bin files
+    - name: Install git-shortcuts bin files (macOS/Linux)
       ansible.builtin.copy:
         src: "{{ item.path }}"
         dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
         mode: "0755"
         remote_src: true
       loop: "{{ git_shortcuts_bin_files.files }}"
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Find git-shortcuts completion files
+    - name: Find git-shortcuts bin files (Windows)
+      ansible.windows.win_find:
+        paths: "{{ workbench_dir }}/git-shortcuts/bin"
+        file_type: file
+      register: git_shortcuts_bin_files_win
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Install git-shortcuts bin files (Windows)
+      ansible.windows.win_copy:
+        src: "{{ item.path }}"
+        dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
+      loop: "{{ git_shortcuts_bin_files_win.files }}"
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Find git-shortcuts completion files (macOS/Linux)
       ansible.builtin.find:
         paths: "{{ workbench_dir }}/git-shortcuts/completion"
         file_type: file
       register: git_shortcuts_completion_files
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Add git-shortcuts completions to ~/.bashrc
+    - name: Add git-shortcuts completions to ~/.bashrc (macOS/Linux)
       ansible.builtin.blockinfile:
         path: "~/.bashrc"
         create: true
@@ -31,3 +48,32 @@
         marker: "# {mark} devtools:completion-{{ item.path | basename }}"
         block: "{{ lookup('file', item.path) }}"
       loop: "{{ git_shortcuts_completion_files.files }}"
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Find git-shortcuts completion files (Windows)
+      ansible.windows.win_find:
+        paths: "{{ workbench_dir }}/git-shortcuts/completion"
+        file_type: file
+      register: git_shortcuts_completion_files_win
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Add git-shortcuts completions to ~/.bashrc (Windows)
+      ansible.windows.win_shell: |
+        $bashrc = "$env:USERPROFILE\.bashrc"
+        $begin  = "# BEGIN devtools:completion-{{ item.path | basename }}"
+        $end    = "# END devtools:completion-{{ item.path | basename }}"
+        $b64    = "{{ lookup('file', item.path) | b64encode }}"
+        $text   = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
+        $block  = $begin + "`n" + $text.TrimEnd() + "`n" + $end
+        if (-not (Test-Path $bashrc)) { New-Item -ItemType File -Path $bashrc -Force | Out-Null }
+        $content = Get-Content $bashrc -Raw -ErrorAction SilentlyContinue
+        if ($null -ne $content -and $content -match [regex]::Escape($begin)) {
+          $content = $content -replace "(?s)$([regex]::Escape($begin)).*?$([regex]::Escape($end))", $block
+        } else {
+          if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
+          $content = $base + "`n" + $block + "`n"
+        }
+        Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
+      loop: "{{ git_shortcuts_completion_files_win.files }}"
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true

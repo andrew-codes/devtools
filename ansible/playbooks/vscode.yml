@@ -7,23 +7,125 @@
       community.general.homebrew_cask:
         name: visual-studio-code
         state: present
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Install VS Code (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
         name: vscode
         state: present
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'
 
     - name: Install VS Code extensions (macOS)
       ansible.builtin.command:
         cmd: code --install-extension {{ item }} --force
       loop: "{{ vscode_extensions }}"
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
       changed_when: true
 
     - name: Install VS Code extensions (Windows)
       ansible.windows.win_shell: |
         code --install-extension {{ item }} --force
       loop: "{{ vscode_extensions }}"
-      when: ansible_os_family == 'Windows'
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Ensure VS Code user settings directory exists (macOS)
+      ansible.builtin.file:
+        path: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User"
+        state: directory
+        mode: '0755'
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Check VS Code settings file (macOS)
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
+      register: vscode_settings_macos_stat
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Read existing VS Code settings (macOS)
+      ansible.builtin.slurp:
+        path: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
+      register: vscode_settings_macos_raw
+      when:
+        - ansible_facts['system'] == 'Darwin'
+        - vscode_settings_macos_stat.stat.exists
+
+    - name: Build merged VS Code settings (macOS)
+      ansible.builtin.set_fact:
+        vscode_settings_macos_merged: >-
+          {{
+            (
+              (vscode_settings_macos_raw.content | b64decode | from_json)
+              if vscode_settings_macos_stat.stat.exists
+              else {}
+            )
+            | combine(
+              {
+                'workbench.panel.defaultLocation': 'left'
+              },
+              recursive=True
+            )
+          }}
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Write VS Code settings (macOS)
+      ansible.builtin.copy:
+        dest: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
+        content: "{{ vscode_settings_macos_merged | to_nice_json }}\n"
+        mode: '0644'
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Ensure VS Code user settings directory exists (Windows)
+      ansible.windows.win_file:
+        path: "{{ ansible_facts['env']['APPDATA'] }}\\Code\\User"
+        state: directory
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Merge VS Code settings (Windows)
+      ansible.windows.win_shell: |
+        $settingsPath = Join-Path $env:APPDATA 'Code\User\settings.json'
+
+        if (Test-Path $settingsPath) {
+          $current = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json -AsHashtable
+        } else {
+          $current = @{}
+        }
+
+        if (-not $current) {
+          $current = @{}
+        }
+
+        $desiredProfiles = @{
+          'Git Bash' = @{
+            source = 'Git Bash'
+          }
+        }
+
+        $changed = $false
+
+        if ($current['workbench.panel.defaultLocation'] -ne 'left') {
+          $current['workbench.panel.defaultLocation'] = 'left'
+          $changed = $true
+        }
+
+        if ($current['terminal.integrated.defaultProfile.windows'] -ne 'Git Bash') {
+          $current['terminal.integrated.defaultProfile.windows'] = 'Git Bash'
+          $changed = $true
+        }
+
+        $profilesJsonCurrent = $current['terminal.integrated.profiles.windows'] | ConvertTo-Json -Depth 10 -Compress
+        $profilesJsonDesired = $desiredProfiles | ConvertTo-Json -Depth 10 -Compress
+        if ($profilesJsonCurrent -ne $profilesJsonDesired) {
+          $current['terminal.integrated.profiles.windows'] = $desiredProfiles
+          $changed = $true
+        }
+
+        if ($changed) {
+          $content = $current | ConvertTo-Json -Depth 20
+          [System.IO.File]::WriteAllText($settingsPath, $content + [Environment]::NewLine)
+          Write-Output 'changed=true'
+        } else {
+          Write-Output 'changed=false'
+        }
+      register: vscode_settings_windows_result
+      changed_when: "'changed=true' in vscode_settings_windows_result.stdout"
+      when: ansible_facts['os_family'] == 'Windows'

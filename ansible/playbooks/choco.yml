@@ -1,0 +1,35 @@
+---
+- name: Bootstrap Chocolatey
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Verify Chocolatey is installed and discoverable (Windows)
+      ansible.windows.win_shell: |
+        $ErrorActionPreference = 'Stop'
+        $chocoRoot = 'C:\ProgramData\chocolatey'
+        $chocoBinExe = Join-Path $chocoRoot 'bin\choco.exe'
+        $chocoRootExe = Join-Path $chocoRoot 'choco.exe'
+        if (-not (Test-Path $chocoBinExe) -and -not (Test-Path $chocoRootExe)) {
+          throw 'Chocolatey is not installed by setup bootstrap. Expected choco.exe under C:\ProgramData\chocolatey.'
+        }
+
+        $machinePath = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine')
+        $chocoBin = Join-Path $chocoRoot 'bin'
+        if ($machinePath -notlike "*$chocoBin*") {
+          [System.Environment]::SetEnvironmentVariable('PATH', $machinePath + ';' + $chocoBin, 'Machine')
+        }
+
+        [System.Environment]::SetEnvironmentVariable('ChocolateyInstall', $chocoRoot, 'Machine')
+
+        $env:ChocolateyInstall = $chocoRoot
+        $env:PATH = $chocoBin + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')
+        $chocoExe = Get-Command choco.exe -ErrorAction SilentlyContinue
+        if ($null -eq $chocoExe) {
+          if (Test-Path $chocoBinExe) { & $chocoBinExe --version | Out-Null }
+          elseif (Test-Path $chocoRootExe) { & $chocoRootExe --version | Out-Null }
+          else { throw 'Chocolatey executable not callable after PATH update.' }
+        } else {
+          & choco.exe --version | Out-Null
+        }
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: false

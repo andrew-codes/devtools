@@ -3,23 +3,45 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Ensure ~/.bash_profile exists
+    - name: Ensure ~/.bash_profile exists (macOS/Linux)
       ansible.builtin.copy:
         content: ""
         dest: "~/.bash_profile"
         force: false
         mode: "0644"
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Ensure ~/.bashrc exists
+    - name: Ensure ~/.bashrc exists (macOS/Linux)
       ansible.builtin.copy:
         content: ""
         dest: "~/.bashrc"
         force: false
         mode: "0644"
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Ensure ~/.bash_profile sources ~/.bashrc
+    - name: Ensure ~/.bash_profile sources ~/.bashrc (macOS/Linux)
       ansible.builtin.blockinfile:
         path: "~/.bash_profile"
         marker: "# {mark} devtools:bash-profile"
         block: |
           source ~/.bashrc
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Ensure ~/.bash_profile and ~/.bashrc exist and are linked (Windows)
+      ansible.windows.win_shell: |
+        $profile = "$env:USERPROFILE\.bash_profile"
+        $bashrc  = "$env:USERPROFILE\.bashrc"
+        $begin   = "# BEGIN devtools:bash-profile"
+        $end     = "# END devtools:bash-profile"
+        $block   = "# BEGIN devtools:bash-profile`nsource ~/.bashrc`n# END devtools:bash-profile"
+        foreach ($f in @($profile, $bashrc)) {
+          if (-not (Test-Path $f)) { New-Item -ItemType File -Path $f -Force | Out-Null }
+        }
+        $content = Get-Content $profile -Raw -ErrorAction SilentlyContinue
+        if ($null -eq $content -or $content -notmatch [regex]::Escape($begin)) {
+          if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
+          $content = $base + "`n" + $block + "`n"
+          Set-Content -Path $profile -Value $content.TrimStart() -NoNewline
+        }
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true

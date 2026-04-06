@@ -3,14 +3,22 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Download git-completion.sh
+    - name: Download git-completion.sh (macOS/Linux)
       ansible.builtin.get_url:
         url: https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
         dest: "{{ tools_home }}/git-completion.sh"
         mode: "0755"
         force: false
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Configure git-completion in ~/.bashrc
+    - name: Download git-completion.sh (Windows)
+      ansible.windows.win_get_url:
+        url: https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
+        dest: "{{ tools_home }}/git-completion.sh"
+        force: false
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Configure git-completion in ~/.bashrc (macOS/Linux)
       ansible.builtin.blockinfile:
         path: "~/.bashrc"
         create: true
@@ -20,3 +28,29 @@
           if [ -f {{ tools_home }}/git-completion.sh ]; then
             . {{ tools_home }}/git-completion.sh
           fi
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Configure git-completion in ~/.bashrc (Windows)
+      ansible.windows.win_shell: |
+        $bashrc = "$env:USERPROFILE\.bashrc"
+        $begin  = "# BEGIN devtools:git-completion"
+        $end    = "# END devtools:git-completion"
+        $lines  = @(
+          "# BEGIN devtools:git-completion",
+          "if [ -f {{ tools_home }}/git-completion.sh ]; then",
+          "  . {{ tools_home }}/git-completion.sh",
+          "fi",
+          "# END devtools:git-completion"
+        )
+        $block = $lines -join "`n"
+        if (-not (Test-Path $bashrc)) { New-Item -ItemType File -Path $bashrc -Force | Out-Null }
+        $content = Get-Content $bashrc -Raw -ErrorAction SilentlyContinue
+        if ($null -ne $content -and $content -match [regex]::Escape($begin)) {
+          $content = $content -replace "(?s)$([regex]::Escape($begin)).*?$([regex]::Escape($end))", $block
+        } else {
+          if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
+          $content = $base + "`n" + $block + "`n"
+        }
+        Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true

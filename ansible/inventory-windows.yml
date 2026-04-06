@@ -12,3 +12,7 @@ all:
       ansible_port: 5985
       ansible_user: "{{ lookup('env', 'USERNAME') }}"
       ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"
+      ansible_become: true
+      ansible_become_method: runas
+      ansible_become_user: "{{ lookup('env', 'USERNAME') }}"
+      ansible_become_pass: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"

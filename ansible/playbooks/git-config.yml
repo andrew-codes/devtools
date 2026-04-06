@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Set common git globals
+    - name: Set common git globals (macOS/Linux)
       community.general.git_config:
         name: "{{ item.name }}"
         value: "{{ item.value }}"
@@ -15,27 +15,54 @@
         - {name: init.defaultBranch, value: main}
         - {name: commit.gpgsign, value: "true"}
         - {name: gpg.format, value: ssh}
+      when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Set git user email
+    - name: Set common git globals (Windows)
+      ansible.windows.win_shell: |
+        git config --global push.default simple
+        git config --global branch.autosetuprebase always
+        git config --global core.autocrlf false
+        git config --global init.defaultBranch main
+        git config --global commit.gpgsign true
+        git config --global gpg.format ssh
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true
+
+    - name: Set git user email (macOS/Linux)
       community.general.git_config:
         name: user.email
         value: "{{ git_email }}"
         scope: global
-      when: git_email | length > 0
+      when: ansible_facts['os_family'] != 'Windows' and git_email | length > 0
 
-    - name: Set git user name
+    - name: Set git user email (Windows)
+      ansible.windows.win_shell: git config --global user.email "{{ git_email }}"
+      when: ansible_facts['os_family'] == 'Windows' and git_email | length > 0
+      changed_when: true
+
+    - name: Set git user name (macOS/Linux)
       community.general.git_config:
         name: user.name
         value: "{{ git_name }}"
         scope: global
-      when: git_name | length > 0
+      when: ansible_facts['os_family'] != 'Windows' and git_name | length > 0
 
-    - name: Set git signing key
+    - name: Set git user name (Windows)
+      ansible.windows.win_shell: git config --global user.name "{{ git_name }}"
+      when: ansible_facts['os_family'] == 'Windows' and git_name | length > 0
+      changed_when: true
+
+    - name: Set git signing key (macOS/Linux)
       community.general.git_config:
         name: user.signingkey
         value: "{{ git_signing_key }}"
         scope: global
-      when: git_signing_key | length > 0
+      when: ansible_facts['os_family'] != 'Windows' and git_signing_key | length > 0
+
+    - name: Set git signing key (Windows)
+      ansible.windows.win_shell: git config --global user.signingkey "{{ git_signing_key }}"
+      when: ansible_facts['os_family'] == 'Windows' and git_signing_key | length > 0
+      changed_when: true
 
     - name: Set macOS git config
       community.general.git_config:
@@ -44,7 +71,7 @@
         scope: global
       loop:
         - {name: core.editor, value: "code --wait"}
-      when: ansible_system == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin'
 
     - name: Set macOS 1Password git signing config
       community.general.git_config:
@@ -55,24 +82,19 @@
         - {name: gpg.program, value: "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"}
         - {name: gpg.ssh.program, value: "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"}
       when:
-        - ansible_system == 'Darwin'
+        - ansible_facts['system'] == 'Darwin'
         - git_ssh_agent == '1p'
 
     - name: Set Windows git config
-      community.general.git_config:
-        name: core.editor
-        value: '"{{ ansible_env.LOCALAPPDATA }}\Programs\Microsoft VS Code\bin\code" --wait'
-        scope: global
-      when: ansible_os_family == 'Windows'
+      ansible.windows.win_shell: git config --global core.editor "code --wait"
+      when: ansible_facts['os_family'] == 'Windows'
+      changed_when: true
 
     - name: Set Windows 1Password git signing config
-      community.general.git_config:
-        name: "{{ item.name }}"
-        value: "{{ item.value }}"
-        scope: global
-      loop:
-        - {name: gpg.ssh.program, value: 'C:\Program Files\1Password\app\8\op-ssh-sign.exe'}
-        - {name: core.sshCommand, value: "C:/Windows/System32/OpenSSH/ssh.exe"}
+      ansible.windows.win_shell: |
+        git config --global gpg.ssh.program "C:\Program Files\1Password\app\8\op-ssh-sign.exe"
+        git config --global core.sshCommand "C:/Windows/System32/OpenSSH/ssh.exe"
       when:
-        - ansible_os_family == 'Windows'
+        - ansible_facts['os_family'] == 'Windows'
         - git_ssh_agent == '1p'
+      changed_when: true
