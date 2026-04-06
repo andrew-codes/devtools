@@ -5,13 +5,13 @@ function bashRcContents() {
 function installMac() {
   addToBashrc 'gh' bashRcContents
 
-  if ! command -v gh >/dev/null 2>&1; then
+  if ! command -v gh > /dev/null 2>&1; then
     brew install gh
   fi
 }
 
 function installWindows() {
-  wingetInstall --id GitHub.cli --accept-package-agreements --accept-source-agreements
+  wingetInstall --id GitHub.cli --accept-package-agreements --accept-source-agreements --source winget
 }
 
 runIf isMac installMac
