@@ -108,7 +108,14 @@ elif [[ "$os_type" == "windows" ]]; then
   else
     # ── Running from Git Bash / msys / cygwin ────────────────────────────────
     echo "==> Checking WSL availability..."
-    if ! wsl -- echo ok &>/dev/null 2>&1; then
+    # Use --list to check if WSL + a distro are installed without invoking
+    # the distro (which fails if first-run setup hasn't been completed yet).
+    _wsl_has_distro=false
+    if wsl --list --quiet 2>/dev/null | grep -q .; then
+      _wsl_has_distro=true
+    fi
+
+    if [[ "$_wsl_has_distro" == false ]]; then
       echo "==> WSL not found or no distro installed. Installing WSL (requires elevation)..."
       powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
         Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
@@ -116,12 +123,22 @@ elif [[ "$os_type" == "windows" ]]; then
         )
       "
       echo ""
-      echo "WSL installation complete. Please restart your computer, then re-run setup"
-      echo "by opening the Ubuntu app (or any WSL terminal) and running:"
-      echo "  bash $(cygpath -w "$SCRIPT_DIR")/setup.sh"
+      echo "WSL installation complete. Please restart your computer."
+      echo "After restart, open the Ubuntu app from the Start menu to finish distro setup,"
+      echo "then re-run setup from the Ubuntu terminal:"
+      echo "  bash \$(wslpath '$(cygpath -w "$SCRIPT_DIR")')/setup.sh"
       echo ""
       echo "Note: Git Bash may not work after restart. Use the WSL/Ubuntu terminal instead."
       exit 0
+    fi
+
+    # WSL + distro exist; check the distro is actually usable (first-run done).
+    if ! wsl -- echo ok &>/dev/null 2>&1; then
+      echo "Error: WSL is installed but the distro is not ready." >&2
+      echo "Open the Ubuntu app from the Start menu to complete first-run setup," >&2
+      echo "then re-run setup from that terminal:" >&2
+      echo "  bash \$(wslpath '$(cygpath -w "$SCRIPT_DIR")')/setup.sh" >&2
+      exit 1
     fi
 
     echo "==> Installing Ansible and WinRM dependencies inside WSL..."
