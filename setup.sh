@@ -137,11 +137,10 @@ elif [[ $os_type == "windows" ]]; then
 
     if [[ $_wsl_has_distro == false ]]; then
       echo "==> WSL2 ready but no distro found. Installing Ubuntu..."
-      powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-        Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
-          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install -d Ubuntu --no-launch'
-        )
-      "
+      # Distro installs are per-user and must NOT be run elevated — running via
+      # Start-Process -Verb RunAs would register Ubuntu under the Administrator
+      # account, making it invisible to the current user.
+      powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "wsl --install -d Ubuntu --no-launch"
       echo ""
       echo "Ubuntu installed. Open the Ubuntu app from the Start menu to complete first-run"
       echo "setup (set a username and password), then re-run setup from that terminal:"
