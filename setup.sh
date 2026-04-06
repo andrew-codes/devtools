@@ -140,7 +140,27 @@ elif [[ $os_type == "windows" ]]; then
       # Distro installs are per-user and must NOT be run elevated — running via
       # Start-Process -Verb RunAs would register Ubuntu under the Administrator
       # account, making it invisible to the current user.
-      powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "wsl --install -d Ubuntu --no-launch"
+      # Call wsl.exe directly (not via a powershell.exe wrapper) so Git Bash
+      # blocks until the install completes — PowerShell would spawn wsl as a
+      # child and return before the download/install finishes.
+      # Tee to a temp file so we can inspect the output for errors.
+      _ubuntu_tmp="$(mktemp)"
+      wsl.exe --install -d Ubuntu --no-launch 2>&1 | tr -d '\0' | tee "$_ubuntu_tmp" || true
+      _ubuntu_out="$(cat "$_ubuntu_tmp")"
+      rm -f "$_ubuntu_tmp"
+      if echo "$_ubuntu_out" | grep -qi "Virtual Machine Platform"; then
+        echo "==> Virtual Machine Platform not enabled. Enabling (requires elevation and a restart)..."
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+          Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install --no-distribution'
+          )
+        "
+        echo ""
+        echo "Virtual Machine Platform enabled. Please restart your computer, then re-run setup."
+        echo "Note: Git Bash may not work after restart. Use PowerShell and run:"
+        echo "  bash \$(cygpath -w '$SCRIPT_DIR')/setup.sh"
+        exit 0
+      fi
       echo ""
       echo "Ubuntu installed. Open the Ubuntu app from the Start menu to complete first-run"
       echo "setup (set a username and password), then re-run setup from that terminal:"
