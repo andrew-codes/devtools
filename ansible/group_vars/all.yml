@@ -1,0 +1,92 @@
+---
+# Variables resolved from environment variables at playbook run time.
+# Set these env vars before running ansible/setup.sh.
+# Defaults are applied when a variable is empty or unset.
+
+dev_home: "{{ lookup('env', 'DEV_HOME') | default(ansible_user_dir + '/developer', true) }}"
+repo_home: "{{ lookup('env', 'REPO_HOME') | default(dev_home + '/repos', true) }}"
+devtools_home: "{{ lookup('env', 'DEVTOOLS_HOME') | default(dev_home + '/devtools', true) }}"
+tools_home: "{{ lookup('env', 'TOOLS_HOME') | default(dev_home + '/tools', true) }}"
+tools_bin_home: "{{ lookup('env', 'TOOLS_BIN_HOME') | default(tools_home + '/bin', true) }}"
+
+node_version: "{{ lookup('env', 'NODE_VERSION') | default('22.22.1', true) }}"
+
+github_username: "{{ lookup('env', 'GITHUB_USERNAME') }}"
+git_email: "{{ lookup('env', 'GIT_EMAIL') }}"
+git_name: "{{ lookup('env', 'GIT_NAME') }}"
+git_signing_key: "{{ lookup('env', 'GIT_SIGNING_KEY') }}"
+git_ssh_agent: "{{ lookup('env', 'GIT_SSH_AGENT') | default('1p', true) }}"
+context7_api_key: "{{ lookup('env', 'CONTEXT7_API_KEY') }}"
+github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+
+# Resolved by setup.sh via -e flag; points to the repository root.
+devtools_repo_root: "{{ lookup('env', 'DEVTOOLS_REPO_ROOT') | default(playbook_dir + '/..') }}"
+
+# Convenience shorthand used by playbooks that copy bin/completion files.
+workbench_dir: "{{ devtools_repo_root }}/workbench"
+
+claude_mcp_servers:
+  context7:
+    type: http
+    url: "https://mcp.context7.com/mcp"
+    headers:
+      CONTEXT7_API_KEY: "{{ context7_api_key }}"
+  sequential-thinking:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+  github:
+    type: http
+    url: "https://api.githubcopilot.com/mcp"
+    headers:
+      Authorization: "Bearer {{ github_token }}"
+  atlassian:
+    type: http
+    url: "https://mcp.atlassian.com/v1/mcp"
+  serena:
+    type: stdio
+    command: uvx
+    args:
+      - "--from"
+      - "git+https://github.com/oraios/serena"
+      - "serena"
+      - "start-mcp-server"
+      - "--context=claude-code"
+      - "--project-from-cwd"
+    env: {}
+
+vscode_extensions:
+  - Anthropic.claude-code
+  - arcanis.vscode-zipfs
+  - atlassian.atlascode
+  - bierner.github-markdown-preview
+  - bierner.markdown-yaml-preamble
+  - capaj.vscode-exports-autocomplete
+  - cmstead.jsrefactor
+  - DavidAnson.vscode-markdownlint
+  - dbaeumer.vscode-eslint
+  - drKnoxy.eslint-disable-snippets
+  - eamodio.gitlens
+  - EditorConfig.EditorConfig
+  - esbenp.prettier-vscode
+  - GitHub.copilot-chat
+  - GitHub.copilot
+  - github.vscode-github-actions
+  - GraphQL.vscode-graphql-syntax
+  - GraphQL.vscode-graphql
+  - hbenl.vscode-test-explorer-liveshare
+  - hbenl.vscode-test-explorer
+  - johnuphoff.vscode-styled-sort
+  - kisstkondoros.vscode-codemetrics
+  - mads-hartmann.bash-ide-vscode
+  - mikestead.dotenv
+  - ms-vsliveshare.vsliveshare
+  - Orta.vscode-jest
+  - paulmolluzzo.convert-css-in-js
+  - pflannery.vscode-versionlens
+  - redhat.vscode-xml
+  - redhat.vscode-yaml
+  - sburg.vscode-javascript-booster
+  - steoates.autoimport
+  - streetsidesoftware.code-spell-checker
+  - styled-components.vscode-styled-components
+  - yzhang.markdown-all-in-one

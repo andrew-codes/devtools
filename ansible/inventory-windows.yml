@@ -1,0 +1,14 @@
+---
+# Windows inventory using WinRM for local execution.
+# Required env vars before running setup.sh:
+#   ANSIBLE_PASSWORD - Windows user account password for WinRM authentication
+all:
+  hosts:
+    localhost:
+      ansible_connection: winrm
+      ansible_winrm_transport: basic
+      ansible_winrm_server_cert_validation: ignore
+      ansible_winrm_scheme: http
+      ansible_port: 5985
+      ansible_user: "{{ lookup('env', 'USERNAME') }}"
+      ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"

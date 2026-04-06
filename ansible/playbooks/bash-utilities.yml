@@ -1,0 +1,52 @@
+---
+- name: Install bash utilities
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    # macOS: install OS-specific bin files from bin/macOS/
+    - name: Find bash-utilities macOS bin files
+      ansible.builtin.find:
+        paths: "{{ workbench_dir }}/bash-utilities/bin/macOS"
+        file_type: file
+      register: bash_utilities_mac_bin_files
+      when: ansible_system == 'Darwin'
+
+    - name: Install bash-utilities macOS bin files
+      ansible.builtin.copy:
+        src: "{{ item.path }}"
+        dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
+        mode: "0755"
+        remote_src: true
+      loop: "{{ bash_utilities_mac_bin_files.files }}"
+      when: ansible_system == 'Darwin'
+
+    # Windows: install OS-specific bin files from bin/windows/
+    - name: Find bash-utilities Windows bin files
+      ansible.builtin.find:
+        paths: "{{ workbench_dir }}/bash-utilities/bin/windows"
+        file_type: file
+      register: bash_utilities_win_bin_files
+      when: ansible_os_family == 'Windows'
+
+    - name: Install bash-utilities Windows bin files
+      ansible.windows.win_copy:
+        src: "{{ item.path }}"
+        dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
+      loop: "{{ bash_utilities_win_bin_files.files }}"
+      when: ansible_os_family == 'Windows'
+
+    # Completion files apply to all platforms
+    - name: Find bash-utilities completion files
+      ansible.builtin.find:
+        paths: "{{ workbench_dir }}/bash-utilities/completion"
+        file_type: file
+      register: bash_utilities_completion_files
+
+    - name: Add bash-utilities completions to ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:completion-{{ item.path | basename }}"
+        block: "{{ lookup('file', item.path) }}"
+      loop: "{{ bash_utilities_completion_files.files }}"

@@ -1,0 +1,52 @@
+---
+- name: Install Claude Code CLI
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Claude Code via npm
+      community.general.npm:
+        name: "@anthropic-ai/claude-code"
+        global: true
+        state: present
+      environment:
+        PATH: "{{ ansible_env.PATH }}"
+
+    - name: Configure Claude Code in ~/.bashrc (Windows)
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:claude-code"
+        block: |
+          export CLAUDE_CODE_GIT_BASH_PATH="C:\Program Files\Git\bin\bash.exe"
+      when: ansible_os_family == 'Windows'
+
+    - name: Ensure ~/.claude.json exists
+      ansible.builtin.copy:
+        content: "{}\n"
+        dest: "{{ ansible_user_dir }}/.claude.json"
+        force: false
+        mode: "0600"
+
+    - name: Configure MCP servers (macOS)
+      ansible.builtin.shell: |
+        tmp=$(mktemp)
+        jq --arg name "{{ item.key }}" \
+           --argjson config '{{ item.value | to_json }}' \
+           '.mcpServers[$name] //= $config' \
+           ~/.claude.json > "$tmp" && mv "$tmp" ~/.claude.json
+      args:
+        executable: /bin/bash
+      loop: "{{ claude_mcp_servers | dict2items }}"
+      when: ansible_system == 'Darwin'
+      changed_when: true
+
+    - name: Configure MCP servers (Windows)
+      ansible.windows.win_shell: |
+        $claude_json = "$env:USERPROFILE\.claude.json"
+        $tmp = [System.IO.Path]::GetTempFileName()
+        jq --arg name "{{ item.key }}" --argjson config '{{ item.value | to_json }}' '.mcpServers[$name] //= $config' $claude_json > $tmp
+        Move-Item -Force $tmp $claude_json
+      loop: "{{ claude_mcp_servers | dict2items }}"
+      when: ansible_os_family == 'Windows'
+      changed_when: true

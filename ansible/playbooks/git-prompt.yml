@@ -1,0 +1,22 @@
+---
+- name: Install and configure git prompt
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Download git-prompt.sh
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh
+        dest: "{{ tools_home }}/git-prompt.sh"
+        mode: "0755"
+        force: false
+
+    - name: Configure git-prompt in ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:git-prompt"
+        block: |
+          if [ -f {{ tools_home }}/git-prompt.sh ]; then
+            source {{ tools_home }}/git-prompt.sh
+          fi

@@ -1,0 +1,33 @@
+---
+- name: Install git shortcuts
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Find git-shortcuts bin files
+      ansible.builtin.find:
+        paths: "{{ workbench_dir }}/git-shortcuts/bin"
+        file_type: file
+      register: git_shortcuts_bin_files
+
+    - name: Install git-shortcuts bin files
+      ansible.builtin.copy:
+        src: "{{ item.path }}"
+        dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
+        mode: "0755"
+        remote_src: true
+      loop: "{{ git_shortcuts_bin_files.files }}"
+
+    - name: Find git-shortcuts completion files
+      ansible.builtin.find:
+        paths: "{{ workbench_dir }}/git-shortcuts/completion"
+        file_type: file
+      register: git_shortcuts_completion_files
+
+    - name: Add git-shortcuts completions to ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:completion-{{ item.path | basename }}"
+        block: "{{ lookup('file', item.path) }}"
+      loop: "{{ git_shortcuts_completion_files.files }}"

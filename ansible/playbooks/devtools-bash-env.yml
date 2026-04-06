@@ -1,0 +1,32 @@
+---
+- name: Configure devtools bash environment
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Create development directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ dev_home }}"
+        - "{{ repo_home }}"
+        - "{{ devtools_home }}"
+        - "{{ tools_home }}"
+        - "{{ tools_bin_home }}"
+
+    - name: Configure devtools env in ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:env"
+        block: |
+          export DEV_HOME={{ dev_home }}
+          export REPO_HOME={{ repo_home }}
+          export DEVTOOLS_HOME={{ devtools_home }}
+          export TOOLS_HOME={{ tools_home }}
+          export TOOLS_BIN_HOME={{ tools_bin_home }}
+          export DEVTOOLS_REPO_NAME=devtools
+          export GITHUB_USERNAME={{ github_username }}
+          export PATH={{ tools_bin_home }}:$PATH

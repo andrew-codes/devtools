@@ -1,0 +1,29 @@
+---
+- name: Install Visual Studio Code and extensions
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install VS Code (macOS via Homebrew cask)
+      community.general.homebrew_cask:
+        name: visual-studio-code
+        state: present
+      when: ansible_system == 'Darwin'
+
+    - name: Install VS Code (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: vscode
+        state: present
+      when: ansible_os_family == 'Windows'
+
+    - name: Install VS Code extensions (macOS)
+      ansible.builtin.command:
+        cmd: code --install-extension {{ item }} --force
+      loop: "{{ vscode_extensions }}"
+      when: ansible_system == 'Darwin'
+      changed_when: true
+
+    - name: Install VS Code extensions (Windows)
+      ansible.windows.win_shell: |
+        code --install-extension {{ item }} --force
+      loop: "{{ vscode_extensions }}"
+      when: ansible_os_family == 'Windows'

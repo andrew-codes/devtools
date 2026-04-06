@@ -1,0 +1,26 @@
+---
+- name: Install and configure GitHub CLI
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install gh (macOS via Homebrew)
+      community.general.homebrew:
+        name: gh
+        state: present
+      when: ansible_system == 'Darwin'
+
+    - name: Configure gh completion in ~/.bashrc (macOS)
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:gh"
+        block: |
+          eval "$(gh completion --shell bash)"
+      when: ansible_system == 'Darwin'
+
+    - name: Install gh (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: gh
+        state: present
+      when: ansible_os_family == 'Windows'

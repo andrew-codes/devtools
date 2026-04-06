@@ -1,0 +1,21 @@
+---
+- name: Install and configure Homebrew (macOS only)
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Homebrew
+      ansible.builtin.shell: |
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      args:
+        creates: /opt/homebrew/bin/brew
+      when: ansible_system == 'Darwin'
+
+    - name: Configure Homebrew in ~/.bashrc
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:brew"
+        block: |
+          export PATH="/opt/homebrew/bin:$PATH"
+      when: ansible_system == 'Darwin'

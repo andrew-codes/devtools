@@ -1,0 +1,44 @@
+---
+- name: Install Node.js via nvm
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install nvm (macOS via Homebrew)
+      community.general.homebrew:
+        name: nvm
+        state: present
+      when: ansible_system == 'Darwin'
+
+    - name: Configure nvm in ~/.bashrc (macOS)
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        create: true
+        mode: "0644"
+        marker: "# {mark} devtools:mac nvm"
+        block: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+          [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+      when: ansible_system == 'Darwin'
+
+    - name: Install Node.js {{ node_version }} via nvm (macOS)
+      ansible.builtin.shell: |
+        source /opt/homebrew/opt/nvm/nvm.sh
+        nvm install {{ node_version }}
+        nvm use {{ node_version }}
+      args:
+        executable: /bin/bash
+      when: ansible_system == 'Darwin'
+      changed_when: true
+
+    - name: Install nvm for Windows (via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: nvm
+        state: present
+      when: ansible_os_family == 'Windows'
+
+    - name: Install Node.js {{ node_version }} via nvm (Windows)
+      ansible.windows.win_shell: |
+        nvm install {{ node_version }}
+        nvm use {{ node_version }}
+      when: ansible_os_family == 'Windows'
