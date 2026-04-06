@@ -1,90 +1,147 @@
 #!/usr/bin/env bash
+# Entry point for Ansible-based devtools setup.
+# Assumes only bash is available; bootstraps Python and Ansible, then runs
+# the appropriate playbook for the detected OS / CPU architecture.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKBENCH_DIR="$SCRIPT_DIR/workbench"
-UTILS_FILE="$SCRIPT_DIR/setup-utils/utils.sh"
-
-manifest_file="${1:-}"
-
-if [ -z "$manifest_file" ]; then
-  echo "Usage: setup.sh <manifest.json>"
-  exit 1
-fi
-
-if [ ! -f "$manifest_file" ]; then
-  echo "Error: manifest file not found: $manifest_file"
-  exit 1
-fi
-
-manifest_file="$(cd "$(dirname "$manifest_file")" && pwd)/$(basename "$manifest_file")"
-
-# Cache sudo credentials upfront on Mac so steps can call runElevated without prompting mid-run
-if [[ $OSTYPE == darwin* ]]; then
-  sudo -v
-fi
 
 exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
 
-# Export env vars from manifest so all steps can access them
-while IFS= read -r line; do
-  key=$(echo "$line" | grep -o '"[^"]*"' | sed -n '1p' | tr -d '"')
-  value=$(echo "$line" | grep -o '"[^"]*"' | sed -n '2p' | tr -d '"')
-  if [ -n "$key" ]; then
-    expanded=$(eval echo "$value")
-    export "${key}=${expanded}"
-  fi
-done < <(sed -n '/"env"/,/\}/p' "$manifest_file" | grep ':')
+# ── Detect OS and architecture ────────────────────────────────────────────────
+os_type=""
+arch_type=""
 
-export MANIFEST_FILE="$manifest_file"
-
-# shellcheck source=setup-utils/utils.sh
-source "$UTILS_FILE"
-
-# Clear all devtools-managed bashrc blocks so steps re-add them in the correct order
-if [ -f ~/.bashrc ]; then
-  tmpfile=$(mktemp)
-  sed '/# BEGIN devtools:/,/# END devtools:/d' ~/.bashrc > "$tmpfile"
-  mv "$tmpfile" ~/.bashrc
+if [[ "$OSTYPE" == darwin* ]]; then
+  os_type="macos"
+  case "$(uname -m)" in
+    arm64)  arch_type="arm64" ;;
+    x86_64) arch_type="amd64" ;;
+    *)      arch_type="$(uname -m)" ;;
+  esac
+elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
+  os_type="windows"
+  arch_type="amd64"
+else
+  echo "Error: Unsupported OS: $OSTYPE" >&2
+  exit 1
 fi
 
-# Parse steps array from manifest
-steps=$(sed -n '/"steps"/,/\]/p' "$manifest_file" | grep -o '"[^"]*"' | tr -d '"' | grep -v '^steps$' | grep -v '^$')
+echo "==> Detected: $os_type / $arch_type"
 
-while IFS= read -r step; do
-  step_dir="$WORKBENCH_DIR/$step"
-  step_script="$step_dir/index.sh"
-
-  if [ ! -d "$step_dir" ]; then
-    echo "Error: step directory not found: $step_dir"
+# ── macOS bootstrap ───────────────────────────────────────────────────────────
+if [[ "$os_type" == "macos" ]]; then
+  echo "==> Ensuring Python 3 is available..."
+  if ! command -v python3 &>/dev/null; then
+    echo "Python 3 not found. Install Xcode Command Line Tools and re-run:"
+    echo "  xcode-select --install"
     exit 1
   fi
 
-  if [ ! -f "$step_script" ]; then
-    echo "Error: index.sh not found in step directory: $step_dir"
+  echo "==> Ensuring pip is up to date..."
+  python3 -m ensurepip --upgrade 2>/dev/null || true
+  python3 -m pip install --upgrade pip --quiet
+
+  echo "==> Installing Ansible..."
+  python3 -m pip install --upgrade ansible --quiet
+
+  # Add user-local bin to PATH if ansible-playbook is not yet visible
+  if ! command -v ansible-playbook &>/dev/null; then
+    export PATH="$(python3 -m site --user-base)/bin:$PATH"
+  fi
+
+# ── Windows bootstrap ─────────────────────────────────────────────────────────
+elif [[ "$os_type" == "windows" ]]; then
+  PYTHON_CMD=""
+  if command -v python3 &>/dev/null; then
+    PYTHON_CMD="python3"
+  elif command -v python &>/dev/null; then
+    PYTHON_CMD="python"
+  fi
+
+  if [[ -z "$PYTHON_CMD" ]]; then
+    echo "==> Python 3 not found. Installing via winget..."
+    winget install --id Python.Python.3.12 \
+      --accept-package-agreements --accept-source-agreements --silent
+    APPDATA_WIN="$(cmd.exe /c echo %LOCALAPPDATA% 2>/dev/null | tr -d '\r')"
+    APPDATA_UNIX="$(cygpath -u "$APPDATA_WIN" 2>/dev/null || echo "")"
+    if [[ -n "$APPDATA_UNIX" ]]; then
+      export PATH="$APPDATA_UNIX/Programs/Python/Python312:$APPDATA_UNIX/Programs/Python/Python312/Scripts:$PATH"
+    fi
+    if command -v python3 &>/dev/null; then
+      PYTHON_CMD="python3"
+    elif command -v python &>/dev/null; then
+      PYTHON_CMD="python"
+    fi
+  fi
+
+  if [[ -z "$PYTHON_CMD" ]]; then
+    echo "Error: Python not found after installation attempt." >&2
     exit 1
   fi
 
-  echo ""
-  echo "==> $step"
+  echo "==> Ensuring pip is up to date..."
+  $PYTHON_CMD -m ensurepip --upgrade 2>/dev/null || true
+  $PYTHON_CMD -m pip install --upgrade pip --quiet
 
-  (
-    cd "$step_dir"
-    # shellcheck source=setup-utils/utils.sh
-    source "$UTILS_FILE"
-    source ./index.sh
-  ) || {
-    echo ""
-    echo "Error: step '$step' failed. Aborting."
-    exit 1
-  }
+  echo "==> Installing Ansible and WinRM dependencies..."
+  $PYTHON_CMD -m pip install --upgrade ansible pywinrm --quiet
 
-  refreshEnv
+  if ! command -v ansible-playbook &>/dev/null; then
+    export PATH="$($PYTHON_CMD -m site --user-base)/bin:$PATH"
+  fi
 
-done <<< "$steps"
+  echo "==> Installing Chocolatey..."
+  if ! command -v choco &>/dev/null; then
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      "Set-ExecutionPolicy Bypass -Scope Process -Force; \
+       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+       iex ((New-Object Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+    export PATH="/c/ProgramData/chocolatey/bin:$PATH"
+  fi
 
-refreshEnv
+  echo "==> Configuring WinRM for local Ansible connections..."
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+    \$ErrorActionPreference = 'SilentlyContinue'
+    Enable-PSRemoting -Force -SkipNetworkProfileCheck 2>\$null
+    Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value \$true 2>\$null
+    Set-Item -Path WSMan:\localhost\Service\AllowUnencrypted -Value \$true 2>\$null
+    winrm quickconfig -quiet 2>\$null
+  " || true
+fi
+
+# ── Validate Ansible is available ─────────────────────────────────────────────
+if ! command -v ansible-playbook &>/dev/null; then
+  echo "Error: ansible-playbook not found after installation." >&2
+  exit 1
+fi
+
+echo "==> Installing Ansible collections..."
+ansible-galaxy collection install -r "$SCRIPT_DIR/ansible/requirements.yml"
+
+# ── Select inventory and playbook ─────────────────────────────────────────────
+inventory=""
+playbook=""
+
+if [[ "$os_type" == "macos" ]]; then
+  inventory="$SCRIPT_DIR/ansible/inventory-macos.yml"
+  playbook="$SCRIPT_DIR/ansible/site-macos-arm64.yml"
+elif [[ "$os_type" == "windows" ]]; then
+  inventory="$SCRIPT_DIR/ansible/inventory-windows.yml"
+  playbook="$SCRIPT_DIR/ansible/site-windows-amd64.yml"
+fi
+
+if [[ ! -f "$playbook" ]]; then
+  echo "Error: Playbook not found: $playbook" >&2
+  exit 1
+fi
+
+echo "==> Running playbook: $(basename "$playbook")..."
+ansible-playbook \
+  -i "$inventory" \
+  "$playbook" \
+  -e "devtools_repo_root=$SCRIPT_DIR"
 
 echo ""
 echo "Setup complete."

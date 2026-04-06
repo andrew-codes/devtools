@@ -42,7 +42,7 @@ export GIT_NAME="Your Name"
 export GIT_SIGNING_KEY="~/.ssh/id_ed25519.pub"
 
 # Run the setup script
-./ansible/setup.sh
+./setup.sh
 ```
 
 Setup logs are written to `workbench.log` in the repository root.
@@ -51,7 +51,7 @@ Setup logs are written to `workbench.log` in the repository root.
 
 ## How It Works
 
-The setup is driven by [Ansible](https://www.ansible.com/) playbooks. `ansible/setup.sh` is the single entry point:
+The setup is driven by [Ansible](https://www.ansible.com/) playbooks. `setup.sh` is the single entry point:
 
 1. Detects the OS and CPU architecture
 2. Bootstraps Python 3 and Ansible (via `pip`)
