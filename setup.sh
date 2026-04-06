@@ -78,10 +78,15 @@ if [[ "$os_type" == "macos" ]]; then
 
 # ── Windows bootstrap ─────────────────────────────────────────────────────────
 elif [[ "$os_type" == "windows" ]]; then
+  # On Windows, App Execution Aliases create stub `python`/`python3` commands that
+  # open the Microsoft Store instead of running Python. Validate the command actually
+  # works (exit 0 + valid version) before trusting it.
+  _python_works() { "$1" -c "import sys; sys.exit(0)" &>/dev/null 2>&1; }
+
   PYTHON_CMD=""
-  if command -v python3 &>/dev/null; then
+  if command -v python3 &>/dev/null && _python_works python3; then
     PYTHON_CMD="python3"
-  elif command -v python &>/dev/null; then
+  elif command -v python &>/dev/null && _python_works python; then
     PYTHON_CMD="python"
   fi
 
@@ -94,9 +99,9 @@ elif [[ "$os_type" == "windows" ]]; then
     if [[ -n "$APPDATA_UNIX" ]]; then
       export PATH="$APPDATA_UNIX/Programs/Python/Python312:$APPDATA_UNIX/Programs/Python/Python312/Scripts:$PATH"
     fi
-    if command -v python3 &>/dev/null; then
+    if command -v python3 &>/dev/null && _python_works python3; then
       PYTHON_CMD="python3"
-    elif command -v python &>/dev/null; then
+    elif command -v python &>/dev/null && _python_works python; then
       PYTHON_CMD="python"
     fi
   fi
