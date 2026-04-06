@@ -122,10 +122,12 @@ elif [[ "$os_type" == "windows" ]]; then
 
   echo "==> Installing Chocolatey..."
   if ! command -v choco &>/dev/null; then
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
-      "Set-ExecutionPolicy Bypass -Scope Process -Force; \
-       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
-       iex ((New-Object Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+      Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command',
+        'Set-ExecutionPolicy Bypass -Scope Process -Force; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object Net.WebClient).DownloadString(''https://community.chocolatey.org/install.ps1''))'
+      )
+    "
     export PATH="/c/ProgramData/chocolatey/bin:$PATH"
   fi
 
