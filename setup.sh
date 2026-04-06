@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ── Self-bootstrap: clone repo if not running from within it ──────────────────
 # Supports: bash <(curl -fsSL https://raw.githubusercontent.com/.../setup.sh)
 if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
-  if [[ -z "${GITHUB_USERNAME:-}" ]]; then
+  if [[ -z ${GITHUB_USERNAME:-} ]]; then
     echo "Error: GITHUB_USERNAME must be set to clone the devtools repo." >&2
     exit 1
   fi
@@ -19,7 +19,7 @@ if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
   _repo_home="${REPO_HOME:-$_dev_home/repos}"
   _devtools_dir="${DEVTOOLS_HOME:-$_repo_home/devtools}"
 
-  if [[ ! -d "$_devtools_dir" ]]; then
+  if [[ ! -d $_devtools_dir ]]; then
     echo "==> Cloning devtools repo into $_devtools_dir..."
     mkdir -p "$_repo_home"
     git clone "https://github.com/$GITHUB_USERNAME/devtools.git" "$_devtools_dir"
@@ -39,17 +39,17 @@ os_type=""
 arch_type=""
 
 running_in_wsl=false
-if [[ "$OSTYPE" == darwin* ]]; then
+if [[ $OSTYPE == darwin* ]]; then
   os_type="macos"
   case "$(uname -m)" in
-    arm64)  arch_type="arm64" ;;
-    x86_64) arch_type="amd64" ;;
-    *)      arch_type="$(uname -m)" ;;
+  arm64) arch_type="arm64" ;;
+  x86_64) arch_type="amd64" ;;
+  *) arch_type="$(uname -m)" ;;
   esac
-elif [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
+elif [[ $OSTYPE == msys* || $OSTYPE == cygwin* ]]; then
   os_type="windows"
   arch_type="amd64"
-elif grep -qi microsoft /proc/version 2>/dev/null; then
+elif grep -qi microsoft /proc/version 2> /dev/null; then
   # Running inside WSL — act as the Windows control node.
   os_type="windows"
   arch_type="amd64"
@@ -62,23 +62,23 @@ fi
 echo "==> Detected: $os_type / $arch_type"
 
 # ── macOS bootstrap ───────────────────────────────────────────────────────────
-if [[ "$os_type" == "macos" ]]; then
+if [[ $os_type == "macos" ]]; then
   echo "==> Ensuring Python 3 is available..."
-  if ! command -v python3 &>/dev/null; then
+  if ! command -v python3 &> /dev/null; then
     echo "Python 3 not found. Install Xcode Command Line Tools and re-run:"
     echo "  xcode-select --install"
     exit 1
   fi
 
   echo "==> Ensuring pip is up to date..."
-  python3 -m ensurepip --upgrade 2>/dev/null || true
+  python3 -m ensurepip --upgrade 2> /dev/null || true
   python3 -m pip install --upgrade pip --quiet
 
   echo "==> Installing Ansible..."
   python3 -m pip install --upgrade ansible --quiet
 
   # Add user-local bin to PATH if ansible-playbook is not yet visible
-  if ! command -v ansible-playbook &>/dev/null; then
+  if ! command -v ansible-playbook &> /dev/null; then
     export PATH="$(python3 -m site --user-base)/bin:$PATH"
   fi
 
@@ -86,14 +86,14 @@ if [[ "$os_type" == "macos" ]]; then
 # Ansible does not support Windows as a control node (os.get_blocking is
 # unavailable on Windows). WSL is used as the control node; it connects back
 # to Windows via WinRM.
-elif [[ "$os_type" == "windows" ]]; then
-  if [[ "$running_in_wsl" == true ]]; then
+elif [[ $os_type == "windows" ]]; then
+  if [[ $running_in_wsl == true ]]; then
     # ── Already inside WSL (e.g. re-running after restart when Git Bash broke) ──
     echo "==> Running inside WSL."
 
     echo "==> Installing Ansible and WinRM dependencies..."
-    pip3 install --quiet --upgrade ansible pywinrm 2>/dev/null \
-      || pip install --quiet --upgrade ansible pywinrm
+    pip3 install --quiet --upgrade ansible pywinrm 2> /dev/null ||
+      pip install --quiet --upgrade ansible pywinrm
 
     echo "==> Configuring WinRM for Ansible connections (requires elevation)..."
     powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
@@ -111,17 +111,17 @@ elif [[ "$os_type" == "windows" ]]; then
     # Probe WSL state without invoking a distro (which fails before first-run).
     # "no installed distributions" in the output means WSL2 kernel is present
     # but no distro has been installed yet — distinct from WSL not installed.
-    _wsl_list_out="$(wsl --list 2>&1 || true)"
+    _wsl_list_out="$(wsl --list 2>&1 | tr -d '\0' || true)"
     _wsl_has_distro=false
     _wsl_kernel=false
-    if wsl --list --quiet 2>/dev/null | grep -q .; then
+    if wsl --list --quiet 2> /dev/null | tr -d '\0' | grep -q .; then
       _wsl_has_distro=true
       _wsl_kernel=true
     elif echo "$_wsl_list_out" | grep -qi "no installed distribution"; then
       _wsl_kernel=true
     fi
 
-    if [[ "$_wsl_kernel" == false ]]; then
+    if [[ $_wsl_kernel == false ]]; then
       echo "==> WSL2 not installed. Installing (requires elevation and a restart)..."
       powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
         Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
@@ -135,7 +135,7 @@ elif [[ "$os_type" == "windows" ]]; then
       exit 0
     fi
 
-    if [[ "$_wsl_has_distro" == false ]]; then
+    if [[ $_wsl_has_distro == false ]]; then
       echo "==> WSL2 ready but no distro found. Installing Ubuntu..."
       powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
         Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
@@ -150,7 +150,7 @@ elif [[ "$os_type" == "windows" ]]; then
     fi
 
     # WSL + distro exist; check the distro is actually usable (first-run done).
-    if ! wsl -- echo ok &>/dev/null 2>&1; then
+    if ! wsl -- echo ok &> /dev/null 2>&1; then
       echo "Error: WSL distro is installed but first-run setup is not complete." >&2
       echo "Open the Ubuntu app from the Start menu, set a username and password," >&2
       echo "then re-run setup from that terminal:" >&2
@@ -176,12 +176,12 @@ elif [[ "$os_type" == "windows" ]]; then
 fi
 
 # ── Validate Ansible is available ─────────────────────────────────────────────
-if [[ "$os_type" == "windows" ]]; then
-  if ! wsl -- command -v ansible-playbook &>/dev/null; then
+if [[ $os_type == "windows" ]]; then
+  if ! wsl -- command -v ansible-playbook &> /dev/null; then
     echo "Error: ansible-playbook not found in WSL after installation." >&2
     exit 1
   fi
-elif ! command -v ansible-playbook &>/dev/null; then
+elif ! command -v ansible-playbook &> /dev/null; then
   echo "Error: ansible-playbook not found after installation." >&2
   exit 1
 fi
@@ -190,28 +190,28 @@ fi
 inventory=""
 playbook=""
 
-if [[ "$os_type" == "macos" ]]; then
+if [[ $os_type == "macos" ]]; then
   inventory="$SCRIPT_DIR/ansible/inventory-macos.yml"
   playbook="$SCRIPT_DIR/ansible/site-macos-arm64.yml"
-elif [[ "$os_type" == "windows" ]]; then
+elif [[ $os_type == "windows" ]]; then
   inventory="$WSL_SCRIPT_DIR/ansible/inventory-windows.yml"
   playbook="$WSL_SCRIPT_DIR/ansible/site-windows-amd64.yml"
 fi
 
-if [[ "$os_type" != "windows" && ! -f "$playbook" ]]; then
+if [[ $os_type != "windows" && ! -f $playbook ]]; then
   echo "Error: Playbook not found: $playbook" >&2
   exit 1
 fi
 
 echo "==> Installing Ansible collections..."
-if [[ "$os_type" == "windows" && "$running_in_wsl" == false ]]; then
+if [[ $os_type == "windows" && $running_in_wsl == false ]]; then
   wsl -- ansible-galaxy collection install -r "$WSL_SCRIPT_DIR/ansible/requirements.yml"
 else
   ansible-galaxy collection install -r "$SCRIPT_DIR/ansible/requirements.yml"
 fi
 
 echo "==> Running playbook: $(basename "$playbook")..."
-if [[ "$os_type" == "windows" && "$running_in_wsl" == false ]]; then
+if [[ $os_type == "windows" && $running_in_wsl == false ]]; then
   wsl -- ansible-playbook \
     -i "$inventory" \
     "$playbook" \
