@@ -60,7 +60,9 @@
             )
             | combine(
               {
-                'workbench.panel.defaultLocation': 'left'
+                'workbench.panel.defaultLocation': 'left',
+                'chat.mcp.discovery.enabled': true,
+                'chat.mcp.autostart': true
               },
               recursive=True
             )
@@ -72,6 +74,37 @@
         dest: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
         content: "{{ vscode_settings_macos_merged | to_nice_json }}\n"
         mode: '0644'
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Ensure VS Code MCP configuration file exists (macOS)
+      ansible.builtin.copy:
+        dest: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/mcp.json"
+        content: "{}\n"
+        force: false
+        mode: '0644'
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Configure VS Code MCP servers (macOS)
+      ansible.builtin.shell: |
+        mcp_path="{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/mcp.json"
+        current="$(cat "$mcp_path")"
+        patched="$(jq --arg name "{{ item }}" --argjson config '{{ claude_mcp_servers[item] | to_json }}' '.servers[$name] //= $config' "$mcp_path")"
+
+        if [[ "$patched" != "$current" ]]; then
+          printf '%s\n' "$patched" > "$mcp_path"
+          echo "changed=true"
+        else
+          echo "changed=false"
+        fi
+      args:
+        executable: /bin/bash
+      loop:
+        - context7
+        - github
+        - serena
+        - atlassian
+      register: vscode_mcp_macos_result
+      changed_when: "'changed=true' in vscode_mcp_macos_result.stdout"
       when: ansible_facts['system'] == 'Darwin'
 
     - name: Ensure VS Code user settings directory exists (Windows)
@@ -112,6 +145,16 @@
           $changed = $true
         }
 
+        if ($current['chat.mcp.discovery.enabled'] -ne $true) {
+          $current['chat.mcp.discovery.enabled'] = $true
+          $changed = $true
+        }
+
+        if ($current['chat.mcp.autostart'] -ne $true) {
+          $current['chat.mcp.autostart'] = $true
+          $changed = $true
+        }
+
         $profilesJsonCurrent = $current['terminal.integrated.profiles.windows'] | ConvertTo-Json -Depth 10 -Compress
         $profilesJsonDesired = $desiredProfiles | ConvertTo-Json -Depth 10 -Compress
         if ($profilesJsonCurrent -ne $profilesJsonDesired) {
@@ -129,3 +172,42 @@
       register: vscode_settings_windows_result
       changed_when: "'changed=true' in vscode_settings_windows_result.stdout"
       when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Ensure VS Code MCP configuration file exists (Windows)
+      ansible.windows.win_shell: |
+        $mcpPath = Join-Path $env:APPDATA 'Code\User\mcp.json'
+        if (-not (Test-Path $mcpPath)) {
+          [System.IO.File]::WriteAllText($mcpPath, "{}" + [Environment]::NewLine)
+          Write-Output 'changed=true'
+        } else {
+          Write-Output 'changed=false'
+        }
+      register: vscode_mcp_windows_file_result
+      changed_when: "'changed=true' in vscode_mcp_windows_file_result.stdout"
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Configure VS Code MCP servers (Windows)
+      ansible.windows.win_shell: |
+        $mcpPath = Join-Path $env:APPDATA 'Code\User\mcp.json'
+        $current = Get-Content -Path $mcpPath -Raw
+        $patched = jq --arg name "{{ item }}" --argjson config '{{ claude_mcp_servers[item] | to_json }}' '.servers[$name] //= $config' $mcpPath
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "jq failed while updating $mcpPath"
+        }
+
+        if ($patched -ne $current) {
+          [System.IO.File]::WriteAllText($mcpPath, ($patched.TrimEnd() + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
+          Write-Output 'changed=true'
+        } else {
+          Write-Output 'changed=false'
+        }
+      loop:
+        - context7
+        - github
+        - serena
+        - atlassian
+      register: vscode_mcp_windows_result
+      changed_when: "'changed=true' in vscode_mcp_windows_result.stdout"
+      when: ansible_facts['os_family'] == 'Windows'
+      no_log: true
