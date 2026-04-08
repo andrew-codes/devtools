@@ -59,10 +59,15 @@
 
     - name: Configure MCP servers (macOS)
       ansible.builtin.shell: |
+        set -euo pipefail
         patched=$(jq --arg name "{{ item.key }}" \
           --argjson config '{{ item.value | to_json }}' \
           '.mcpServers[$name] //= $config' \
           ~/.claude.json)
+        if [[ -z "${patched//[[:space:]]/}" ]]; then
+          echo "jq produced empty output while updating ~/.claude.json" >&2
+          exit 1
+        fi
         printf '%s\n' "$patched" > ~/.claude.json
       args:
         executable: /bin/bash
@@ -78,7 +83,11 @@
         if ($LASTEXITCODE -ne 0) {
           throw "jq failed while updating $claude_json"
         }
-        [System.IO.File]::WriteAllText($claude_json, ($patched + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
+        $patched_text = ($patched -join [Environment]::NewLine).Trim()
+        if ([string]::IsNullOrWhiteSpace($patched_text)) {
+          throw "jq produced empty output while updating $claude_json"
+        }
+        [System.IO.File]::WriteAllText($claude_json, ($patched_text + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
       loop: "{{ claude_mcp_servers | dict2items }}"
       when: ansible_facts['os_family'] == 'Windows'
       changed_when: true
