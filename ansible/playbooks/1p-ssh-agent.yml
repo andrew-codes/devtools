@@ -48,6 +48,22 @@
         state: present
       when: ansible_facts['os_family'] == 'Windows' and git_ssh_agent == '1p'
 
+    - name: Check OpenSSH Authentication Agent service (Windows)
+      ansible.windows.win_service_info:
+        name: ssh-agent
+      register: windows_ssh_agent_service
+      when: ansible_facts['os_family'] == 'Windows' and git_ssh_agent == '1p'
+
+    - name: Disable OpenSSH Authentication Agent service (Windows)
+      ansible.windows.win_service:
+        name: ssh-agent
+        state: stopped
+        start_mode: disabled
+      when:
+        - ansible_facts['os_family'] == 'Windows'
+        - git_ssh_agent == '1p'
+        - (windows_ssh_agent_service.services | default([]) | length) > 0
+
     - name: Configure 1Password SSH agent in ~/.bashrc (Windows)
       ansible.windows.win_shell: |
         $bashrc = "$env:USERPROFILE\.bashrc"
@@ -55,7 +71,9 @@
         $end    = "# END devtools:1p-ssh-agent"
         $lines  = @(
           "# BEGIN devtools:1p-ssh-agent",
-          "export SSH_AUTH_SOCK=//./pipe/openssh-ssh-agent",
+          'export PATH="/c/Windows/System32/OpenSSH:$PATH"',
+          'alias ssh="/c/Windows/System32/OpenSSH/ssh.exe"',
+          'alias ssh-add="/c/Windows/System32/OpenSSH/ssh-add.exe"',
           "# END devtools:1p-ssh-agent"
         )
         $block = $lines -join "`n"
@@ -67,13 +85,13 @@
           if ($null -ne $content) { $base = $content.TrimEnd() } else { $base = "" }
           $content = $base + "`n" + $block + "`n"
         }
-        Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
+        [System.IO.File]::WriteAllText($bashrc, $content.TrimStart(), (New-Object System.Text.UTF8Encoding($false)))
       when: ansible_facts['os_family'] == 'Windows' and git_ssh_agent == '1p'
       changed_when: true
 
     - name: Ensure 1Password SSH config directory exists (Windows)
       ansible.windows.win_file:
-        path: "{{ ansible_env.LOCALAPPDATA }}\\1Password\\ssh"
+        path: "{{ ansible_facts['env']['LOCALAPPDATA'] }}\\1Password\\ssh"
         state: directory
       when:
         - ansible_facts['os_family'] == 'Windows'
@@ -82,7 +100,7 @@
 
     - name: Configure 1Password SSH agent.toml (Windows)
       ansible.windows.win_copy:
-        dest: "{{ ansible_env.LOCALAPPDATA }}\\1Password\\ssh\\agent.toml"
+        dest: "{{ ansible_facts['env']['LOCALAPPDATA'] }}\\1Password\\ssh\\agent.toml"
         content: |
           [[ssh-keys]]
           vault = "Private"

@@ -21,18 +21,11 @@
       when: ansible_facts['system'] == 'Darwin'
 
     # Windows: install OS-specific bin files from bin/windows/
-    - name: Find bash-utilities Windows bin files
-      ansible.windows.win_find:
-        paths: "{{ workbench_dir }}/bash-utilities/bin/windows"
-        file_type: file
-      register: bash_utilities_win_bin_files
-      when: ansible_facts['os_family'] == 'Windows'
-
     - name: Install bash-utilities Windows bin files
       ansible.windows.win_copy:
-        src: "{{ item.path }}"
-        dest: "{{ tools_bin_home }}/{{ item.path | basename }}"
-      loop: "{{ bash_utilities_win_bin_files.files }}"
+        src: "{{ item }}"
+        dest: "{{ tools_bin_home }}/{{ item | basename }}"
+      loop: "{{ query('fileglob', workbench_dir ~ '/bash-utilities/bin/windows/*') }}"
       when: ansible_facts['os_family'] == 'Windows'
 
     # Completion files
@@ -53,19 +46,12 @@
       loop: "{{ bash_utilities_completion_files.files }}"
       when: ansible_facts['os_family'] != 'Windows'
 
-    - name: Find bash-utilities completion files (Windows)
-      ansible.windows.win_find:
-        paths: "{{ workbench_dir }}/bash-utilities/completion"
-        file_type: file
-      register: bash_utilities_completion_files_win
-      when: ansible_facts['os_family'] == 'Windows'
-
     - name: Add bash-utilities completions to ~/.bashrc (Windows)
       ansible.windows.win_shell: |
         $bashrc = "$env:USERPROFILE\.bashrc"
-        $begin  = "# BEGIN devtools:completion-{{ item.path | basename }}"
-        $end    = "# END devtools:completion-{{ item.path | basename }}"
-        $b64    = "{{ lookup('file', item.path) | b64encode }}"
+        $begin  = "# BEGIN devtools:completion-{{ item | basename }}"
+        $end    = "# END devtools:completion-{{ item | basename }}"
+        $b64    = "{{ lookup('file', item) | b64encode }}"
         $text   = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64))
         $block  = $begin + "`n" + $text.TrimEnd() + "`n" + $end
         if (-not (Test-Path $bashrc)) { New-Item -ItemType File -Path $bashrc -Force | Out-Null }
@@ -77,6 +63,6 @@
           $content = $base + "`n" + $block + "`n"
         }
         Set-Content -Path $bashrc -Value $content.TrimStart() -NoNewline
-      loop: "{{ bash_utilities_completion_files_win.files }}"
+      loop: "{{ query('fileglob', workbench_dir ~ '/bash-utilities/completion/*') }}"
       when: ansible_facts['os_family'] == 'Windows'
       changed_when: true

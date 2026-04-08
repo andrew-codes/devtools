@@ -23,7 +23,6 @@ Set these before running `setup.sh`. Variables without a default **must** be set
 | `GIT_SIGNING_KEY` | _(optional)_ | SSH public key path for commit signing |
 | `GIT_SSH_AGENT` | `1p` | SSH agent type (`1p` for 1Password) |
 | `ONEPASSWORD_SSH_KEY` | _(optional)_ | 1Password SSH key selector for `agent.toml` (`[[ssh-keys]].item`), defaults to `GIT_SIGNING_KEY` |
-| `ONEPASSWORD_SSH_KEY` | _(optional)_ | 1Password SSH key selector for `agent.toml` (`[[ssh-keys]].item`), defaults to `GIT_SIGNING_KEY` |
 | `CONTEXT7_API_KEY` | _(optional)_ | Context7 API key |
 | `NODE_VERSION` | `24.14.1` | Node.js version to install via nvm |
 | `GITHUB_TOKEN` | _(optional)_ | GitHub personal access token |
@@ -105,6 +104,32 @@ ansible/
 ```
 
 Each playbook is self-contained, idempotent, and uses `when:` guards for platform-specific tasks. macOS tasks use [Homebrew](https://brew.sh/); Windows tasks use [Chocolatey](https://chocolatey.org/).
+
+---
+
+## Installed Tools
+
+| Tool | Description | macOS | Windows |
+| --- | --- | :---: | :---: |
+| [Homebrew](https://brew.sh/) | Package manager | ✓ | |
+| [Chocolatey](https://chocolatey.org/) | Package manager | | ✓ |
+| Shell environment | Dev directory structure, `PATH` exports, and `~/.bash_profile` → `~/.bashrc` wiring | ✓ | ✓ |
+| [Git](https://git-scm.com/) | Global config — user identity, commit signing, default editor | ✓ | ✓ |
+| Git completion | Bash tab-completion for git commands | ✓ | ✓ |
+| [git-prompt](https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh) | Git branch and status info in the shell prompt | ✓ | ✓ |
+| [git-shortcuts](workbench/git-shortcuts/) | Custom git shortcut scripts (`co`, `nb`, `push`, `pull`, `st`, `glg`, …) | ✓ | ✓ |
+| [GitHub CLI](https://cli.github.com/) (`gh`) | GitHub CLI for PRs, issues, and repo management | ✓ | ✓ |
+| [uv / uvx](https://github.com/astral-sh/uv) | Fast Python package and tool runner | ✓ | ✓ |
+| [shfmt](https://github.com/mvdan/sh) | Shell script formatter | ✓ | ✓ |
+| [jq](https://jqlang.github.io/jq/) | Command-line JSON processor | ✓ | ✓ |
+| [yq](https://mikefarah.gitbook.io/yq/) | Command-line YAML processor | ✓ | ✓ |
+| [Node.js](https://nodejs.org/) | Node.js installed and managed via [nvm](https://github.com/nvm-sh/nvm) | ✓ | ✓ |
+| [Claude Code](https://www.anthropic.com/claude-code) | Anthropic Claude Code CLI (`@anthropic-ai/claude-code`) and default MCP servers | ✓ | ✓ |
+| [Visual Studio Code](https://code.visualstudio.com/) | Editor + configured extension set | ✓ | ✓ |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Docker Desktop + `denv` / `dka` bin utilities | ✓ | ✓ |
+| [1Password SSH Agent](https://developer.1password.com/docs/ssh/agent/) | SSH agent integration via 1Password | ✓ | ✓ |
+| [projects](workbench/projects/) | Project navigation scripts (`proj`, `projs`, `oproj`) | ✓ | ✓ |
+| [bash-utilities](workbench/bash-utilities/) | Custom bash utility scripts (`aup`, `kaup`) | ✓ | ✓ |
 
 ---
 

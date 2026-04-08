@@ -77,20 +77,114 @@
       no_log: true
 
     - name: Configure MCP servers (Windows)
+      ansible.windows.win_copy:
+        dest: "{{ ansible_facts['user_dir'] }}\\.claude.mcp.desired.json"
+        content: "{{ claude_mcp_servers | to_nice_json }}\n"
+      when: ansible_facts['os_family'] == 'Windows'
+      no_log: true
+
+    - name: Merge MCP servers into Claude config (Windows)
       ansible.windows.win_shell: |
+        function ConvertTo-Hashtable($value) {
+          if ($null -eq $value) {
+            return $null
+          }
+
+          if ($value -is [System.Management.Automation.PSCustomObject]) {
+            $result = @{}
+            foreach ($prop in $value.PSObject.Properties) {
+              $result[$prop.Name] = ConvertTo-Hashtable $prop.Value
+            }
+            return $result
+          }
+
+          if ($value -is [System.Collections.IDictionary]) {
+            $result = @{}
+            foreach ($key in $value.Keys) {
+              $result[$key] = ConvertTo-Hashtable $value[$key]
+            }
+            return $result
+          }
+
+          if ($value -is [System.Collections.IEnumerable] -and -not ($value -is [string])) {
+            $items = @()
+            foreach ($item in $value) {
+              $items += ,(ConvertTo-Hashtable $item)
+            }
+            return $items
+          }
+
+          return $value
+        }
+
+        function Read-JsonHashtable($path) {
+          if (-not (Test-Path $path)) {
+            return @{}
+          }
+
+          $raw = [System.IO.File]::ReadAllText($path)
+          if ([string]::IsNullOrWhiteSpace($raw)) {
+            return @{}
+          }
+
+          try {
+            $parsed = $raw | ConvertFrom-Json
+          } catch {
+            throw ("Invalid JSON in {0}: {1}" -f $path, $_.Exception.Message)
+          }
+
+          $result = ConvertTo-Hashtable $parsed
+          if ($null -eq $result) {
+            return @{}
+          }
+
+          if (-not ($result -is [System.Collections.IDictionary])) {
+            throw ("Expected a JSON object in {0}" -f $path)
+          }
+
+          return $result
+        }
+
         $claude_json = "$env:USERPROFILE\.claude.json"
-        $patched = jq --arg name "{{ item.key }}" --argjson config '{{ item.value | to_json }}' '.mcpServers[$name] //= $config' $claude_json
-        if ($LASTEXITCODE -ne 0) {
-          throw "jq failed while updating $claude_json"
+        $desired_json = "$env:USERPROFILE\.claude.mcp.desired.json"
+        if (-not (Test-Path $claude_json)) {
+          [System.IO.File]::WriteAllText($claude_json, "{}", (New-Object System.Text.UTF8Encoding($false)))
         }
-        $patched_text = ($patched -join [Environment]::NewLine).Trim()
-        if ([string]::IsNullOrWhiteSpace($patched_text)) {
-          throw "jq produced empty output while updating $claude_json"
+        if (-not (Test-Path $desired_json)) {
+          throw ("Desired MCP config file not found: {0}" -f $desired_json)
         }
-        [System.IO.File]::WriteAllText($claude_json, ($patched_text + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
-      loop: "{{ claude_mcp_servers | dict2items }}"
+
+        $claudeObj = Read-JsonHashtable $claude_json
+        $desiredObj = Read-JsonHashtable $desired_json
+
+        if (-not $claudeObj.ContainsKey('mcpServers') -or -not ($claudeObj['mcpServers'] -is [System.Collections.IDictionary])) {
+          $claudeObj['mcpServers'] = @{}
+        }
+
+        foreach ($key in $desiredObj.Keys) {
+          if (-not $claudeObj['mcpServers'].ContainsKey($key)) {
+            $claudeObj['mcpServers'][$key] = $desiredObj[$key]
+          }
+        }
+
+        $json = $claudeObj | ConvertTo-Json -Depth 20
+        if ([string]::IsNullOrWhiteSpace($json)) {
+          throw ("ConvertTo-Json produced empty output while updating {0}" -f $claude_json)
+        }
+
+        $tmp = $claude_json + ".tmp"
+        [System.IO.File]::WriteAllText($tmp, ($json.TrimEnd() + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
+        Move-Item -Path $tmp -Destination $claude_json -Force
+        Write-Output "MCP_UPDATED"
       when: ansible_facts['os_family'] == 'Windows'
       changed_when: true
+      no_log: true
+
+    - name: Remove temporary MCP desired config (Windows)
+      ansible.windows.win_file:
+        path: "{{ ansible_facts['user_dir'] }}\\.claude.mcp.desired.json"
+        state: absent
+      when: ansible_facts['os_family'] == 'Windows'
       no_log: true
 
     - name: Disable Serena web dashboard on launch (macOS)

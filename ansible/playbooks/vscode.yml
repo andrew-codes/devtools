@@ -135,7 +135,7 @@
               {
                 'workbench.panel.defaultLocation': 'left',
                 'chat.mcp.discovery.enabled': true,
-                'chat.mcp.autostart': true
+                'chat.mcp.autoStart': true
               },
               recursive=True
             )
@@ -191,12 +191,10 @@
         $settingsPath = Join-Path $env:APPDATA 'Code\User\settings.json'
 
         if (Test-Path $settingsPath) {
-          $current = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json -AsHashtable
-        } else {
+          $parsed = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
           $current = @{}
-        }
-
-        if (-not $current) {
+          foreach ($prop in $parsed.PSObject.Properties) { $current[$prop.Name] = $prop.Value }
+        } else {
           $current = @{}
         }
 
@@ -223,8 +221,8 @@
           $changed = $true
         }
 
-        if ($current['chat.mcp.autostart'] -ne $true) {
-          $current['chat.mcp.autostart'] = $true
+        if ($current['chat.mcp.autoStart'] -ne $true) {
+          $current['chat.mcp.autoStart'] = $true
           $changed = $true
         }
 
@@ -237,7 +235,12 @@
 
         if ($changed) {
           $content = $current | ConvertTo-Json -Depth 20
-          [System.IO.File]::WriteAllText($settingsPath, $content + [Environment]::NewLine)
+          if ([string]::IsNullOrWhiteSpace($content)) {
+            throw "ConvertTo-Json produced empty output while updating $settingsPath"
+          }
+          $tmp = $settingsPath + '.tmp'
+          [System.IO.File]::WriteAllText($tmp, ($content.TrimEnd() + [Environment]::NewLine))
+          Move-Item -Path $tmp -Destination $settingsPath -Force
           Write-Output 'changed=true'
         } else {
           Write-Output 'changed=false'
@@ -262,15 +265,21 @@
     - name: Configure VS Code MCP servers (Windows)
       ansible.windows.win_shell: |
         $mcpPath = Join-Path $env:APPDATA 'Code\User\mcp.json'
-        $current = Get-Content -Path $mcpPath -Raw
-        $patched = jq --arg name "{{ item }}" --argjson config '{{ claude_mcp_servers[item] | to_json }}' '.servers[$name] //= $config' $mcpPath
-
-        if ($LASTEXITCODE -ne 0) {
-          throw "jq failed while updating $mcpPath"
+        $mcpObj = Get-Content -Path $mcpPath -Raw | ConvertFrom-Json
+        if (-not $mcpObj.PSObject.Properties['servers']) {
+          $mcpObj | Add-Member -NotePropertyName 'servers' -NotePropertyValue ([PSCustomObject]@{})
         }
-
-        if ($patched -ne $current) {
-          [System.IO.File]::WriteAllText($mcpPath, ($patched.TrimEnd() + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
+        $name = "{{ item }}"
+        $config = '{{ claude_mcp_servers[item] | to_json }}' | ConvertFrom-Json
+        if (-not $mcpObj.servers.PSObject.Properties[$name]) {
+          $mcpObj.servers | Add-Member -NotePropertyName $name -NotePropertyValue $config
+          $json = $mcpObj | ConvertTo-Json -Depth 20
+          if ([string]::IsNullOrWhiteSpace($json)) {
+            throw "ConvertTo-Json produced empty output while updating $mcpPath"
+          }
+          $tmp = $mcpPath + '.tmp'
+          [System.IO.File]::WriteAllText($tmp, ($json.TrimEnd() + [Environment]::NewLine), (New-Object System.Text.UTF8Encoding($false)))
+          Move-Item -Path $tmp -Destination $mcpPath -Force
           Write-Output 'changed=true'
         } else {
           Write-Output 'changed=false'
