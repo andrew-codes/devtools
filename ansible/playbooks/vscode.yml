@@ -15,18 +15,91 @@
         state: present
       when: ansible_facts['os_family'] == 'Windows'
 
+    - name: Compute desired VS Code extension hash
+      ansible.builtin.set_fact:
+        vscode_extensions_hash: "{{ (vscode_extensions | unique | sort | join('\n')) | hash('sha256') }}"
+      changed_when: false
+
+    - name: Check VS Code extension hash file (macOS)
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['user_dir'] }}/.vscode-extensions.hash"
+      register: vscode_extensions_hash_macos_stat
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Read VS Code extension hash file (macOS)
+      ansible.builtin.slurp:
+        path: "{{ ansible_facts['user_dir'] }}/.vscode-extensions.hash"
+      register: vscode_extensions_hash_macos_raw
+      when:
+        - ansible_facts['system'] == 'Darwin'
+        - vscode_extensions_hash_macos_stat.stat.exists
+
+    - name: Determine whether VS Code extensions should be installed (macOS)
+      ansible.builtin.set_fact:
+        vscode_extensions_install_needed_macos: >-
+          {{
+            (not vscode_extensions_hash_macos_stat.stat.exists)
+            or ((vscode_extensions_hash_macos_raw.content | b64decode | trim) != vscode_extensions_hash)
+          }}
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Check VS Code extension hash file (Windows)
+      ansible.windows.win_stat:
+        path: "{{ ansible_facts['env']['USERPROFILE'] }}\\.vscode-extensions.hash"
+      register: vscode_extensions_hash_windows_stat
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Read VS Code extension hash file (Windows)
+      ansible.windows.win_shell: |
+        Get-Content -Path "{{ ansible_facts['env']['USERPROFILE'] }}\\.vscode-extensions.hash" -Raw
+      register: vscode_extensions_hash_windows_raw
+      changed_when: false
+      when:
+        - ansible_facts['os_family'] == 'Windows'
+        - vscode_extensions_hash_windows_stat.stat.exists
+
+    - name: Determine whether VS Code extensions should be installed (Windows)
+      ansible.builtin.set_fact:
+        vscode_extensions_install_needed_windows: >-
+          {{
+            (not vscode_extensions_hash_windows_stat.stat.exists)
+            or ((vscode_extensions_hash_windows_raw.stdout | trim) != vscode_extensions_hash)
+          }}
+      when: ansible_facts['os_family'] == 'Windows'
+
     - name: Install VS Code extensions (macOS)
       ansible.builtin.command:
         cmd: code --install-extension {{ item }} --force
       loop: "{{ vscode_extensions }}"
-      when: ansible_facts['system'] == 'Darwin'
+      when:
+        - ansible_facts['system'] == 'Darwin'
+        - vscode_extensions_install_needed_macos
       changed_when: true
+
+    - name: Persist VS Code extension hash (macOS)
+      ansible.builtin.copy:
+        dest: "{{ ansible_facts['user_dir'] }}/.vscode-extensions.hash"
+        content: "{{ vscode_extensions_hash }}\n"
+        mode: '0644'
+      when:
+        - ansible_facts['system'] == 'Darwin'
+        - vscode_extensions_install_needed_macos
 
     - name: Install VS Code extensions (Windows)
       ansible.windows.win_shell: |
         code --install-extension {{ item }} --force
       loop: "{{ vscode_extensions }}"
-      when: ansible_facts['os_family'] == 'Windows'
+      when:
+        - ansible_facts['os_family'] == 'Windows'
+        - vscode_extensions_install_needed_windows
+
+    - name: Persist VS Code extension hash (Windows)
+      ansible.windows.win_copy:
+        dest: "{{ ansible_facts['env']['USERPROFILE'] }}\\.vscode-extensions.hash"
+        content: "{{ vscode_extensions_hash }}\r\n"
+      when:
+        - ansible_facts['os_family'] == 'Windows'
+        - vscode_extensions_install_needed_windows
 
     - name: Ensure VS Code user settings directory exists (macOS)
       ansible.builtin.file:
