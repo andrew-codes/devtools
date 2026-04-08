@@ -52,14 +52,14 @@
         $end    = "# END devtools:env"
         $lines  = @(
           "# BEGIN devtools:env",
-          "export DEV_HOME={{ dev_home }}",
-          "export REPO_HOME={{ repo_home }}",
-          "export DEVTOOLS_HOME={{ devtools_home }}",
-          "export TOOLS_HOME={{ tools_home }}",
-          "export TOOLS_BIN_HOME={{ tools_bin_home }}",
+          "export DEV_HOME=`$(cygpath -u '{{ dev_home }}')",
+          "export REPO_HOME=`$(cygpath -u '{{ repo_home }}')",
+          "export DEVTOOLS_HOME=`$(cygpath -u '{{ devtools_home }}')",
+          "export TOOLS_HOME=`$(cygpath -u '{{ tools_home }}')",
+          "export TOOLS_BIN_HOME=`$(cygpath -u '{{ tools_bin_home }}')",
           "export DEVTOOLS_REPO_NAME=devtools",
           "export GITHUB_USERNAME={{ github_username }}",
-          "export PATH={{ tools_bin_home }}:`$PATH",
+          "export PATH=`$TOOLS_BIN_HOME:`$PATH",
           "# END devtools:env"
         )
         $block = $lines -join "`n"
