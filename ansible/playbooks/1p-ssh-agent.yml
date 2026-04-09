@@ -93,10 +93,12 @@
       ansible.windows.win_file:
         path: "{{ ansible_facts['env']['LOCALAPPDATA'] }}\\1Password\\ssh"
         state: directory
+      vars:
+        windows_onepassword_ssh_key: "{{ ansible_facts['env'].get('ONEPASSWORD_SSH_KEY') | default(onepassword_ssh_key, true) }}"
       when:
         - ansible_facts['os_family'] == 'Windows'
         - git_ssh_agent == '1p'
-        - onepassword_ssh_key | length > 0
+        - windows_onepassword_ssh_key | length > 0
 
     - name: Configure 1Password SSH agent.toml (Windows)
       ansible.windows.win_copy:
@@ -104,8 +106,10 @@
         content: |
           [[ssh-keys]]
           vault = "Private"
-          item = "{{ onepassword_ssh_key }}"
+          item = "{{ windows_onepassword_ssh_key }}"
+      vars:
+        windows_onepassword_ssh_key: "{{ ansible_facts['env'].get('ONEPASSWORD_SSH_KEY') | default(onepassword_ssh_key, true) }}"
       when:
         - ansible_facts['os_family'] == 'Windows'
         - git_ssh_agent == '1p'
-        - onepassword_ssh_key | length > 0
+        - windows_onepassword_ssh_key | length > 0
