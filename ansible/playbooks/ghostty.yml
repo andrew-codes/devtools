@@ -1,0 +1,10 @@
+---
+- name: Install Ghostty
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Ghostty (macOS via Homebrew cask)
+      community.general.homebrew_cask:
+        name: ghostty
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

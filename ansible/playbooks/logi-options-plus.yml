@@ -1,0 +1,16 @@
+---
+- name: Install Logi Options+
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Logi Options+ (macOS via Homebrew cask)
+      community.general.homebrew_cask:
+        name: logi-options+
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install Logi Options+ (Windows via Chocolatey)
+      chocolatey.chocolatey.win_chocolatey:
+        name: logioptionsplus
+        state: present
+      when: ansible_facts['os_family'] == 'Windows'

@@ -1,0 +1,10 @@
+---
+- name: Install Lens IDE
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Lens IDE (macOS via Homebrew cask)
+      community.general.homebrew_cask:
+        name: lens
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

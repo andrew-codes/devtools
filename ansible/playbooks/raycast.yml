@@ -1,0 +1,42 @@
+---
+- name: Install and configure Raycast
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Raycast (macOS via Homebrew cask)
+      community.general.homebrew_cask:
+        name: raycast
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Disable Spotlight indexing (macOS)
+      ansible.builtin.command:
+        cmd: mdutil -i off -d /
+      become: true
+      when: ansible_facts['system'] == 'Darwin'
+      changed_when: false
+
+    - name: Check whether Raycast is installed (Windows)
+      ansible.windows.win_stat:
+        path: "{{ ansible_facts['env']['LOCALAPPDATA'] }}\\Programs\\Raycast\\Raycast.exe"
+      register: raycast_windows_stat
+      when: ansible_facts['os_family'] == 'Windows'
+
+    # Raycast does not currently provide a Chocolatey package in this setup,
+    # so install from the vendor download URL directly.
+    - name: Download Raycast installer (Windows)
+      ansible.windows.win_get_url:
+        url: https://ray.so/download-windows
+        dest: "{{ ansible_facts['env']['TEMP'] }}\\RaycastInstaller.exe"
+      when:
+        - ansible_facts['os_family'] == 'Windows'
+        - not raycast_windows_stat.stat.exists
+
+    - name: Install Raycast (Windows via direct installer)
+      ansible.windows.win_package:
+        path: "{{ ansible_facts['env']['TEMP'] }}\\RaycastInstaller.exe"
+        arguments: /S
+        state: present
+      when:
+        - ansible_facts['os_family'] == 'Windows'
+        - not raycast_windows_stat.stat.exists
