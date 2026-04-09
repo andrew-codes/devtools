@@ -101,6 +101,10 @@ ansible/
     claude-code.yml          # Claude Code CLI
     vscode.yml               # VS Code + extensions
     docker.yml               # Docker Desktop + bin utilities
+    raycast.yml              # Raycast + macOS Spotlight disable
+    ghostty.yml              # Ghostty terminal (macOS)
+    logi-options-plus.yml    # Logi Options+ (macOS/Windows)
+    lens.yml                 # Lens IDE (macOS)
 ```
 
 Each playbook is self-contained, idempotent, and uses `when:` guards for platform-specific tasks. macOS tasks use [Homebrew](https://brew.sh/); Windows tasks use [Chocolatey](https://chocolatey.org/).
@@ -127,6 +131,10 @@ Each playbook is self-contained, idempotent, and uses `when:` guards for platfor
 | [Claude Code](https://www.anthropic.com/claude-code) | Anthropic Claude Code CLI (`@anthropic-ai/claude-code`) and default MCP servers | ✓ | ✓ |
 | [Visual Studio Code](https://code.visualstudio.com/) | Editor + configured extension set | ✓ | ✓ |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Docker Desktop + `denv` / `dka` bin utilities | ✓ | ✓ |
+| [Raycast](https://raycast.com/) | Launcher and productivity app; disables Spotlight indexing on macOS; installed from vendor installer URL on Windows | ✓ | ✓ |
+| [Ghostty](https://ghostty.org/) | Terminal emulator | ✓ | |
+| [Logi Options+](https://www.logitech.com/en-us/software/logi-options-plus.html) | Logitech device customization software | ✓ | ✓ |
+| [Lens](https://k8slens.dev/) | Kubernetes IDE | ✓ | |
 | [1Password SSH Agent](https://developer.1password.com/docs/ssh/agent/) | SSH agent integration via 1Password | ✓ | ✓ |
 | [projects](workbench/projects/) | Project navigation scripts (`proj`, `projs`, `oproj`) | ✓ | ✓ |
 | [bash-utilities](workbench/bash-utilities/) | Custom bash utility scripts (`aup`, `kaup`) | ✓ | ✓ |
