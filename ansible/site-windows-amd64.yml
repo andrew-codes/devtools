@@ -19,6 +19,7 @@
 - import_playbook: playbooks/1p-ssh-agent.yml
 - import_playbook: playbooks/nodejs.yml
 - import_playbook: playbooks/claude-code.yml
+- import_playbook: playbooks/serena.yml
 - import_playbook: playbooks/vscode.yml
 - import_playbook: playbooks/docker.yml
 - import_playbook: playbooks/raycast.yml

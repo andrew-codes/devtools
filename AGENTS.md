@@ -46,25 +46,6 @@ ansible/
   site-macos-arm64.yml       # macOS arm64 entry playbook
   site-windows-amd64.yml     # Windows amd64 entry playbook
   playbooks/
-    devtools-bash-env.yml
-    bash-profile.yml
-    brew.yml
-    git-config.yml
-    uvx.yml
-    shfmt.yml
-    jq.yml
-    git-completion.yml
-    git-prompt.yml
-    gh.yml
-    yq.yml
-    git-shortcuts.yml
-    projects.yml
-    bash-utilities.yml
-    1p-ssh-agent.yml
-    nodejs.yml
-    claude-code.yml
-    vscode.yml
-    docker.yml
 ```
 
 ## Adding a New Tool

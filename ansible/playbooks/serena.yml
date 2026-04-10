@@ -1,0 +1,56 @@
+---
+- name: Configure Serena
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Ensure Serena config directory exists (macOS)
+      ansible.builtin.file:
+        path: "{{ ansible_facts['user_dir'] }}/.serena"
+        state: directory
+        mode: '0700'
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Set Serena web dashboard preference (macOS)
+      ansible.builtin.shell: |
+        config_path="{{ ansible_facts['user_dir'] }}/.serena/serena_config.yml"
+        if [[ ! -f "$config_path" ]]; then
+          printf '{}\n' > "$config_path"
+          chmod 600 "$config_path"
+        fi
+
+        current="$(yq '.web_dashboard_open_on_launch // ""' "$config_path")"
+        if [[ "$current" != "false" ]]; then
+          yq -i '.web_dashboard_open_on_launch = false' "$config_path"
+          echo 'changed=true'
+        else
+          echo 'changed=false'
+        fi
+      args:
+        executable: /bin/bash
+      register: serena_config_macos_result
+      changed_when: "'changed=true' in serena_config_macos_result.stdout"
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Ensure Serena config directory exists (Windows)
+      ansible.windows.win_file:
+        path: "{{ ansible_facts['user_dir'] }}\\.serena"
+        state: directory
+      when: ansible_facts['os_family'] == 'Windows'
+
+    - name: Set Serena web dashboard preference (Windows)
+      ansible.windows.win_shell: |
+        $configPath = Join-Path $env:USERPROFILE '.serena\serena_config.yml'
+        if (-not (Test-Path $configPath)) {
+          [System.IO.File]::WriteAllText($configPath, "{}" + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))
+        }
+
+        $current = (yq '.web_dashboard_open_on_launch // ""' $configPath).Trim()
+        if ($current -ne 'false') {
+          yq -i '.web_dashboard_open_on_launch = false' $configPath
+          Write-Output 'changed=true'
+        } else {
+          Write-Output 'changed=false'
+        }
+      register: serena_config_windows_result
+      changed_when: "'changed=true' in serena_config_windows_result.stdout"
+      when: ansible_facts['os_family'] == 'Windows'

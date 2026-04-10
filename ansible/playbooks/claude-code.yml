@@ -186,20 +186,3 @@
         state: absent
       when: ansible_facts['os_family'] == 'Windows'
       no_log: true
-
-    - name: Disable Serena web dashboard on launch (macOS)
-      ansible.builtin.command:
-        cmd: yq -i '.web_dashboard_open_on_launch = false' "{{ ansible_facts['user_dir'] }}/.serena/serena_config.yaml"
-      when:
-        - ansible_facts['system'] == 'Darwin'
-        - ansible_facts['user_dir'] + '/.serena/serena_config.yaml' is exists
-      changed_when: false
-
-    - name: Disable Serena web dashboard on launch (Windows)
-      ansible.windows.win_shell: |
-        $f = "$env:USERPROFILE\.serena\serena_config.yaml"
-        if (Test-Path $f) {
-          yq -i '.web_dashboard_open_on_launch = false' $f
-        }
-      when: ansible_facts['os_family'] == 'Windows'
-      changed_when: false
