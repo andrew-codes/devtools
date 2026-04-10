@@ -12,6 +12,7 @@
         - {name: push.default, value: simple}
         - {name: branch.autosetuprebase, value: always}
         - {name: core.autocrlf, value: "false"}
+        - {name: core.excludesfile, value: "{{ ansible_facts['user_dir'] }}/.gitignore"}
         - {name: init.defaultBranch, value: main}
         - {name: commit.gpgsign, value: "true"}
         - {name: gpg.format, value: ssh}
@@ -22,11 +23,27 @@
         git config --global push.default simple
         git config --global branch.autosetuprebase always
         git config --global core.autocrlf false
+        git config --global core.excludesfile "$env:USERPROFILE/.gitignore"
         git config --global init.defaultBranch main
         git config --global commit.gpgsign true
         git config --global gpg.format ssh
       when: ansible_facts['os_family'] == 'Windows'
       changed_when: true
+
+    - name: Ensure global gitignore exists (macOS/Linux)
+      ansible.builtin.copy:
+        dest: "{{ ansible_facts['user_dir'] }}/.gitignore"
+        content: ""
+        force: false
+        mode: '0644'
+      when: ansible_facts['os_family'] != 'Windows'
+
+    - name: Ensure global gitignore exists (Windows)
+      ansible.windows.win_copy:
+        dest: "{{ ansible_facts['user_dir'] }}\\.gitignore"
+        content: ""
+        force: false
+      when: ansible_facts['os_family'] == 'Windows'
 
     - name: Set git user email (macOS/Linux)
       community.general.git_config:
