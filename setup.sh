@@ -278,59 +278,81 @@ elif [[ $os_type == "windows" ]]; then
   else
     # ── Running from Git Bash / msys / cygwin ────────────────────────────────
     echo "==> Checking WSL availability..."
-    # Probe WSL state without invoking a distro (which fails before first-run).
-    # "no installed distributions" in the output means WSL2 kernel is present
-    # but no distro has been installed yet — distinct from WSL not installed.
-    _wsl_list_out="$(wsl --list 2>&1 | tr -d '\0' || true)"
+
+    # Get-WindowsOptionalFeature requires elevation, so we write a PS1, run it
+    # elevated, and communicate the result back via a temp file — same pattern
+    # used by ensure_windows_bootstrap below.
+    _feat_ps1="$(mktemp).ps1"
+    _feat_out="$(mktemp)"
+    _feat_ps1_win="$(cygpath -w "$_feat_ps1")"
+    _feat_out_win="$(cygpath -w "$_feat_out")"
+
+    cat > "$_feat_ps1" << 'FEAT_EOF'
+param([string]$Out)
+$wsl = (Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -ErrorAction SilentlyContinue).State
+$vmp = (Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -ErrorAction SilentlyContinue).State
+if ($wsl -eq 'Enabled' -and $vmp -eq 'Enabled') {
+  'already-enabled' | Out-File -FilePath $Out -Encoding ascii -NoNewline
+} else {
+  $r1 = Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -WarningAction SilentlyContinue
+  $r2 = Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -WarningAction SilentlyContinue
+  if ($r1.RestartNeeded -or $r2.RestartNeeded) {
+    'needs-restart' | Out-File -FilePath $Out -Encoding ascii -NoNewline
+  } else {
+    'enabled-no-restart' | Out-File -FilePath $Out -Encoding ascii -NoNewline
+  }
+}
+FEAT_EOF
+
+    echo "==> Checking WSL Windows features (requires elevation)..."
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+      Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', '$_feat_ps1_win',
+        '-Out', '$_feat_out_win'
+      )
+    "
+
+    _feat_result="$(cat "$_feat_out" | tr -d '\r\n\0' || true)"
+    rm -f "$_feat_ps1" "$_feat_out"
+
+    case "$_feat_result" in
+      already-enabled | enabled-no-restart)
+        : # features ready; fall through to distro check
+        ;;
+      needs-restart)
+        echo ""
+        echo "WSL features enabled. Please restart your computer, then re-run setup."
+        exit 0
+        ;;
+      "")
+        echo "Error: WSL feature setup did not complete — UAC prompt cancelled?" >&2
+        echo "Re-run setup and accept the elevation prompt to continue." >&2
+        exit 1
+        ;;
+      *)
+        echo "Error: unexpected result from WSL feature check: '$_feat_result'" >&2
+        echo "Enable manually in an elevated PowerShell, then restart:" >&2
+        echo "  Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux" >&2
+        echo "  Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform" >&2
+        exit 1
+        ;;
+    esac
+
+    # Features confirmed enabled; check whether a distro is installed.
     _wsl_has_distro=false
-    _wsl_kernel=false
     if wsl --list --quiet 2> /dev/null | tr -d '\0' | grep -q .; then
       _wsl_has_distro=true
-      _wsl_kernel=true
-    elif echo "$_wsl_list_out" | grep -qi "no installed distribution"; then
-      _wsl_kernel=true
-    fi
-
-    if [[ $_wsl_kernel == false ]]; then
-      echo "==> WSL2 not installed. Installing (requires elevation and a restart)..."
-      powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-        Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
-          '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install --no-distribution'
-        )
-      "
-      echo ""
-      echo "WSL2 kernel installed. Please restart your computer, then re-run setup."
-      echo "Note: Git Bash may not work after restart. Use PowerShell and run:"
-      echo "  wsl bash \$(wslpath -u '$(cygpath -w "$SCRIPT_DIR")')/setup.sh"
-      exit 0
     fi
 
     if [[ $_wsl_has_distro == false ]]; then
-      echo "==> WSL2 ready but no distro found. Installing Ubuntu..."
+      echo "==> No WSL distro found. Installing Ubuntu..."
       # Distro installs are per-user and must NOT be run elevated — running via
       # Start-Process -Verb RunAs would register Ubuntu under the Administrator
       # account, making it invisible to the current user.
       # Call wsl.exe directly (not via a powershell.exe wrapper) so Git Bash
       # blocks until the install completes — PowerShell would spawn wsl as a
       # child and return before the download/install finishes.
-      # Tee to a temp file so we can inspect the output for errors.
-      _ubuntu_tmp="$(mktemp)"
-      wsl.exe --install -d Ubuntu --no-launch 2>&1 | tr -d '\0' | tee "$_ubuntu_tmp" || true
-      _ubuntu_out="$(cat "$_ubuntu_tmp")"
-      rm -f "$_ubuntu_tmp"
-      if echo "$_ubuntu_out" | grep -qi "Virtual Machine Platform"; then
-        echo "==> Virtual Machine Platform not enabled. Enabling (requires elevation and a restart)..."
-        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-          Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @(
-            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'wsl --install --no-distribution'
-          )
-        "
-        echo ""
-        echo "Virtual Machine Platform enabled. Please restart your computer, then re-run setup."
-        echo "Note: Git Bash may not work after restart. Use PowerShell and run:"
-        echo "  bash \$(cygpath -w '$SCRIPT_DIR')/setup.sh"
-        exit 0
-      fi
+      wsl.exe --install -d Ubuntu --no-launch 2>&1 | tr -d '\0' || true
       echo ""
       echo "Ubuntu installed. Open the Ubuntu app from the Start menu to complete first-run"
       echo "setup (set a username and password), then re-run setup from that terminal:"
