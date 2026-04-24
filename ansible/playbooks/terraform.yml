@@ -1,0 +1,10 @@
+---
+- name: Install Terraform
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Terraform (macOS via Homebrew)
+      community.general.homebrew:
+        name: hashicorp/tap/terraform
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

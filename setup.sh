@@ -354,9 +354,10 @@ FEAT_EOF
       # child and return before the download/install finishes.
       wsl.exe --install -d Ubuntu --no-launch 2>&1 | tr -d '\0' || true
       echo ""
-      echo "Ubuntu installed. Open the Ubuntu app from the Start menu to complete first-run"
-      echo "setup (set a username and password), then re-run setup from that terminal:"
-      echo "  bash \$(wslpath '$(cygpath -w "$SCRIPT_DIR")')/setup.sh"
+      echo "Ubuntu installed. Open the Ubuntu app from the Start menu to complete"
+      echo "first-run setup (set a username and password), then close it and re-run"
+      echo "this script from Git Bash:"
+      echo "  bash '$SCRIPT_DIR/setup.sh'"
       exit 0
     fi
 

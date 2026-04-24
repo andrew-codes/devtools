@@ -26,3 +26,6 @@
 - import_playbook: playbooks/ghostty.yml
 - import_playbook: playbooks/logi-options-plus.yml
 - import_playbook: playbooks/lens.yml
+- import_playbook: playbooks/terraform.yml
+- import_playbook: playbooks/kubectl.yml
+- import_playbook: playbooks/ansible-install.yml

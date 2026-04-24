@@ -1,0 +1,10 @@
+---
+- name: Install kubectl
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install kubectl (macOS via Homebrew)
+      community.general.homebrew:
+        name: kubectl
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

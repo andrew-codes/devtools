@@ -24,3 +24,4 @@
 - import_playbook: playbooks/docker.yml
 # - import_playbook: playbooks/raycast.yml
 - import_playbook: playbooks/logi-options-plus.yml
+- import_playbook: playbooks/windows-dark-mode.yml

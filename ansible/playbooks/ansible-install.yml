@@ -1,0 +1,10 @@
+---
+- name: Install Ansible
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Ansible (macOS via Homebrew)
+      community.general.homebrew:
+        name: ansible
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

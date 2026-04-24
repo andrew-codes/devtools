@@ -1,0 +1,15 @@
+---
+- name: Enable Windows dark mode system wide
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Set system dark mode (Windows registry)
+      ansible.windows.win_regedit:
+        path: HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize
+        name: "{{ item }}"
+        data: 0
+        type: dword
+      loop:
+        - AppsUseLightTheme
+        - SystemUsesLightTheme
+      when: ansible_facts['os_family'] == 'Windows'
