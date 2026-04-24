@@ -8,7 +8,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Self-bootstrap: clone repo if not running from within it ──────────────────
-# Supports: bash <(curl -fsSL https://raw.githubusercontent.com/.../setup.sh)
+# Supports: bash $(curl -fsSL https://raw.githubusercontent.com/.../setup.sh)
 if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
   if [[ -z ${GITHUB_USERNAME:-} ]]; then
     echo "Error: GITHUB_USERNAME must be set to clone the devtools repo." >&2
@@ -35,6 +35,16 @@ if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
 fi
 
 exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
+
+# ── Self-update: pull latest main when running directly from the repo ─────────
+if [[ -z ${DEVTOOLS_UPDATED:-} ]] && git -C "$SCRIPT_DIR" remote get-url origin &>/dev/null 2>&1; then
+  echo "==> Updating devtools repo to latest main..."
+  git -C "$SCRIPT_DIR" fetch origin
+  git -C "$SCRIPT_DIR" reset --hard origin/main
+  echo "==> Re-running setup after update..."
+  export DEVTOOLS_UPDATED=1
+  exec "$SCRIPT_DIR/setup.sh"
+fi
 
 ensure_windows_bootstrap() {
   local bootstrap_ps1="${SCRIPT_DIR}/.devtools-windows-bootstrap.ps1"
@@ -318,26 +328,26 @@ FEAT_EOF
     rm -f "$_feat_ps1" "$_feat_out"
 
     case "$_feat_result" in
-      already-enabled | enabled-no-restart)
-        : # features ready; fall through to distro check
-        ;;
-      needs-restart)
-        echo ""
-        echo "WSL features enabled. Please restart your computer, then re-run setup."
-        exit 0
-        ;;
-      "")
-        echo "Error: WSL feature setup did not complete — UAC prompt cancelled?" >&2
-        echo "Re-run setup and accept the elevation prompt to continue." >&2
-        exit 1
-        ;;
-      *)
-        echo "Error: unexpected result from WSL feature check: '$_feat_result'" >&2
-        echo "Enable manually in an elevated PowerShell, then restart:" >&2
-        echo "  Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux" >&2
-        echo "  Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform" >&2
-        exit 1
-        ;;
+    already-enabled | enabled-no-restart)
+      : # features ready; fall through to distro check
+      ;;
+    needs-restart)
+      echo ""
+      echo "WSL features enabled. Please restart your computer, then re-run setup."
+      exit 0
+      ;;
+    "")
+      echo "Error: WSL feature setup did not complete — UAC prompt cancelled?" >&2
+      echo "Re-run setup and accept the elevation prompt to continue." >&2
+      exit 1
+      ;;
+    *)
+      echo "Error: unexpected result from WSL feature check: '$_feat_result'" >&2
+      echo "Enable manually in an elevated PowerShell, then restart:" >&2
+      echo "  Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux" >&2
+      echo "  Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform" >&2
+      exit 1
+      ;;
     esac
 
     # Features confirmed enabled; check whether a distro is installed.
