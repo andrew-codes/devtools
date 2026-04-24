@@ -16,7 +16,7 @@
 - import_playbook: playbooks/git-shortcuts.yml
 - import_playbook: playbooks/projects.yml
 - import_playbook: playbooks/bash-utilities.yml
-- import_playbook: playbooks/1p-ssh-agent.yml
+- import_playbook: playbooks/ssh.yml
 - import_playbook: playbooks/nodejs.yml
 - import_playbook: playbooks/claude-code.yml
 - import_playbook: playbooks/serena.yml

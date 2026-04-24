@@ -96,7 +96,7 @@ ansible/
     git-shortcuts.yml        # Custom git shortcut scripts
     projects.yml             # Project navigation scripts
     bash-utilities.yml       # Custom bash utility scripts
-    1p-ssh-agent.yml         # 1Password SSH agent
+    ssh.yml                  # SSH config and 1Password SSH agent
     nodejs.yml               # Node.js via nvm
     claude-code.yml          # Claude Code CLI
     vscode.yml               # VS Code + extensions

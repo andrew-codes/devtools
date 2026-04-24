@@ -42,6 +42,24 @@
         - git_ssh_agent == '1p'
         - onepassword_ssh_key | length > 0
 
+    - name: Ensure ~/.ssh directory exists (macOS)
+      ansible.builtin.file:
+        path: "~/.ssh"
+        state: directory
+        mode: "0700"
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Set TERM in ~/.ssh/config for all hosts (macOS)
+      ansible.builtin.blockinfile:
+        path: "~/.ssh/config"
+        create: true
+        mode: "0600"
+        marker: "# {mark} devtools:ssh-term"
+        block: |
+          Host *
+              SetEnv TERM=xterm-256color
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install 1Password (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
         name: 1password
