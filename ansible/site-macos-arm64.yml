@@ -28,4 +28,8 @@
 - import_playbook: playbooks/lens.yml
 - import_playbook: playbooks/terraform.yml
 - import_playbook: playbooks/kubectl.yml
+- import_playbook: playbooks/kubeseal.yml
+- import_playbook: playbooks/telepresence.yml
+- import_playbook: playbooks/flux.yml
+- import_playbook: playbooks/gitops.yml
 - import_playbook: playbooks/ansible-install.yml

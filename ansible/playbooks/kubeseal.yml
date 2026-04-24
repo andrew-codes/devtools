@@ -1,0 +1,10 @@
+---
+- name: Install kubeseal
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install kubeseal (macOS via Homebrew)
+      community.general.homebrew:
+        name: kubeseal
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

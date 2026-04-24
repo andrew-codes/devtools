@@ -1,0 +1,10 @@
+---
+- name: Install Weave GitOps CLI
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install gitops CLI (macOS via Homebrew)
+      community.general.homebrew:
+        name: weaveworks/tap/gitops
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
