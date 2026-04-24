@@ -1,14 +1,8 @@
 ---
-- name: Install and configure 1Password SSH agent
+- name: Configure SSH
   hosts: localhost
   gather_facts: true
   tasks:
-    - name: Install 1Password (macOS via Homebrew cask)
-      community.general.homebrew_cask:
-        name: 1password
-        state: present
-      when: ansible_facts['system'] == 'Darwin' and git_ssh_agent == '1p'
-
     - name: Configure 1Password SSH agent in ~/.bashrc (macOS)
       ansible.builtin.blockinfile:
         path: "~/.bashrc"
@@ -59,12 +53,6 @@
           Host *
               SetEnv TERM=xterm-256color
       when: ansible_facts['system'] == 'Darwin'
-
-    - name: Install 1Password (Windows via Chocolatey)
-      chocolatey.chocolatey.win_chocolatey:
-        name: 1password
-        state: present
-      when: ansible_facts['os_family'] == 'Windows' and git_ssh_agent == '1p'
 
     - name: Check OpenSSH Authentication Agent service (Windows)
       ansible.windows.win_service_info:
