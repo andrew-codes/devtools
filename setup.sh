@@ -25,7 +25,9 @@ if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
     git clone "https://github.com/$GITHUB_USERNAME/devtools.git" "$_devtools_dir"
     chmod +x "$_devtools_dir/setup.sh"
   else
-    echo "==> Devtools repo already exists at $_devtools_dir, skipping clone."
+    echo "==> Devtools repo already exists at $_devtools_dir, updating..."
+    git -C "$_devtools_dir" fetch origin
+    git -C "$_devtools_dir" reset --hard origin/main
   fi
 
   echo "==> Re-running setup from cloned repo..."
