@@ -1,0 +1,59 @@
+---
+- import_playbook: nodejs.yml
+
+- name: Install bash IDE tools (macOS)
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Install Nerd Fonts (macOS)
+      community.general.homebrew_cask:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ nerd_fonts }}"
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install neovim (macOS)
+      community.general.homebrew:
+        name: neovim
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install tree-sitter CLI (macOS)
+      community.general.homebrew:
+        name: tree-sitter
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install GCC C compiler (macOS)
+      community.general.homebrew:
+        name: gcc
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Add GCC to PATH in ~/.bashrc (macOS)
+      ansible.builtin.blockinfile:
+        path: "~/.bashrc"
+        marker: "# {mark} devtools:bash-ide-gcc"
+        block: |
+          if command -v brew &>/dev/null; then
+            export PATH="$(brew --prefix gcc)/bin:$PATH"
+          fi
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install ripgrep (macOS)
+      community.general.homebrew:
+        name: ripgrep
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install bottom (macOS)
+      community.general.homebrew:
+        name: bottom
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Install gdu — go disk usage (macOS)
+      community.general.homebrew:
+        name: gdu
+        state: present
+      when: ansible_facts['system'] == 'Darwin'

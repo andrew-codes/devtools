@@ -35,3 +35,4 @@
 - import_playbook: ../../playbooks/flux.yml
 - import_playbook: ../../playbooks/gitops.yml
 - import_playbook: ../../playbooks/ansible-install.yml
+- import_playbook: ../../playbooks/bash-ide.yml

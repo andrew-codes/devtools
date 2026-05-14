@@ -58,6 +58,10 @@ claude_mcp_servers:
       - "--project-from-cwd"
     env: {}
 
+nerd_fonts:
+  - font-hack-nerd-font
+  - font-jetbrains-mono-nerd-font
+
 vscode_extensions:
   - Anthropic.claude-code
   - arcanis.vscode-zipfs
