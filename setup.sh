@@ -252,17 +252,14 @@ if [[ $os_type == "macos" ]]; then
     exit 1
   fi
 
-  echo "==> Ensuring pip is up to date..."
-  python3 -m ensurepip --upgrade 2> /dev/null || true
-  python3 -m pip install --upgrade pip --quiet
-
-  echo "==> Installing Ansible..."
-  python3 -m pip install --upgrade ansible --quiet
-
-  # Add user-local bin to PATH if ansible-playbook is not yet visible
-  if ! command -v ansible-playbook &> /dev/null; then
-    export PATH="$(python3 -m site --user-base)/bin:$PATH"
+  echo "==> Installing Ansible in isolated venv..."
+  if [[ ! -x "$HOME/.ansible-venv/bin/ansible-playbook" ]]; then
+    rm -rf "$HOME/.ansible-venv"
+    python3 -m venv "$HOME/.ansible-venv"
+    "$HOME/.ansible-venv/bin/pip" install --upgrade pip --quiet
+    "$HOME/.ansible-venv/bin/pip" install ansible --quiet
   fi
+  export PATH="$HOME/.ansible-venv/bin:$PATH"
 
 # ── Windows bootstrap ─────────────────────────────────────────────────────────
 # Ansible does not support Windows as a control node (os.get_blocking is
