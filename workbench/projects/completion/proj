@@ -1,12 +1,183 @@
-# Completion for proj, projs, and oproj
-_proj_complete() {
-  local currToken="${COMP_WORDS[COMP_CWORD]}" matches
-  matches=$(ls ${REPO_HOME} | grep "${currToken}" | sed 's/^\(.*\)/\1/')
-  cur=${COMP_WORDS[COMP_CWORD]}
-  COMPREPLY=()
-  COMPREPLY=($(compgen -W "${matches}" -- ${currToken}))
+# proj — project navigation and creation
+#
+# Modes:
+#   proj                          cd to main repo of current project
+#   proj <project>                cd to main repo of a project
+#   proj <worktree>               cd to worktree of current project (when already in one)
+#   proj <project> <worktree>     cd to worktree of a specific project
+#   proj --new <url> [--name <n>] clone a new project and cd into it
+
+_proj_main_dir() {
+  local project_dir="$1"
+  local dir
+  # Primary clone has .git as a directory; worktrees have .git as a file
+  for dir in "$project_dir"/*/; do
+    [[ -d "${dir}.git" ]] && { printf '%s' "${dir%/}"; return; }
+  done
+  # Fallback: first subdirectory
+  for dir in "$project_dir"/*/; do
+    [[ -d "$dir" ]] && { printf '%s' "${dir%/}"; return; }
+  done
+  printf '%s' "$project_dir"
 }
 
-complete -F _proj_complete proj
-complete -F _proj_complete projs
-complete -F _proj_complete oproj
+proj() {
+  local repo_home="${REPO_HOME:-$HOME/developer/repos}"
+
+  # ── --help ───────────────────────────────────────────────────────────────────
+  if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat <<'EOF'
+Usage: proj [options] [<project> [<worktree>]]
+
+Navigate and create projects stored under $REPO_HOME.
+
+Modes:
+  proj                          cd to the primary clone of the current project
+  proj <project>                cd to the primary clone of <project>
+  proj <worktree>               cd to <worktree> of the current project
+                                  (only when already inside a project)
+  proj <project> <worktree>     cd to <worktree> of <project>
+  proj --new <url>              clone <url> as a new project and cd into it
+  proj --new <url> --name <n>   same, overriding the inferred project name
+
+Options:
+  --new <url>       Clone a repo and set up a new project directory.
+                    The project name is inferred from the URL; use --name
+                    to override. The clone directory is named after the
+                    default branch (e.g. main).
+  --name <name>     Override the project name (only valid with --new).
+  --help, -h        Show this help.
+
+Directory structure:
+  $REPO_HOME/
+    <project>/
+      <branch>/     ← primary clone (.git is a directory)
+      <worktree>/   ← git worktree (.git is a file)
+
+Related commands:
+  projs [filter]    List all projects (optionally filtered by name).
+  oproj <project>   Open a project in VS Code.
+EOF
+    return 0
+  fi
+
+  # ── --new: clone a new project ──────────────────────────────────────────────
+  if [[ "${1:-}" == "--new" ]]; then
+    shift
+    local url="" name=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --name) name="$2"; shift 2 ;;
+        *)      url="$1";  shift   ;;
+      esac
+    done
+    if [[ -z "$url" ]]; then
+      echo "proj --new: URL is required" >&2
+      return 1
+    fi
+    if [[ -z "$name" ]]; then
+      name="${url##*/}"
+      name="${name%.git}"
+    fi
+    local proj_dir="$repo_home/$name"
+    mkdir -p "$proj_dir" || return 1
+    local tmp="$proj_dir/.proj-clone-$$"
+    if ! git clone "$url" "$tmp"; then
+      rm -rf "$tmp"
+      return 1
+    fi
+    local branch
+    branch=$(git -C "$tmp" symbolic-ref --short HEAD 2>/dev/null || echo "main")
+    mv "$tmp" "$proj_dir/$branch"
+    cd "$proj_dir/$branch"
+    return
+  fi
+
+  # ── Determine if we're already inside a project ─────────────────────────────
+  local current_project=""
+  if [[ "$PWD" == "$repo_home"/* ]]; then
+    local _rel="${PWD#"$repo_home/"}"
+    current_project="${_rel%%/*}"
+  fi
+
+  case $# in
+    0)
+      # Mode 4: no args — go to main repo of current project
+      if [[ -z "$current_project" ]]; then
+        echo "proj: not inside a project directory (hint: proj <project>)" >&2
+        return 1
+      fi
+      cd "$(_proj_main_dir "$repo_home/$current_project")"
+      ;;
+    1)
+      local arg="$1"
+      # Mode 3: in a project and arg matches a worktree of that project
+      if [[ -n "$current_project" && -d "$repo_home/$current_project/$arg" ]]; then
+        cd "$repo_home/$current_project/$arg"
+      # Mode 1: arg is a project name
+      elif [[ -d "$repo_home/$arg" ]]; then
+        cd "$(_proj_main_dir "$repo_home/$arg")"
+      else
+        echo "proj: '$arg' is not a worktree of '$current_project' or a project in $repo_home" >&2
+        return 1
+      fi
+      ;;
+    2)
+      # Mode 2: proj <project> <worktree>
+      local project="$1" worktree="$2"
+      if [[ ! -d "$repo_home/$project/$worktree" ]]; then
+        echo "proj: worktree '$worktree' not found in project '$project'" >&2
+        return 1
+      fi
+      cd "$repo_home/$project/$worktree"
+      ;;
+    *)
+      echo "Usage: proj [--new <url> [--name <name>]] [<project> [<worktree>]]" >&2
+      return 1
+      ;;
+  esac
+}
+
+# ── Completions ─────────────────────────────────────────────────────────────
+_proj_complete() {
+  local repo_home="${REPO_HOME:-$HOME/developer/repos}"
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  COMPREPLY=()
+
+  # No completion for --new (URLs are free-form)
+  local word
+  for word in "${COMP_WORDS[@]}"; do
+    [[ "$word" == "--new" ]] && return
+  done
+
+  local current_project=""
+  if [[ "$PWD" == "$repo_home"/* ]]; then
+    local _rel="${PWD#"$repo_home/"}"
+    current_project="${_rel%%/*}"
+  fi
+
+  if [[ ${#COMP_WORDS[@]} -eq 2 ]]; then
+    # First arg: flags, project names, and worktrees of current project when inside one
+    local candidates="--new --help"
+    candidates=$(printf '%s\n%s' "$candidates" "$(ls "$repo_home" 2>/dev/null)")
+    if [[ -n "$current_project" ]]; then
+      candidates=$(printf '%s\n%s' "$candidates" "$(ls "$repo_home/$current_project" 2>/dev/null)" | sort -u)
+    fi
+    COMPREPLY=($(compgen -W "$candidates" -- "$cur"))
+  elif [[ ${#COMP_WORDS[@]} -eq 3 ]]; then
+    # Second arg: worktrees of the specified project
+    local project="${COMP_WORDS[1]}"
+    local candidates
+    candidates=$(ls "$repo_home/$project" 2>/dev/null)
+    COMPREPLY=($(compgen -W "$candidates" -- "$cur"))
+  fi
+}
+
+_projs_complete() {
+  local repo_home="${REPO_HOME:-$HOME/developer/repos}"
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  COMPREPLY=($(compgen -W "$(ls "$repo_home" 2>/dev/null)" -- "$cur"))
+}
+
+complete -F _proj_complete  proj
+complete -F _projs_complete projs
