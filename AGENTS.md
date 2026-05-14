@@ -1,5 +1,8 @@
 An Ansible-driven devtools setup that bootstraps a developer workbench on macOS arm64 and Windows 11 amd64 from a single bash entry-point (`setup.sh`).
 
+Documentation located: https://docs.home.smith-simms.family/wiki/external/NDFmMWRkNzk5MTYzNDZiYWE5M2M0YjE1YzMyMThhYjM
+Update this documentation as new features are updated.
+
 # Setup
 
 Run `./setup.sh` from the repo root. Logs are written to `workbench.log`.
