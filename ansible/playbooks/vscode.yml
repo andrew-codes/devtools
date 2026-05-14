@@ -3,11 +3,17 @@
   hosts: localhost
   gather_facts: true
   tasks:
+    - name: Check if VS Code app already exists (macOS)
+      ansible.builtin.stat:
+        path: /Applications/Visual Studio Code.app
+      register: _vscode_app
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install VS Code (macOS via Homebrew cask)
       community.general.homebrew_cask:
         name: visual-studio-code
         state: present
-      when: ansible_facts['system'] == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin' and not _vscode_app.stat.exists
 
     - name: Install VS Code (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:
@@ -69,7 +75,7 @@
 
     - name: Install VS Code extensions (macOS)
       ansible.builtin.command:
-        cmd: code --install-extension {{ item }} --force
+        cmd: code --install-extension {{ item }}
       loop: "{{ vscode_extensions }}"
       retries: 3
       delay: 5
@@ -91,7 +97,7 @@
 
     - name: Install VS Code extensions (Windows)
       ansible.windows.win_shell: |
-        code --install-extension {{ item }} --force
+        code --install-extension {{ item }}
       loop: "{{ vscode_extensions }}"
       retries: 3
       delay: 5
@@ -116,45 +122,79 @@
         mode: '0755'
       when: ansible_facts['system'] == 'Darwin'
 
-    - name: Check VS Code settings file (macOS)
-      ansible.builtin.stat:
-        path: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
-      register: vscode_settings_macos_stat
-      when: ansible_facts['system'] == 'Darwin'
-
-    - name: Read existing VS Code settings (macOS)
-      ansible.builtin.slurp:
-        path: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
-      register: vscode_settings_macos_raw
-      when:
-        - ansible_facts['system'] == 'Darwin'
-        - vscode_settings_macos_stat.stat.exists
-
-    - name: Build merged VS Code settings (macOS)
-      ansible.builtin.set_fact:
-        vscode_settings_macos_merged: >-
-          {{
-            (
-              (vscode_settings_macos_raw.content | b64decode | from_json)
-              if vscode_settings_macos_stat.stat.exists
-              else {}
-            )
-            | combine(
-              {
-                'workbench.panel.defaultLocation': 'left',
-                'chat.mcp.discovery.enabled': true,
-                'chat.mcp.autoStart': true
-              },
-              recursive=True
-            )
-          }}
-      when: ansible_facts['system'] == 'Darwin'
-
-    - name: Write VS Code settings (macOS)
+    - name: Write VS Code settings merge script (macOS)
       ansible.builtin.copy:
-        dest: "{{ ansible_facts['user_dir'] }}/Library/Application Support/Code/User/settings.json"
-        content: "{{ vscode_settings_macos_merged | to_nice_json }}\n"
-        mode: '0644'
+        dest: /tmp/devtools_vscode_settings.py
+        mode: "0700"
+        content: |
+          import json, os, re
+
+          path = os.path.expanduser(
+              "~/Library/Application Support/Code/User/settings.json"
+          )
+
+          def parse_jsonc(text):
+              out = []
+              i = 0
+              in_string = False
+              while i < len(text):
+                  c = text[i]
+                  if in_string:
+                      if c == "\\" and i + 1 < len(text):
+                          out.append(c)
+                          out.append(text[i + 1])
+                          i += 2
+                          continue
+                      if c == '"':
+                          in_string = False
+                      out.append(c)
+                  else:
+                      if c == '"':
+                          in_string = True
+                          out.append(c)
+                      elif c == "/" and i + 1 < len(text) and text[i + 1] == "/":
+                          while i < len(text) and text[i] != "\n":
+                              i += 1
+                          continue
+                      elif c == "/" and i + 1 < len(text) and text[i + 1] == "*":
+                          i += 2
+                          while i < len(text) - 1 and not (text[i] == "*" and text[i + 1] == "/"):
+                              i += 1
+                          i += 2
+                          continue
+                      else:
+                          out.append(c)
+                  i += 1
+              stripped = re.sub(r",\s*([}\]])", r"\1", "".join(out))
+              return json.loads(stripped, strict=False)
+
+          existing = {}
+          if os.path.exists(path):
+              with open(path) as f:
+                  existing = parse_jsonc(f.read())
+
+          existing.update({
+              "workbench.panel.defaultLocation": "left",
+              "chat.mcp.discovery.enabled": True,
+              "chat.mcp.autoStart": True,
+          })
+
+          os.makedirs(os.path.dirname(path), exist_ok=True)
+          with open(path, "w") as f:
+              json.dump(existing, f, indent=4)
+              f.write("\n")
+      when: ansible_facts['system'] == 'Darwin'
+
+    - name: Merge and write VS Code settings (macOS)
+      ansible.builtin.command:
+        cmd: python3 /tmp/devtools_vscode_settings.py
+      when: ansible_facts['system'] == 'Darwin'
+      changed_when: true
+
+    - name: Remove VS Code settings merge script (macOS)
+      ansible.builtin.file:
+        path: /tmp/devtools_vscode_settings.py
+        state: absent
       when: ansible_facts['system'] == 'Darwin'
 
     - name: Ensure VS Code MCP configuration file exists (macOS)

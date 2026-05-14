@@ -3,8 +3,14 @@
   hosts: localhost
   gather_facts: true
   tasks:
+    - name: Check if Lens app already exists (macOS)
+      ansible.builtin.stat:
+        path: /Applications/Lens.app
+      register: _lens_app
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install Lens IDE (macOS via Homebrew cask)
       community.general.homebrew_cask:
         name: lens
         state: present
-      when: ansible_facts['system'] == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin' and not _lens_app.stat.exists

@@ -3,8 +3,14 @@
   hosts: localhost
   gather_facts: true
   tasks:
+    - name: Check if Ghostty app already exists (macOS)
+      ansible.builtin.stat:
+        path: /Applications/Ghostty.app
+      register: _ghostty_app
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install Ghostty (macOS via Homebrew cask)
       community.general.homebrew_cask:
         name: ghostty
         state: present
-      when: ansible_facts['system'] == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin' and not _ghostty_app.stat.exists

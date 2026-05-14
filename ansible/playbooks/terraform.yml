@@ -3,6 +3,12 @@
   hosts: localhost
   gather_facts: true
   tasks:
+    - name: Tap hashicorp/tap (macOS)
+      community.general.homebrew_tap:
+        name: hashicorp/tap
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install Terraform (macOS via Homebrew)
       community.general.homebrew:
         name: hashicorp/tap/terraform

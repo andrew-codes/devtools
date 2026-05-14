@@ -76,8 +76,6 @@ vscode_extensions:
   - eamodio.gitlens
   - EditorConfig.EditorConfig
   - esbenp.prettier-vscode
-  - GitHub.copilot-chat
-  - GitHub.copilot
   - github.vscode-github-actions
   - GraphQL.vscode-graphql-syntax
   - GraphQL.vscode-graphql

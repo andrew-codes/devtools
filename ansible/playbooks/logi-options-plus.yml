@@ -3,11 +3,24 @@
   hosts: localhost
   gather_facts: true
   tasks:
+    - name: Check if Logi Options+ app already exists (macOS)
+      ansible.builtin.stat:
+        path: /Applications/Logi Options+.app
+      register: _logi_app
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install Logi Options+ (macOS via Homebrew cask)
       community.general.homebrew_cask:
         name: logi-options+
         state: present
-      when: ansible_facts['system'] == 'Darwin'
+      when: ansible_facts['system'] == 'Darwin' and not _logi_app.stat.exists
+      ignore_errors: true
+      register: _logi_install
+
+    - name: Warn if Logi Options+ could not be installed automatically (macOS)
+      ansible.builtin.debug:
+        msg: "Logi Options+ could not be installed automatically (its installer requires sudo with a terminal). Install it manually from https://www.logitech.com/en-us/software/logi-options-plus.html"
+      when: ansible_facts['system'] == 'Darwin' and not _logi_app.stat.exists and _logi_install is failed
 
     - name: Install Logi Options+ (Windows via Chocolatey)
       chocolatey.chocolatey.win_chocolatey:

@@ -3,6 +3,12 @@
   hosts: localhost
   gather_facts: true
   tasks:
+    - name: Tap datawire/blackbird (macOS)
+      community.general.homebrew_tap:
+        name: datawire/blackbird
+        state: present
+      when: ansible_facts['system'] == 'Darwin'
+
     - name: Install Telepresence (macOS via Homebrew)
       community.general.homebrew:
         name: datawire/blackbird/telepresence
