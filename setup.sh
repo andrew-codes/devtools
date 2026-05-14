@@ -6,10 +6,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SET_NAME="${1:-personal}"
 
 # ── Self-bootstrap: clone repo if not running from within it ──────────────────
 # Supports: bash $(curl -fsSL https://raw.githubusercontent.com/.../setup.sh)
-if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
+if [[ ! -d "$SCRIPT_DIR/ansible/sets" ]]; then
   if [[ -z ${GITHUB_USERNAME:-} ]]; then
     echo "Error: GITHUB_USERNAME must be set to clone the devtools repo." >&2
     exit 1
@@ -31,7 +32,7 @@ if [[ ! -f "$SCRIPT_DIR/ansible/site-macos-arm64.yml" ]]; then
   fi
 
   echo "==> Re-running setup from cloned repo..."
-  exec "$_devtools_dir/setup.sh"
+  exec "$_devtools_dir/setup.sh" "$SET_NAME"
 fi
 
 exec > >(tee "$SCRIPT_DIR/workbench.log") 2>&1
@@ -43,7 +44,7 @@ if [[ -z ${DEVTOOLS_UPDATED:-} ]] && git -C "$SCRIPT_DIR" remote get-url origin 
   git -C "$SCRIPT_DIR" reset --hard origin/main
   echo "==> Re-running setup after update..."
   export DEVTOOLS_UPDATED=1
-  exec "$SCRIPT_DIR/setup.sh"
+  exec "$SCRIPT_DIR/setup.sh" "$SET_NAME"
 fi
 
 ensure_windows_bootstrap() {
@@ -499,12 +500,14 @@ fi
 inventory=""
 playbook=""
 
+echo "==> Using devtools set: $SET_NAME"
+
 if [[ $os_type == "macos" ]]; then
   inventory="$SCRIPT_DIR/ansible/inventory-macos.yml"
-  playbook="$SCRIPT_DIR/ansible/site-macos-arm64.yml"
+  playbook="$SCRIPT_DIR/ansible/sets/$SET_NAME/$os_type-$arch_type.yml"
 elif [[ $os_type == "windows" ]]; then
   inventory="$WSL_SCRIPT_DIR/ansible/inventory-windows.yml"
-  playbook="$WSL_SCRIPT_DIR/ansible/site-windows-amd64.yml"
+  playbook="$WSL_SCRIPT_DIR/ansible/sets/$SET_NAME/$os_type-$arch_type.yml"
 fi
 
 if [[ $os_type != "windows" && ! -f $playbook ]]; then
