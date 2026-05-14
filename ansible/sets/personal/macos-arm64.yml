@@ -17,6 +17,7 @@
 - import_playbook: ../../playbooks/projects.yml
 - import_playbook: ../../playbooks/bash-utilities.yml
 - import_playbook: ../../playbooks/1password.yml
+- import_playbook: ../../playbooks/runtime-env-1password.yml
 - import_playbook: ../../playbooks/ssh.yml
 - import_playbook: ../../playbooks/nodejs.yml
 - import_playbook: ../../playbooks/claude-code.yml

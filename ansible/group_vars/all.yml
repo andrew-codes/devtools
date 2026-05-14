@@ -17,6 +17,11 @@ git_name: "{{ lookup('env', 'GIT_NAME') }}"
 git_signing_key: "{{ lookup('env', 'GIT_SIGNING_KEY') }}"
 git_ssh_agent: "{{ lookup('env', 'GIT_SSH_AGENT') | default('1p', true) }}"
 onepassword_ssh_key: "{{ lookup('env', 'ONEPASSWORD_SSH_KEY') | default(git_signing_key, true) }}"
+onepassword_vault: "{{ lookup('env', 'ONEPASSWORD_VAULT') }}"
+
+runtime_env_vars:
+  - CONTEXT7_API_KEY
+  - GITHUB_TOKEN
 
 # Resolved by setup.sh via -e flag; points to the repository root.
 devtools_repo_root: "{{ lookup('env', 'DEVTOOLS_REPO_ROOT') | default(playbook_dir + '/..') }}"

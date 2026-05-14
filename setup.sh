@@ -477,9 +477,9 @@ fi
 # ── Forward env vars into WSL for Ansible ────────────────────────────────────
 # WSLENV lists the Windows env vars WSL should inherit. Variables are
 # colon-separated; /u means path-translate (not needed here).
-_wslenv="USERNAME:GITHUB_USERNAME:GIT_EMAIL:GIT_NAME:GIT_SIGNING_KEY:GIT_SSH_AGENT:ONEPASSWORD_SSH_KEY"
+_wslenv="USERNAME:GITHUB_USERNAME:GIT_EMAIL:GIT_NAME:GIT_SIGNING_KEY:GIT_SSH_AGENT:ONEPASSWORD_SSH_KEY:ONEPASSWORD_VAULT"
 _wslenv="$_wslenv:DEV_HOME:REPO_HOME:DEVTOOLS_HOME:TOOLS_HOME:TOOLS_BIN_HOME"
-_wslenv="$_wslenv:NODE_VERSION:GITHUB_TOKEN:CONTEXT7_API_KEY:ANSIBLE_PASSWORD"
+_wslenv="$_wslenv:NODE_VERSION:ANSIBLE_PASSWORD"
 
 # ── Validate Ansible is available ─────────────────────────────────────────────
 if [[ $os_type == "windows" ]]; then

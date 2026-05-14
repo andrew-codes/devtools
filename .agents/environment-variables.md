@@ -17,6 +17,7 @@ Resolved in `ansible/group_vars/all.yml` via `lookup('env', 'VAR_NAME')`. Must b
 | `GIT_SIGNING_KEY` | _(optional)_ | SSH public key path for commit signing |
 | `GIT_SSH_AGENT` | `1p` | SSH agent type (`1p` for 1Password) |
 | `ONEPASSWORD_SSH_KEY` | _(optional)_ | 1Password SSH key selector for `agent.toml` (`[[ssh-keys]].item`), defaults to `GIT_SIGNING_KEY` |
+| `ONEPASSWORD_VAULT` | _(optional)_ | 1Password vault name used to read runtime secrets into `~/.bashrc`. If unset, no runtime env block is written. |
 | `NODE_VERSION` | `24.14.1` | Node.js version to install via nvm |
 
 ### Windows Only
@@ -27,11 +28,11 @@ Resolved in `ansible/group_vars/all.yml` via `lookup('env', 'VAR_NAME')`. Must b
 
 ## Runtime Variables
 
-Must be present in the shell environment when using the installed tools. Not consumed by Ansible at setup time.
+Injected automatically into `~/.bashrc` at setup time using the 1Password CLI (`op read`). The vault is determined by `ONEPASSWORD_VAULT`. Secret names in 1Password match the variable names exactly.
 
 ### Claude Code MCP
 
-| Variable | Description |
+| Variable | 1Password Secret |
 | --- | --- |
-| `CONTEXT7_API_KEY` | Context7 API key — used by the Context7 MCP server |
-| `GITHUB_TOKEN` | GitHub personal access token — used by the GitHub MCP server |
+| `CONTEXT7_API_KEY` | `CONTEXT7_API_KEY` |
+| `GITHUB_TOKEN` | `GITHUB_TOKEN` |
