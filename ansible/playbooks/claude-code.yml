@@ -64,7 +64,7 @@
         set -euo pipefail
         patched=$(jq --arg name "{{ item.key }}" \
           --argjson config '{{ item.value | to_json }}' \
-          '.mcpServers[$name] //= $config' \
+          '.mcpServers[$name] = $config' \
           ~/.claude.json)
         if [[ -z "${patched//[[:space:]]/}" ]]; then
           echo "jq produced empty output while updating ~/.claude.json" >&2
@@ -164,9 +164,7 @@
         }
 
         foreach ($key in $desiredObj.Keys) {
-          if (-not $claudeObj['mcpServers'].ContainsKey($key)) {
-            $claudeObj['mcpServers'][$key] = $desiredObj[$key]
-          }
+          $claudeObj['mcpServers'][$key] = $desiredObj[$key]
         }
 
         $json = $claudeObj | ConvertTo-Json -Depth 20

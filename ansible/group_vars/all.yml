@@ -21,7 +21,7 @@ onepassword_vault: "{{ lookup('env', 'ONEPASSWORD_VAULT') }}"
 
 runtime_env_vars:
   - CONTEXT7_API_KEY
-  - GITHUB_TOKEN
+  - GITHUB_MCP_PAT
 
 # Resolved by setup.sh via -e flag; points to the repository root.
 devtools_repo_root: "{{ lookup('env', 'DEVTOOLS_REPO_ROOT') | default(playbook_dir + '/..') }}"
@@ -42,7 +42,7 @@ claude_mcp_servers:
     type: http
     url: "https://api.githubcopilot.com/mcp"
     headers:
-      Authorization: "Bearer $GITHUB_TOKEN"
+      Authorization: "Bearer $GITHUB_MCP_PAT"
   atlassian:
     type: http
     url: "https://mcp.atlassian.com/v1/mcp"
