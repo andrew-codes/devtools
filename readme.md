@@ -1,183 +1,180 @@
 # Devtools
 
-This repo is my **personal** collection of dotfiles, configuration settings, templates, and productivity tools. The intention is to be able to automate the installation and setup of a new developer workbench as much as possible. This represents the culmination of numerous iterations across various companies to automate developer onboarding.
+My **personal** developer workbench, defined declaratively with [Nix](https://nixos.org/). One command takes a clean machine to a fully configured environment: system settings, applications, CLI tooling, shell, dotfiles, and an AI agent harness.
 
-## Install Your Workbench
+Everything is reproducible and version controlled. Configuration files are symlinked back into this repo, so editing a config here takes effect immediately without a rebuild.
 
-The only required software is bash (or Git Bash for Windows). Everything else — including Python and Ansible — is bootstrapped automatically by the setup script.
+## Supported Platforms
 
-### Required Environment Variables
-
-Set these before running `setup.sh`. Variables without a default **must** be set.
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `DEV_HOME` | `~/developer` | Root developer directory |
-| `REPO_HOME` | `$DEV_HOME/repos` | Git repository directory |
-| `DEVTOOLS_HOME` | `$DEV_HOME/devtools` | Devtools installation directory |
-| `TOOLS_HOME` | `$DEV_HOME/tools` | Shared tools directory |
-| `TOOLS_BIN_HOME` | `$TOOLS_HOME/bin` | Tools binary directory (added to PATH) |
-| `GITHUB_USERNAME` | _(required)_ | Your GitHub username |
-| `GIT_EMAIL` | _(optional)_ | Git commit email |
-| `GIT_NAME` | _(optional)_ | Git commit display name |
-| `GIT_SIGNING_KEY` | _(optional)_ | SSH public key path for commit signing |
-| `GIT_SSH_AGENT` | `1p` | SSH agent type (`1p` for 1Password) |
-| `ONEPASSWORD_SSH_KEY` | _(optional)_ | 1Password SSH key selector for `agent.toml` (`[[ssh-keys]].item`), defaults to `GIT_SIGNING_KEY` |
-| `CONTEXT7_API_KEY` | _(optional)_ | Context7 API key |
-| `NODE_VERSION` | `24.14.1` | Node.js version to install via nvm |
-| `GITHUB_TOKEN` | _(optional)_ | GitHub personal access token |
-
-**Windows only:**
-
-| Variable | Description |
+| Platform | Status |
 | --- | --- |
-| `ANSIBLE_PASSWORD` | Windows user account password (required for WinRM authentication) |
+| macOS on Apple Silicon (`aarch64-darwin`) | Supported |
+| macOS on Intel | Not supported |
+| Windows / WSL | Not yet migrated |
 
-### Running Setup
+## Install
+
+Requires macOS on Apple Silicon. Nothing else needs to be preinstalled; the setup script bootstraps Nix itself.
 
 ```bash
-# Set required environment variables
-export GITHUB_USERNAME="your-username"
-export GIT_EMAIL="you@example.com"
-export GIT_NAME="Your Name"
-export GIT_SIGNING_KEY="~/.ssh/id_ed25519.pub"
-
-# Run directly from the repo
+git clone https://github.com/andrew-codes/devtools.git ~/developer/repos/devtools
+cd ~/developer/repos/devtools
 ./setup.sh
-
-# Or bootstrap from scratch with curl (clones the repo automatically)
-bash $(curl -fsSL https://raw.githubusercontent.com/andrew-codes/devtools/main/setup.sh)
 ```
 
-Setup logs are written to `workbench.log` in the repository root.
+`setup.sh` detects the OS and architecture and dispatches to the matching platform script -- currently just `setup/macOS.sh` for macOS on Apple Silicon. On any other platform it prints what was detected and exits rather than attempting an install.
+
+The macOS script:
+
+1. Installs [Determinate Nix](https://determinate.systems/) if `nix` is not already present.
+2. Symlinks the repo to `~/.dotfiles`, which every config path resolves through.
+3. Offers to rewrite the `user = "..."` line in `flake.nix` to match your macOS username.
+4. Runs the first `darwin-rebuild switch` against the flake.
+
+Sign in to the Mac App Store first if you want the `masApps` entries to install; `mas` cannot authenticate on its own.
+
+### Applying Changes Later
+
+After the first install, rebuild with either:
+
+```bash
+devtools-rebuild    # from anywhere, symlinked onto PATH
+```
+
+### Required Manual Steps
+
+Two files hold values that are specific to a single machine or are secret, so they are never tracked in this public repo.
+
+| File | Purpose |
+| --- | --- |
+| `~/.env` | Secrets. Auto-created with every required key stubbed empty. zsh warns on every shell until each has a value. |
+| `~/.gitconfig.local` | This machine's git SSH signing key. Activation prints a reminder if missing. |
+| `~/.ssh/config.local` | Optional. Personal SSH hosts, included from the tracked `~/.ssh/config`. |
+
+> **Note:** Homebrew uses `onActivation.cleanup = "none"`, so packages installed outside this repo are left alone on rebuild. Existing files at a managed path must be moved aside before the first activation; home-manager will not clobber them.
 
 ---
 
-## How It Works
+## What You Get
 
-The setup is driven by [Ansible](https://www.ansible.com/) playbooks. `setup.sh` is the single entry point:
+### Shell
 
-1. Detects the OS and CPU architecture
-2. Bootstraps Python 3 and Ansible (via `pip`)
-3. On Windows: installs Chocolatey and configures WinRM for local Ansible connections
-4. Runs the appropriate site playbook for the detected platform
+- **zsh** with autosuggestions (`Ctrl-F` to accept), syntax highlighting, and a [starship](https://starship.rs/) prompt showing directory, git branch/status, and command duration.
+- **Secret loading.** `~/.env` is sourced and exported at startup so child processes (agents, MCP servers) inherit it.
+- **Completions.** Tab-completion for the custom commands below, loaded through `bashcompinit`.
+- Aliases: `..`, `add`, `m`, `cc`, `co`, `aup`.
 
-### Supported Platforms
+### Custom Commands
 
-| Platform | Site Playbook |
+Scripts in `home/bin/` are symlinked individually into `~/.local/bin`.
+
+| Group | Commands |
 | --- | --- |
-| macOS arm64 (Apple Silicon) | `ansible/site-macos-arm64.yml` |
-| Windows 11 amd64 | `ansible/site-windows-amd64.yml` |
+| Agents | `firstmate` (launch pi inside the firstmate repo) |
+| Git | `gco` `db` `fa` `glg` `gnxt` `gwta` `lb` `nb` `pmb` `pull` `push` `rba` `rbc` `rbi` `rbs` `rh` `rs` `sb` `st` `stash` |
+| Docker | `denv` `dka` |
+| Ports | `kaup` (kill whatever is listening on a port) |
 
-### Playbook Structure
+### CLI Toolchain
+
+Installed from nixpkgs: `ripgrep`, `fd`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font.
+
+Node.js is managed by [Volta](https://volta.sh/), which pins each global CLI to the Node version it was installed with, so changing your default Node version never breaks an installed tool.
+
+### Applications
+
+Installed via Homebrew and the Mac App Store:
+
+| App | Purpose |
+| --- | --- |
+| [WezTerm](https://wezterm.org/) | Terminal emulator |
+| [1Password](https://1password.com/) + CLI | Passwords, SSH agent, commit signing |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Containers |
+| [Raycast](https://raycast.com/) | Launcher (replaces Spotlight) |
+| [Lens](https://k8slens.dev/) | Kubernetes IDE |
+| [Claude Code](https://www.anthropic.com/claude-code) | Anthropic coding agent |
+| [herdr](https://herdr.dev/) | Agent session multiplexer |
+| [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs |
+| [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) | Logitech device configuration |
+| Dynamic Wallpaper Library | Wallpapers (Mac App Store) |
+
+### AI Agent Harness
+
+The environment is built around [pi](https://pi.dev/) as the primary agent harness.
+
+**Agent CLIs** (installed globally, `--ignore-scripts` for supply-chain safety):
+
+- `pi` - the coding agent itself
+- [AXI](https://axi.md/) tools, token-efficient CLIs designed for agent use: `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`
+- [`no-mistakes`](https://kunchenguid.github.io/no-mistakes/) - AI-gated push pipeline (review, test, lint before code lands)
+- [`treehouse`](https://github.com/kunchenguid/treehouse) - pooled, reusable git worktrees
+
+**pi extensions**, declared in `home/.pi/agent/settings.json` and installed by pi itself:
+
+| Extension | Capability |
+| --- | --- |
+| `pi-mcp-adapter` | MCP servers behind a single token-efficient proxy tool |
+| `pi-subagents` | Autonomous sub-agents in isolated sessions |
+| `pi-subdir-context` | Auto-loads `AGENTS.md` / `CLAUDE.md` walking up the tree |
+| `pi-yaml-hooks` | YAML-defined lifecycle hooks |
+| `codex-fast-mode`, `openai-server-compaction` | Model and context tuning |
+
+**Session hooks** (`home/.pi/agent/hook/hooks.yaml`) run on every new pi session: warm up the AXI CLIs, and run `no-mistakes init` when inside a git repo so each repo is gated automatically without manual per-repo setup.
+
+**MCP servers** (`home/.config/mcp/mcp.json`): Context7 for library documentation, and Atlassian for Jira and Confluence. Secrets are referenced as `${VAR}` and resolved from the environment at connection time, never stored in the file.
+
+**Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Global agent skills live in `home/.agents/skills/`.
+
+### Git and SSH
+
+Git config is layered so shared settings stay tracked while machine-specific and OS-specific values do not:
 
 ```text
-ansible/
-  setup.sh                   # Bootstrap entry point
-  requirements.yml           # Ansible Galaxy collections
-  inventory-macos.yml        # macOS localhost inventory (connection: local)
-  inventory-windows.yml      # Windows localhost inventory (connection: winrm)
-  group_vars/
-    all.yml                  # Variables resolved from environment variables
-  site-macos-arm64.yml       # macOS arm64 entry playbook
-  site-windows-amd64.yml     # Windows amd64 entry playbook
-  playbooks/
-    devtools-bash-env.yml    # Dev directory structure + PATH export
-    bash-profile.yml         # ~/.bash_profile → sources ~/.bashrc
-    brew.yml                 # Homebrew (macOS only)
-    git-config.yml           # Git globals, signing, editor
-    uvx.yml                  # uv / uvx (Python tool runner)
-    shfmt.yml                # Shell script formatter
-    jq.yml                   # JSON processor
-    git-completion.yml       # Bash tab-completion for git
-    git-prompt.yml           # Git branch info in shell prompt
-    gh.yml                   # GitHub CLI
-    yq.yml                   # YAML processor
-    git-shortcuts.yml        # Custom git shortcut scripts
-    projects.yml             # Project navigation scripts
-    bash-utilities.yml       # Custom bash utility scripts
-    ssh.yml                  # SSH config and 1Password SSH agent
-    nodejs.yml               # Node.js via nvm
-    claude-code.yml          # Claude Code CLI
-    vscode.yml               # VS Code + extensions
-    docker.yml               # Docker Desktop + bin utilities
-    raycast.yml              # Raycast + macOS Spotlight disable
-    ghostty.yml              # Ghostty terminal (macOS)
-    logi-options-plus.yml    # Logi Options+ (macOS/Windows)
-    lens.yml                 # Lens IDE (macOS)
+~/.gitconfig          tracked, shared settings
+  -> ~/.gitconfig-os      OS-specific (1Password signing paths)
+  -> ~/.gitconfig.local   machine-specific signing key, untracked
 ```
 
-Each playbook is self-contained, idempotent, and uses `when:` guards for platform-specific tasks. macOS tasks use [Homebrew](https://brew.sh/); Windows tasks use [Chocolatey](https://chocolatey.org/).
+SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` (the 1Password `IdentityAgent`) and an untracked `~/.ssh/config.local` for personal hosts.
+
+1Password acts as the SSH agent (`SSH_AUTH_SOCK`) and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`.
+
+### macOS System Defaults
+
+Dark mode, fast key repeat, auto-hiding dock and menu bar, all file extensions visible, Finder in list view, no desktop icons, tap-to-click disabled, and Spotlight indexing turned off since Raycast replaces it.
+
+### Edit-in-Place Configs
+
+These are symlinked out of the repo, so edits apply immediately with no rebuild: WezTerm, Neovim, herdr, pi (settings, models, theme, extensions, hooks), Claude Code settings, and the global gitignore.
 
 ---
 
-## Installed Tools
+## Repo Layout
 
-| Tool | Description | macOS | Windows |
-| --- | --- | :---: | :---: |
-| [Homebrew](https://brew.sh/) | Package manager | ✓ | |
-| [Chocolatey](https://chocolatey.org/) | Package manager | | ✓ |
-| Shell environment | Dev directory structure, `PATH` exports, and `~/.bash_profile` → `~/.bashrc` wiring | ✓ | ✓ |
-| [Git](https://git-scm.com/) | Global config — user identity, commit signing, default editor | ✓ | ✓ |
-| Git completion | Bash tab-completion for git commands | ✓ | ✓ |
-| [git-prompt](https://github.com/git/git/blob/master/contrib/completion/git-prompt.sh) | Git branch and status info in the shell prompt | ✓ | ✓ |
-| [git-shortcuts](workbench/git-shortcuts/) | Custom git shortcut scripts (`co`, `nb`, `push`, `pull`, `st`, `glg`, …) | ✓ | ✓ |
-| [GitHub CLI](https://cli.github.com/) (`gh`) | GitHub CLI for PRs, issues, and repo management | ✓ | ✓ |
-| [uv / uvx](https://github.com/astral-sh/uv) | Fast Python package and tool runner | ✓ | ✓ |
-| [shfmt](https://github.com/mvdan/sh) | Shell script formatter | ✓ | ✓ |
-| [jq](https://jqlang.github.io/jq/) | Command-line JSON processor | ✓ | ✓ |
-| [yq](https://mikefarah.gitbook.io/yq/) | Command-line YAML processor | ✓ | ✓ |
-| [Node.js](https://nodejs.org/) | Node.js installed and managed via [nvm](https://github.com/nvm-sh/nvm) | ✓ | ✓ |
-| [Claude Code](https://www.anthropic.com/claude-code) | Anthropic Claude Code CLI (`@anthropic-ai/claude-code`) and default MCP servers | ✓ | ✓ |
-| [Visual Studio Code](https://code.visualstudio.com/) | Editor + configured extension set | ✓ | ✓ |
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Docker Desktop + `denv` / `dka` bin utilities | ✓ | ✓ |
-| [Raycast](https://raycast.com/) | Launcher and productivity app; disables Spotlight indexing on macOS; installed from vendor installer URL on Windows | ✓ | ✓ |
-| [Ghostty](https://ghostty.org/) | Terminal emulator | ✓ | |
-| [Logi Options+](https://www.logitech.com/en-us/software/logi-options-plus.html) | Logitech device customization software | ✓ | ✓ |
-| [Lens](https://k8slens.dev/) | Kubernetes IDE | ✓ | |
-| [1Password SSH Agent](https://developer.1password.com/docs/ssh/agent/) | SSH agent integration via 1Password | ✓ | ✓ |
-| [projects](workbench/projects/) | Project navigation scripts (`proj`, `projs`, `oproj`) | ✓ | ✓ |
-| [bash-utilities](workbench/bash-utilities/) | Custom bash utility scripts (`aup`, `kaup`) | ✓ | ✓ |
-
----
-
-## Adding New Tools
-
-Create a new playbook in `ansible/playbooks/` following this pattern:
-
-```yaml
----
-- name: Install my-tool
-  hosts: localhost
-  gather_facts: true
-  tasks:
-    - name: Install my-tool (macOS via Homebrew)
-      community.general.homebrew:
-        name: my-tool
-        state: present
-      when: ansible_system == 'Darwin'
-
-    - name: Install my-tool (Windows via Chocolatey)
-      chocolatey.chocolatey.win_chocolatey:
-        name: my-tool
-        state: present
-      when: ansible_os_family == 'Windows'
+```text
+flake.nix              Inputs (nixpkgs, nix-darwin, home-manager, nix-homebrew) and the "mac" host
+configuration.nix      System level: macOS defaults, Homebrew packages, Mac App Store apps
+home.nix               User level: packages, zsh, dotfile symlinks, activation scripts
+setup.sh               Detects OS/arch, dispatches to the matching setup/ script
+setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
+rebuild.sh             Apply changes (also on PATH as devtools-rebuild)
+home/                  Every tracked dotfile, symlinked into place
+  bin/                 Custom commands -> ~/.local/bin
+  bin-completion/      Their zsh completions
+  .pi/agent/           pi harness config
+  .config/mcp/         MCP server definitions
+  .agents/skills/      Global agent skills
+ansible/, workbench/   Legacy pre-Nix setup, kept for the unmigrated Windows path
 ```
 
-Then add it to the appropriate site playbook(s):
+## Customizing
 
-```yaml
-# ansible/site-macos-arm64.yml
-- import_playbook: playbooks/my-tool.yml
-```
-
----
-
-## Windows Prerequisites
-
-On Windows, Ansible connects to `localhost` via WinRM. `setup.sh` will configure WinRM automatically, but the Windows user account must have administrator rights. Set `ANSIBLE_PASSWORD` to your Windows account password before running:
-
-```bash
-export ANSIBLE_PASSWORD="your-windows-password"
-./ansible/setup.sh
-```
+| To add | Edit |
+| --- | --- |
+| A CLI from nixpkgs | `home.packages` in `home.nix` |
+| A GUI app or Homebrew formula | `homebrew.casks` / `brews` / `masApps` in `configuration.nix` |
+| A global npm CLI | `globalNpmPackages` in `home.nix` (semver range, upgrades in place) |
+| A Go CLI | `goPackages` in `home.nix` (pinned to a release tag) |
+| A required secret | `secretEnvVars` in `home.nix`; it is stubbed into `~/.env` on the next rebuild |
+| A custom command | Drop an executable in `home/bin/`; it is picked up automatically |
+| A pi extension | `packages` in `home/.pi/agent/settings.json` |

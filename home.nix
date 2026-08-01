@@ -1,0 +1,285 @@
+{ config, lib, pkgs, user, ... }:
+
+let
+  dotfiles = "${config.home.homeDirectory}/.dotfiles";
+  # Global npm CLIs installed via Volta. Bump a version here to upgrade it;
+  # each is a semver range that npm itself resolves and satisfies in place.
+  globalNpmPackages = [
+    "@earendil-works/pi-coding-agent@^0.83.0" # https://www.npmjs.com/package/@earendil-works/pi-coding-agent
+    "gh-axi@^0.1.29"                          # https://www.npmjs.com/package/gh-axi
+    "chrome-devtools-axi@^0.1.28"             # https://www.npmjs.com/package/chrome-devtools-axi
+    "quota-axi@^0.1.17"                       # https://www.npmjs.com/package/quota-axi
+    "npm-axi@^0.1.1"                          # https://www.npmjs.com/package/npm-axi
+  ];
+  # Go modules installed via `go install`, pinned to a released tag. Their
+  # own docs lead with an unpinned `curl | sh` from main with no checksum
+  # verification; `go install @<tag>` instead goes through Go's module
+  # system, which verifies against sum.golang.org.
+  goPackages = [
+    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.41.2" # https://github.com/kunchenguid/no-mistakes/releases
+    # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1) is broken
+    # upstream -- they tagged v2 releases without bumping go.mod's module
+    # path to ".../treehouse/v2" as Go's semantic import versioning
+    # requires, so `go install` rejects every v2.x ref with "invalid
+    # version: module contains a go.mod file, so module path must match
+    # major version". Bump this once upstream fixes go.mod on a new tag.
+    "github.com/kunchenguid/treehouse@v1.8.0"                     # https://github.com/kunchenguid/treehouse/releases
+  ];
+  # Secrets referenced by tooling that reads them from the environment --
+  # currently the MCP servers in home/.config/mcp/mcp.json. Values never live
+  # in this public repo: activation stubs each key into ~/.env (untracked),
+  # and zsh sources that file so child processes inherit them. Add a key here
+  # when a new config references one.
+  secretEnvVars = [
+    "CONTEXT7_API_KEY"   # mcp.json: context7 headers
+    "ATLASSIAN_USERNAME" # mcp.json: mcp-atlassian (Jira + Confluence)
+    "ATLASSIAN_TOKEN"    # mcp.json: mcp-atlassian (Jira + Confluence)
+  ];
+in
+
+{
+  home.username = user;
+  home.homeDirectory = "/Users/${user}";
+  home.stateVersion = "24.11";
+  home.packages = with pkgs; [
+    ripgrep   # fast search
+    fd        # fast find
+    fzf       # fuzzy finder
+    jq        # json on the command line
+    lazygit
+    neovim
+    yq
+    uv
+    shfmt
+    kubeseal
+    gh
+    fluxcd     # flux CLI
+    kubectl
+    terraform
+    ansible
+    volta      # node.js version management
+    # the font everything renders in
+    nerd-fonts.hack
+  ];
+  fonts.fontconfig.enable = true;
+  home.sessionVariables.EDITOR = "nvim";
+  home.sessionVariables.REPO_HOME = "${config.home.homeDirectory}/developer/repos";
+  home.sessionVariables.VOLTA_HOME = "${config.home.homeDirectory}/.volta";
+  home.sessionVariables.SSH_AUTH_SOCK = "${config.home.homeDirectory}/.1password/agent.sock";
+  home.sessionPath = [
+    "${config.home.homeDirectory}/.local/bin" # custom bin/ commands (db, fa, ...) symlinked here
+    "${config.home.homeDirectory}/.volta/bin"
+    "${config.home.homeDirectory}/go/bin" # go install targets, e.g. no-mistakes
+  ];
+
+  programs.zsh = {
+    enable = true;
+    autosuggestion.enable = true;      # ghost text from history
+    syntaxHighlighting.enable = true;  # commands turn green when valid
+    initContent = ''
+      bindkey '^f' autosuggest-accept
+
+      # Completions for the custom bin/ commands are written as bash-style
+      # `complete -F` scripts; bashcompinit lets zsh load them unchanged.
+      autoload -U +X bashcompinit && bashcompinit
+      for f in ~/.config/zsh/bin-completion/*(N); do
+        source "$f"
+      done
+
+      # Secrets live in ~/.env (untracked; activation stubs the keys in).
+      # `set -a` exports everything it defines, so child processes -- pi, its
+      # MCP servers, etc. -- inherit them.
+      if [[ -f ~/.env ]]; then
+        set -a
+        source ~/.env
+        set +a
+      fi
+
+      # Say so, every shell, until each stubbed secret actually has a value.
+      () {
+        local var
+        local -a missing
+        for var in ${lib.concatStringsSep " " secretEnvVars}; do
+          if [[ -z ''${(P)var} ]]; then
+            missing+=($var)
+          fi
+        done
+        if (( $#missing )); then
+          print -u2 "⚠  Unset secrets in ~/.env: ''${(j:, :)missing}"
+          print -u2 "   Set them there before using tooling that needs them."
+        fi
+      }
+    '';
+    shellAliases = {
+      ".." = "cd ..";
+      add = "git add .";
+      m = "git switch main";
+      cc = "claude --dangerously-skip-permissions";
+      co = "codex --full-auto";
+      aup = "lsof -nP -i4TCP:$1 | grep LISTEN";
+    };
+  };
+
+  programs.starship = {
+    enable = true;
+    settings = {
+      add_newline = false;
+      format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
+      character = {
+        success_symbol = "[❯](purple)";
+        error_symbol = "[❯](red)";
+      };
+      cmd_duration.format = "[$duration]($style) ";
+    };
+  };
+
+  # Edit-in-place: the real file stays in my repo, ~/.config just points at it.
+  home.file = {
+    ".agents/skills".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
+    ".config/wezterm".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/wezterm";
+    ".config/nvim".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/nvim";
+    ".config/herdr".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
+    ".config/zsh/bin-completion".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/bin-completion";
+    ".claude/settings.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/.claude/settings.json";
+
+    # Keep Pi's credential and runtime state local by linking only authored files.
+    ".pi/agent/themes/rose-pine-moon.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/themes/rose-pine-moon.json";
+    ".pi/agent/models.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/models.json";
+    ".pi/agent/settings.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/settings.json";
+    ".pi/agent/extensions/terminal-status-title.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/extensions/terminal-status-title.js";
+    ".pi/agent/hook/hooks.yaml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/hook/hooks.yaml";
+    # Global subagent definitions for pi-subagents: <name>.md files with
+    # YAML frontmatter (description/tools/model/etc.) + a markdown prompt body.
+    ".pi/agent/agents".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
+
+    ".claude/CLAUDE.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
+    ".codex/AGENTS.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
+
+    ".gitignore".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/gitignore";
+
+    # Shared git config, with OS-specific bits (1Password signing path, etc.)
+    # pulled in via its own `[include] path = ~/.gitconfig-os`.
+    ".gitconfig".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.gitconfig";
+    ".gitconfig-os".source =
+      config.lib.file.mkOutOfStoreSymlink
+        "${dotfiles}/home/${if pkgs.stdenv.isDarwin then ".gitconfig-macos" else ".gitconfig-windows"}";
+
+    ".local/bin/devtools-rebuild".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/rebuild.sh";
+
+    ".config/1Password/ssh/agent.toml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/1Password/ssh/agent.toml";
+
+    # MCP servers for pi-mcp-adapter (and anything else that reads the
+    # standard ~/.config/mcp/mcp.json location). Secrets are referenced via
+    # ${VAR}/bearerTokenEnv, never embedded, since this repo is public.
+    ".config/mcp/mcp.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/mcp/mcp.json";
+
+    # Personal host entries live in ~/.ssh/config.local (untracked, Included
+    # from here) since this repo is public. OS-specific bits (the 1Password
+    # IdentityAgent path on macOS; nothing needed on WSL) come via
+    # ~/.ssh/config-os, same split as .gitconfig-os above.
+    ".ssh/config".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.ssh/config";
+    ".ssh/config-os".source =
+      config.lib.file.mkOutOfStoreSymlink
+        "${dotfiles}/home/.ssh/${if pkgs.stdenv.isDarwin then "config-macos" else "config-windows"}";
+  }
+  # Bash utility scripts, symlinked individually into ~/.local/bin (which already
+  # holds other unmanaged entries) so home-manager only owns these specific names.
+  // builtins.listToAttrs (map
+    (name: {
+      name = ".local/bin/${name}";
+      value.source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/bin/${name}";
+    })
+    (builtins.attrNames (builtins.readDir ./home/bin)));
+
+  # Global npm CLIs (pi.dev's coding agent, plus the AXI tools its
+  # session-start hook invokes): none have a nixpkgs package, and their docs
+  # recommend npm with --ignore-scripts (skip install-time lifecycle
+  # scripts, a common supply-chain vector) over ad-hoc alternatives.
+  # Installed through Volta's npm shim, which pins each to the Node version
+  # active at install time -- they keep working even after
+  # `volta install node@X` changes the default later. Provisions Node via
+  # Volta first if it isn't there yet (defaults to latest LTS), so a fresh
+  # machine gets everything working in a single rebuild pass. Each entry in
+  # globalNpmPackages above is a semver range; npm itself checks whether the
+  # installed version already satisfies it and no-ops if so, so bumping the
+  # range is the only thing needed to upgrade.
+  home.activation.installGlobalNpmPackages = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    VOLTA="${pkgs.volta}/bin/volta"
+    VOLTA_NPM="${config.home.homeDirectory}/.volta/bin/npm"
+
+    # Volta writes a shim per installed binary into ~/.volta/bin, then checks
+    # that the new command actually resolves, printing "cannot find command
+    # <x>. Please ensure that ~/.volta/bin is available on your PATH" when it
+    # doesn't. home.sessionPath puts that directory on PATH for interactive
+    # shells, but activation scripts don't get sessionPath or
+    # sessionVariables, so during a rebuild the check always fails and every
+    # freshly shimmed tool prints the note. The installs themselves succeed;
+    # the note is only about this script's PATH. Set both so it stays quiet
+    # and so Volta uses the same VOLTA_HOME the shells do.
+    export VOLTA_HOME="${config.home.homeDirectory}/.volta"
+    export PATH="$VOLTA_HOME/bin:$PATH"
+
+    if [ ! -x "$VOLTA_NPM" ]; then
+      $DRY_RUN_CMD "$VOLTA" install node || true
+    fi
+
+    if [ -x "$VOLTA_NPM" ]; then
+      ${lib.concatMapStringsSep "\n      " (pkg: ''
+        $DRY_RUN_CMD "$VOLTA_NPM" install -g --ignore-scripts "${pkg}" || true'') globalNpmPackages}
+    fi
+  '';
+
+  home.activation.installGoPackages = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    # `go install` shells out to git to resolve VCS versions for modules
+    # (e.g. pinned @<tag> refs), and to clang (via cgo) for deps that need a
+    # C compiler. Activation scripts don't inherit the interactive shell's
+    # PATH, so without this both are invisible and the install fails with
+    # "exec: \"git\": executable file not found in $PATH" or the same for
+    # clang. /usr/bin carries Xcode Command Line Tools' clang; no need to
+    # pull in a separate Nix toolchain for it.
+    export GOBIN="${config.home.homeDirectory}/go/bin"
+    export PATH="${pkgs.git}/bin:/usr/bin:$PATH"
+    ${lib.concatMapStringsSep "\n    " (pkg: ''
+      $DRY_RUN_CMD ${pkgs.go}/bin/go install "${pkg}" || true'') goPackages}
+  '';
+
+  # Stub every secretEnvVars key into ~/.env without touching values that are
+  # already set, so adding a key to that list later tops up an existing file
+  # rather than needing a hand edit. The file itself is never tracked.
+  home.activation.ensureEnvFile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    ENV_FILE="${config.home.homeDirectory}/.env"
+    GREP="${pkgs.gnugrep}/bin/grep"
+    TEE="${pkgs.coreutils}/bin/tee"
+
+    if [ ! -e "$ENV_FILE" ]; then
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 600 /dev/null "$ENV_FILE"
+      $DRY_RUN_CMD "$TEE" -a "$ENV_FILE" >/dev/null <<< $'# Secrets sourced by zsh on startup. Never commit this file.\n# Quote values containing spaces or shell metacharacters.\n'
+    fi
+
+    ${lib.concatMapStringsSep "\n    " (var: ''
+      if ! "$GREP" -q '^${var}=' "$ENV_FILE"; then
+        $DRY_RUN_CMD "$TEE" -a "$ENV_FILE" >/dev/null <<< '${var}='
+        echo "==> Stubbed ${var} in ~/.env -- set its value."
+      fi'') secretEnvVars}
+  '';
+}

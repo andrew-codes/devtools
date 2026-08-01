@@ -1,0 +1,24 @@
+[user]
+	email = andrew@andrew.codes
+	name = Andrew Smith
+[commit]
+	gpgsign = true
+[gpg]
+	format = ssh
+[push]
+	default = simple
+[branch]
+	autosetuprebase = always
+[core]
+	autocrlf = false
+	editor = zed --wait
+	excludesfile = ~/.gitignore
+[init]
+	defaultBranch = main
+[include]
+	# OS-specific bits (1Password signing paths, sshCommand, etc.)
+	path = ~/.gitconfig-os
+[include]
+	# Machine-specific signing key: not tracked or symlinked, since each dev
+	# machine has its own. See rebuild.sh's post-activation reminder.
+	path = ~/.gitconfig.local

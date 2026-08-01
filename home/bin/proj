@@ -1,0 +1,2 @@
+#!/usr/bin/env zsh
+cd ${REPO_HOME}/$1

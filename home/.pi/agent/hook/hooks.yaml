@@ -1,0 +1,17 @@
+hooks:
+  - id: warm-up-axi-tools
+    event: session.created
+    actions:
+      - bash: "$HOME/.volta/bin/gh-axi --version"
+      - bash: "$HOME/.volta/bin/chrome-devtools-axi --version"
+      - bash: "$HOME/.volta/bin/quota-axi --version"
+      - bash: "$HOME/.volta/bin/npm-axi --version"
+      - bash: "$HOME/.volta/bin/lavish-axi --version"
+
+  # `no-mistakes init` is idempotent (it refreshes an existing gate rather
+  # than erroring), so it's safe to run on every session start. Only runs
+  # inside an actual git repo.
+  - id: init-no-mistakes
+    event: session.created
+    actions:
+      - bash: "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && $HOME/go/bin/no-mistakes init"
