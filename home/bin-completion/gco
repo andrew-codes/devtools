@@ -1,0 +1,16 @@
+# Completion for gco (git checkout wrapper)
+_gco_complete() {
+    local cur branches files
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    # Get branches
+    branches=$(git branch --format='%(refname:short)' 2>/dev/null)
+
+    # Get modified files
+    files=$(git status --porcelain 2>/dev/null | awk '{print $2}')
+
+    # Combine branches and files for completion
+    COMPREPLY=($(compgen -W "$branches $files" -- "$cur"))
+}
+
+complete -F _gco_complete gco

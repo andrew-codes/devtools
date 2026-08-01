@@ -1,10 +1,33 @@
-.idea
-.DS_Store
+# env files
 *.env
 !sample.env
-.tmp
-.devcontainer/.devpod-internal/
-.yarn/install-state.gz
+
 default.profraw
-manifest.json
+
+# Logs
 *.log
+
+# herdr runtime artifacts (regenerated at runtime; never commit)
+home/.config/herdr/*.log
+home/.config/herdr/session.json
+home/.config/herdr/*.sock
+
+# macOS + nix build noise
+.DS_Store
+result
+result-*
+
+# Pi credentials and Home Manager adoption backups stay local
+/home/.pi/agent/auth.json
+/home/.pi/agent/**/*.backup
+
+# Pi Calm is a runtime toggle; its local state file is never tracked
+/home/.pi/agent/extensions/calm
+
+# pi-subagents writes its tuned settings here at runtime (global and
+# project-level, if pi is ever run from within this repo)
+/home/.pi/agent/subagents.json
+/.pi/subagents.json
+
+# no-mistakes local validation state - never commit in this public repo
+.no-mistakes/

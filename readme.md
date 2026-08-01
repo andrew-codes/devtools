@@ -1,5 +1,180 @@
 # Devtools
 
-This repo is my **personal** collection of dotfiles, configuration settings, templates, and productivity tools. The intention is to be able to automate the installation and setup of a new developer workbench as much as possible. This represents the culmination of numerous iterations across various companies to automate developer onboarding.
+My **personal** developer workbench, defined declaratively with [Nix](https://nixos.org/). One command takes a clean machine to a fully configured environment: system settings, applications, CLI tooling, shell, dotfiles, and an AI agent harness.
 
-See documentation at [https://docs.home.smith-simms.family/wiki/external/NDFmMWRkNzk5MTYzNDZiYWE5M2M0YjE1YzMyMThhYjM](https://docs.home.smith-simms.family/wiki/external/NDFmMWRkNzk5MTYzNDZiYWE5M2M0YjE1YzMyMThhYjM).
+Everything is reproducible and version controlled. Configuration files are symlinked back into this repo, so editing a config here takes effect immediately without a rebuild.
+
+## Supported Platforms
+
+| Platform | Status |
+| --- | --- |
+| macOS on Apple Silicon (`aarch64-darwin`) | Supported |
+| macOS on Intel | Not supported |
+| Windows / WSL | Not yet migrated |
+
+## Install
+
+Requires macOS on Apple Silicon. Nothing else needs to be preinstalled; the setup script bootstraps Nix itself.
+
+```bash
+git clone https://github.com/andrew-codes/devtools.git ~/developer/repos/devtools
+cd ~/developer/repos/devtools
+./setup.sh
+```
+
+`setup.sh` detects the OS and architecture and dispatches to the matching platform script -- currently just `setup/macOS.sh` for macOS on Apple Silicon. On any other platform it prints what was detected and exits rather than attempting an install.
+
+The macOS script:
+
+1. Installs [Determinate Nix](https://determinate.systems/) if `nix` is not already present.
+2. Symlinks the repo to `~/.dotfiles`, which every config path resolves through.
+3. Offers to rewrite the `user = "..."` line in `flake.nix` to match your macOS username.
+4. Runs the first `darwin-rebuild switch` against the flake.
+
+Sign in to the Mac App Store first if you want the `masApps` entries to install; `mas` cannot authenticate on its own.
+
+### Applying Changes Later
+
+After the first install, rebuild with either:
+
+```bash
+devtools-rebuild    # from anywhere, symlinked onto PATH
+```
+
+### Required Manual Steps
+
+Two files hold values that are specific to a single machine or are secret, so they are never tracked in this public repo.
+
+| File | Purpose |
+| --- | --- |
+| `~/.env` | Secrets. Auto-created with every required key stubbed empty. zsh warns on every shell until each has a value. |
+| `~/.gitconfig.local` | This machine's git SSH signing key. Activation prints a reminder if missing. |
+| `~/.ssh/config.local` | Optional. Personal SSH hosts, included from the tracked `~/.ssh/config`. |
+
+> **Note:** Homebrew uses `onActivation.cleanup = "none"`, so packages installed outside this repo are left alone on rebuild. Existing files at a managed path must be moved aside before the first activation; home-manager will not clobber them.
+
+---
+
+## What You Get
+
+### Shell
+
+- **zsh** with autosuggestions (`Ctrl-F` to accept), syntax highlighting, and a [starship](https://starship.rs/) prompt showing directory, git branch/status, and command duration.
+- **Secret loading.** `~/.env` is sourced and exported at startup so child processes (agents, MCP servers) inherit it.
+- **Completions.** Tab-completion for the custom commands below, loaded through `bashcompinit`.
+- Aliases: `..`, `add`, `m`, `cc`, `co`, `aup`.
+
+### Custom Commands
+
+Scripts in `home/bin/` are symlinked individually into `~/.local/bin`.
+
+| Group | Commands |
+| --- | --- |
+| Agents | `firstmate` (launch pi inside the firstmate repo) |
+| Git | `gco` `db` `fa` `glg` `gnxt` `gwta` `lb` `nb` `pmb` `pull` `push` `rba` `rbc` `rbi` `rbs` `rh` `rs` `sb` `st` `stash` |
+| Docker | `denv` `dka` |
+| Ports | `kaup` (kill whatever is listening on a port) |
+
+### CLI Toolchain
+
+Installed from nixpkgs: `ripgrep`, `fd`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font.
+
+Node.js is managed by [Volta](https://volta.sh/), which pins each global CLI to the Node version it was installed with, so changing your default Node version never breaks an installed tool.
+
+### Applications
+
+Installed via Homebrew and the Mac App Store:
+
+| App | Purpose |
+| --- | --- |
+| [WezTerm](https://wezterm.org/) | Terminal emulator |
+| [1Password](https://1password.com/) + CLI | Passwords, SSH agent, commit signing |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Containers |
+| [Raycast](https://raycast.com/) | Launcher (replaces Spotlight) |
+| [Lens](https://k8slens.dev/) | Kubernetes IDE |
+| [Claude Code](https://www.anthropic.com/claude-code) | Anthropic coding agent |
+| [herdr](https://herdr.dev/) | Agent session multiplexer |
+| [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs |
+| [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) | Logitech device configuration |
+| Dynamic Wallpaper Library | Wallpapers (Mac App Store) |
+
+### AI Agent Harness
+
+The environment is built around [pi](https://pi.dev/) as the primary agent harness.
+
+**Agent CLIs** (installed globally, `--ignore-scripts` for supply-chain safety):
+
+- `pi` - the coding agent itself
+- [AXI](https://axi.md/) tools, token-efficient CLIs designed for agent use: `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`
+- [`no-mistakes`](https://kunchenguid.github.io/no-mistakes/) - AI-gated push pipeline (review, test, lint before code lands)
+- [`treehouse`](https://github.com/kunchenguid/treehouse) - pooled, reusable git worktrees
+
+**pi extensions**, declared in `home/.pi/agent/settings.json` and installed by pi itself:
+
+| Extension | Capability |
+| --- | --- |
+| `pi-mcp-adapter` | MCP servers behind a single token-efficient proxy tool |
+| `pi-subagents` | Autonomous sub-agents in isolated sessions |
+| `pi-subdir-context` | Auto-loads `AGENTS.md` / `CLAUDE.md` walking up the tree |
+| `pi-yaml-hooks` | YAML-defined lifecycle hooks |
+| `codex-fast-mode`, `openai-server-compaction` | Model and context tuning |
+
+**Session hooks** (`home/.pi/agent/hook/hooks.yaml`) run on every new pi session: warm up the AXI CLIs, and run `no-mistakes init` when inside a git repo so each repo is gated automatically without manual per-repo setup.
+
+**MCP servers** (`home/.config/mcp/mcp.json`): Context7 for library documentation, and Atlassian for Jira and Confluence. Secrets are referenced as `${VAR}` and resolved from the environment at connection time, never stored in the file.
+
+**Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Global agent skills live in `home/.agents/skills/`.
+
+### Git and SSH
+
+Git config is layered so shared settings stay tracked while machine-specific and OS-specific values do not:
+
+```text
+~/.gitconfig          tracked, shared settings
+  -> ~/.gitconfig-os      OS-specific (1Password signing paths)
+  -> ~/.gitconfig.local   machine-specific signing key, untracked
+```
+
+SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` (the 1Password `IdentityAgent`) and an untracked `~/.ssh/config.local` for personal hosts.
+
+1Password acts as the SSH agent (`SSH_AUTH_SOCK`) and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`.
+
+### macOS System Defaults
+
+Dark mode, fast key repeat, auto-hiding dock and menu bar, all file extensions visible, Finder in list view, no desktop icons, tap-to-click disabled, and Spotlight indexing turned off since Raycast replaces it.
+
+### Edit-in-Place Configs
+
+These are symlinked out of the repo, so edits apply immediately with no rebuild: WezTerm, Neovim, herdr, pi (settings, models, theme, extensions, hooks), Claude Code settings, and the global gitignore.
+
+---
+
+## Repo Layout
+
+```text
+flake.nix              Inputs (nixpkgs, nix-darwin, home-manager, nix-homebrew) and the "mac" host
+configuration.nix      System level: macOS defaults, Homebrew packages, Mac App Store apps
+home.nix               User level: packages, zsh, dotfile symlinks, activation scripts
+setup.sh               Detects OS/arch, dispatches to the matching setup/ script
+setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
+rebuild.sh             Apply changes (also on PATH as devtools-rebuild)
+home/                  Every tracked dotfile, symlinked into place
+  bin/                 Custom commands -> ~/.local/bin
+  bin-completion/      Their zsh completions
+  .pi/agent/           pi harness config
+  .config/mcp/         MCP server definitions
+  .agents/skills/      Global agent skills
+ansible/, workbench/   Legacy pre-Nix setup, kept for the unmigrated Windows path
+```
+
+## Customizing
+
+| To add | Edit |
+| --- | --- |
+| A CLI from nixpkgs | `home.packages` in `home.nix` |
+| A GUI app or Homebrew formula | `homebrew.casks` / `brews` / `masApps` in `configuration.nix` |
+| A global npm CLI | `globalNpmPackages` in `home.nix` (semver range, upgrades in place) |
+| A Go CLI | `goPackages` in `home.nix` (pinned to a release tag) |
+| A required secret | `secretEnvVars` in `home.nix`; it is stubbed into `~/.env` on the next rebuild |
+| A custom command | Drop an executable in `home/bin/`; it is picked up automatically |
+| A pi extension | `packages` in `home/.pi/agent/settings.json` |
