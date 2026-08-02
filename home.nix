@@ -77,6 +77,22 @@ in
     autosuggestion.enable = true;      # ghost text from history
     syntaxHighlighting.enable = true;  # commands turn green when valid
     initContent = ''
+      # home.sessionPath is applied once per environment in ~/.zshenv, guarded
+      # by __HM_SESS_VARS_SOURCED. A shell that inherits that guard but a PATH
+      # missing these dirs never re-adds them. That is exactly what happens in
+      # herdr panes: the persistent `herdr server` froze an environment with
+      # the guard already set and ~/.local/bin absent, and every pane it forks
+      # inherits it. Re-add the home bin dirs idempotently for each interactive
+      # shell so custom commands (db, gco, ...) resolve everywhere.
+      for _d in "$HOME/go/bin" "$HOME/.volta/bin" "$HOME/.local/bin"; do
+        case ":$PATH:" in
+          *":$_d:"*) ;;
+          *) PATH="$_d:$PATH" ;;
+        esac
+      done
+      export PATH
+      unset _d
+
       bindkey '^f' autosuggest-accept
 
       # Completions for the custom bin/ commands are written as bash-style
@@ -147,6 +163,14 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/bin-completion";
     ".claude/settings.json".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/.claude/settings.json";
+    # Claude Code reads the same harness sources as pi: skills and subagents use
+    # a shared on-disk format, so both harnesses symlink to one source of truth.
+    # (MCP servers can't be symlinked into Claude's stateful ~/.claude.json; they
+    # are synced from the same mcp.json by home.activation.syncClaudeMcp below.)
+    ".claude/skills".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
+    ".claude/agents".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
 
     # Keep Pi's credential and runtime state local by linking only authored files.
     ".pi/agent/themes/rose-pine-moon.json".source =
@@ -159,8 +183,14 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/extensions/terminal-status-title.js";
     ".pi/agent/hook/hooks.yaml".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/hook/hooks.yaml";
-    # Global subagent definitions for pi-subagents: <name>.md files with
-    # YAML frontmatter (description/tools/model/etc.) + a markdown prompt body.
+    # Session-start actions shared by both harnesses: pi runs it from hooks.yaml,
+    # Claude Code runs it from .claude/settings.json's SessionStart hook.
+    ".pi/agent/hook/session-start.sh".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/hook/session-start.sh";
+    # Global subagent definitions: <name>.md files with YAML frontmatter
+    # (description/tools/model/etc.) + a markdown prompt body. This exact format
+    # is shared by pi-subagents and Claude Code, so both harnesses point at this
+    # one source (see the ".claude/agents" symlink below).
     ".pi/agent/agents".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
 
@@ -224,29 +254,33 @@ in
   # installed version already satisfies it and no-ops if so, so bumping the
   # range is the only thing needed to upgrade.
   home.activation.installGlobalNpmPackages = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    VOLTA="${pkgs.volta}/bin/volta"
-    VOLTA_NPM="${config.home.homeDirectory}/.volta/bin/npm"
+    # Run in a subshell so the PATH/VOLTA_HOME exports below stay contained and
+    # do not leak into later activation steps (all steps share one shell).
+    (
+      VOLTA="${pkgs.volta}/bin/volta"
+      VOLTA_NPM="${config.home.homeDirectory}/.volta/bin/npm"
 
-    # Volta writes a shim per installed binary into ~/.volta/bin, then checks
-    # that the new command actually resolves, printing "cannot find command
-    # <x>. Please ensure that ~/.volta/bin is available on your PATH" when it
-    # doesn't. home.sessionPath puts that directory on PATH for interactive
-    # shells, but activation scripts don't get sessionPath or
-    # sessionVariables, so during a rebuild the check always fails and every
-    # freshly shimmed tool prints the note. The installs themselves succeed;
-    # the note is only about this script's PATH. Set both so it stays quiet
-    # and so Volta uses the same VOLTA_HOME the shells do.
-    export VOLTA_HOME="${config.home.homeDirectory}/.volta"
-    export PATH="$VOLTA_HOME/bin:$PATH"
+      # Volta writes a shim per installed binary into ~/.volta/bin, then checks
+      # that the new command actually resolves, printing "cannot find command
+      # <x>. Please ensure that ~/.volta/bin is available on your PATH" when it
+      # doesn't. home.sessionPath puts that directory on PATH for interactive
+      # shells, but activation scripts don't get sessionPath or
+      # sessionVariables, so during a rebuild the check always fails and every
+      # freshly shimmed tool prints the note. The installs themselves succeed;
+      # the note is only about this script's PATH. Set both so it stays quiet
+      # and so Volta uses the same VOLTA_HOME the shells do.
+      export VOLTA_HOME="${config.home.homeDirectory}/.volta"
+      export PATH="$VOLTA_HOME/bin:$PATH"
 
-    if [ ! -x "$VOLTA_NPM" ]; then
-      $DRY_RUN_CMD "$VOLTA" install node || true
-    fi
+      if [ ! -x "$VOLTA_NPM" ]; then
+        $DRY_RUN_CMD "$VOLTA" install node || true
+      fi
 
-    if [ -x "$VOLTA_NPM" ]; then
-      ${lib.concatMapStringsSep "\n      " (pkg: ''
-        $DRY_RUN_CMD "$VOLTA_NPM" install -g --ignore-scripts "${pkg}" || true'') globalNpmPackages}
-    fi
+      if [ -x "$VOLTA_NPM" ]; then
+        ${lib.concatMapStringsSep "\n        " (pkg: ''
+          $DRY_RUN_CMD "$VOLTA_NPM" install -g --ignore-scripts "${pkg}" || true'') globalNpmPackages}
+      fi
+    )
   '';
 
   home.activation.installGoPackages = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -257,10 +291,18 @@ in
     # "exec: \"git\": executable file not found in $PATH" or the same for
     # clang. /usr/bin carries Xcode Command Line Tools' clang; no need to
     # pull in a separate Nix toolchain for it.
-    export GOBIN="${config.home.homeDirectory}/go/bin"
-    export PATH="${pkgs.git}/bin:/usr/bin:$PATH"
-    ${lib.concatMapStringsSep "\n    " (pkg: ''
-      $DRY_RUN_CMD ${pkgs.go}/bin/go install "${pkg}" || true'') goPackages}
+    #
+    # Run in a subshell so these exports stay contained. All activation steps
+    # share one shell, and prepending /usr/bin here would otherwise leak into
+    # later steps -- notably home-manager's own linkGeneration, whose
+    # `readlink -e` would then resolve to BSD /usr/bin/readlink (no -e flag)
+    # and fail, aborting the entire switch under `set -e`.
+    (
+      export GOBIN="${config.home.homeDirectory}/go/bin"
+      export PATH="${pkgs.git}/bin:/usr/bin:$PATH"
+      ${lib.concatMapStringsSep "\n      " (pkg: ''
+        $DRY_RUN_CMD ${pkgs.go}/bin/go install "${pkg}" || true'') goPackages}
+    )
   '';
 
   # Stub every secretEnvVars key into ~/.env without touching values that are
@@ -281,5 +323,31 @@ in
         $DRY_RUN_CMD "$TEE" -a "$ENV_FILE" >/dev/null <<< '${var}='
         echo "==> Stubbed ${var} in ~/.env -- set its value."
       fi'') secretEnvVars}
+  '';
+
+  # Keep Claude Code's MCP servers in sync with the shared mcp.json that pi uses
+  # (home/.config/mcp/mcp.json, symlinked to ~/.config/mcp/mcp.json). Claude
+  # reads user-scope MCP servers from ~/.claude.json, which also holds auth,
+  # history, and per-project state, so it can't be symlinked wholesale. Instead
+  # merge the shared servers into its .mcpServers key with jq, leaving every
+  # other field -- and any Claude-only servers -- untouched. Same ${VAR}
+  # substitution syntax mcp.json already uses is expanded by Claude at runtime.
+  # Idempotent: re-running only re-applies the same merge.
+  home.activation.syncClaudeMcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    CLAUDE_JSON="${config.home.homeDirectory}/.claude.json"
+    MCP_SRC="${config.home.homeDirectory}/.config/mcp/mcp.json"
+    JQ="${pkgs.jq}/bin/jq"
+
+    if [ -f "$CLAUDE_JSON" ] && [ -f "$MCP_SRC" ]; then
+      TMP="$(${pkgs.coreutils}/bin/mktemp)"
+      if "$JQ" --slurpfile mcp "$MCP_SRC" \
+        '.mcpServers = ((.mcpServers // {}) + $mcp[0].mcpServers)' \
+        "$CLAUDE_JSON" > "$TMP"; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/mv "$TMP" "$CLAUDE_JSON"
+      else
+        ${pkgs.coreutils}/bin/rm -f "$TMP"
+        echo "==> syncClaudeMcp: jq merge failed; left ~/.claude.json unchanged." >&2
+      fi
+    fi
   '';
 }
