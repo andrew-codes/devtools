@@ -1,2 +1,2 @@
 #!/usr/bin/env zsh
-cd "$HOME/developer/firstmate" && exec pi
+cd "$HOME/developer/firstmate" && exec cc
