@@ -76,6 +76,32 @@ in
     enable = true;
     autosuggestion.enable = true;      # ghost text from history
     syntaxHighlighting.enable = true;  # commands turn green when valid
+
+    # oh-my-zsh comes from the nixpkgs `oh-my-zsh` package (no curl|sh clone);
+    # home-manager points $ZSH at the store path and sources oh-my-zsh.sh.
+    # `theme` is left at its "" default on purpose: an empty ZSH_THEME loads no
+    # oh-my-zsh prompt, so starship (below) stays in sole control of the prompt.
+    # Autosuggestion and syntax highlighting stay on the native modules above --
+    # not re-added here as omz plugins -- to avoid double-loading them.
+    oh-my-zsh = {
+      enable = true;
+      # Kept intentionally conflict-free: the `git` plugin is deliberately
+      # omitted because its `gco`/`glg` aliases would shadow the
+      # ~/.local/bin scripts of the same name.
+      plugins = [
+        "sudo"
+        "colored-man-pages"
+        "pj"
+        "docker"
+        "yarn"
+        "encode64"
+        "eza"
+        "fluxcd"
+        "gh"
+        "git-escape-magic"
+      ];
+    };
+
     initContent = ''
       # home.sessionPath is applied once per environment in ~/.zshenv, guarded
       # by __HM_SESS_VARS_SOURCED. A shell that inherits that guard but a PATH
