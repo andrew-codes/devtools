@@ -10,6 +10,7 @@ let
     "chrome-devtools-axi@^0.1.28"             # https://www.npmjs.com/package/chrome-devtools-axi
     "quota-axi@^0.1.17"                       # https://www.npmjs.com/package/quota-axi
     "npm-axi@^0.1.1"                          # https://www.npmjs.com/package/npm-axi
+    "lavish-axi@^0.1.45"                      # https://www.npmjs.com/package/lavish-axi
   ];
   # Go modules installed via `go install`, pinned to a released tag. Their
   # own docs lead with an unpinned `curl | sh` from main with no checksum
@@ -30,11 +31,22 @@ let
   # in this public repo: activation stubs each key into ~/.env (untracked),
   # and zsh sources that file so child processes inherit them. Add a key here
   # when a new config references one.
+  #
+  # No ATLASSIAN_* keys here on purpose: Jira and Confluence are reached through
+  # the twg CLI (installed below), which holds its own OAuth credentials from
+  # `twg login` rather than reading an API token from the environment.
   secretEnvVars = [
     "CONTEXT7_API_KEY"   # mcp.json: context7 headers
-    "ATLASSIAN_USERNAME" # mcp.json: mcp-atlassian (Jira + Confluence)
-    "ATLASSIAN_TOKEN"    # mcp.json: mcp-atlassian (Jira + Confluence)
   ];
+  # Atlassian's Teamwork Graph CLI. Agents use this for every Jira and
+  # Confluence operation instead of an Atlassian MCP server -- see the rule in
+  # home/AGENTS.md. Atlassian ships no nixpkgs package, npm package, or Go
+  # module for it, only a shell installer, so this is the one tool here that
+  # comes from a downloaded script. Pinning an exact version is what makes that
+  # acceptable: the installer resolves a versioned binary and verifies it
+  # against Atlassian's published SHA256SUMS for that same version, so nothing
+  # floating or unchecked is executed. Bump this to upgrade.
+  twgVersion = "1.1.1"; # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
 in
 
 {
@@ -44,6 +56,9 @@ in
   home.packages = with pkgs; [
     ripgrep   # fast search
     fd        # fast find
+    eza       # modern ls; required by the oh-my-zsh `eza` plugin below, which
+              # only defines aliases and silently leaves them all broken when
+              # the binary is missing
     fzf       # fuzzy finder
     jq        # json on the command line
     lazygit
@@ -328,6 +343,89 @@ in
       export PATH="${pkgs.git}/bin:/usr/bin:$PATH"
       ${lib.concatMapStringsSep "\n      " (pkg: ''
         $DRY_RUN_CMD ${pkgs.go}/bin/go install "${pkg}" || true'') goPackages}
+    )
+  '';
+
+  # Install the twg CLI (see twgVersion above for why this is a script and not
+  # a package). Lands in ~/.local/bin, which home.sessionPath already exports.
+  home.activation.installTwg = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    (
+      TWG="${config.home.homeDirectory}/.local/bin/twg"
+
+      # Activation scripts inherit none of the interactive shell's PATH, so the
+      # installer's own dependencies have to be handed to it explicitly: curl to
+      # download, coreutils for sha256sum/mktemp/uname, /usr/bin for awk and
+      # sed. ~/.local/bin goes first for a second reason -- when the installer
+      # finds its install dir absent from PATH it appends an `export PATH=...`
+      # line to the detected shell profile, and ~/.zshrc here is a read-only
+      # symlink into the nix store. Having it already on PATH takes that branch
+      # out of play entirely. Subshell so none of this leaks into later
+      # activation steps, which share one shell.
+      export PATH="${config.home.homeDirectory}/.local/bin:${pkgs.curl}/bin:${pkgs.coreutils}/bin:/usr/bin:/bin"
+
+      # Idempotent by version rather than by presence: re-running the installer
+      # works, but re-downloads a 70MB binary every time, and rebuilds are
+      # frequent. `twg -v` prints a bare version and works before login.
+      INSTALLED=""
+      if [ -x "$TWG" ]; then
+        INSTALLED="$("$TWG" -v 2>/dev/null | ${pkgs.coreutils}/bin/head -n1)"
+      fi
+
+      case "$INSTALLED" in
+        *"${twgVersion}"*)
+          : # already on the pinned version
+          ;;
+        *)
+          echo "==> Installing twg ${twgVersion}"
+          # Flags:
+          #   --skip-login  login is an interactive browser OAuth flow; it must
+          #     not run inside a rebuild. Run `twg login` once by hand; the
+          #     credentials then persist across every later rebuild.
+          #   --skip-skills the installer's agent detection writes skill files
+          #     into ~/.agents/skills and ~/.claude/skills, both of which are
+          #     symlinks into this git repo. Without this it drops untracked
+          #     files into the checkout on every fresh install.
+          #
+          # setsid is load-bearing, not decoration. After downloading, the
+          # installer runs `twg setup finalize`, which asks for terms consent
+          # with a "Continue? [yes/no]" prompt. It reads that prompt from
+          # /dev/tty rather than stdin, so redirecting stdin does not suppress
+          # it -- and `sudo darwin-rebuild switch` runs from a real terminal,
+          # where it would sit there blocking the whole switch on a keypress.
+          # Running in a new session with no controlling terminal makes the
+          # installer's own `: < /dev/tty` probe fail, so it takes its
+          # non-interactive branch instead. Consent is then recorded below.
+          #
+          # The finalize step still exits non-zero because it could not ask
+          # about consent, so its status says nothing about whether the install
+          # worked. Ignore it and judge on the artifact: the binary is
+          # downloaded and checksum-verified against Atlassian's published
+          # SHA256SUMS well before finalize runs, so it lands either way.
+          ${pkgs.curl}/bin/curl -fsSL --retry 2 \
+              https://teamwork-graph.atlassian.com/cli/install \
+            | ${pkgs.util-linux}/bin/setsid --wait ${pkgs.bash}/bin/bash -s -- \
+                --version "${twgVersion}" --skip-login --skip-skills \
+            || true
+          ;;
+      esac
+
+      # Verify against the binary, and record terms consent non-interactively
+      # so nothing prompts on any later run. Re-running --agree is a no-op.
+      INSTALLED=""
+      if [ -x "$TWG" ]; then
+        INSTALLED="$("$TWG" -v 2>/dev/null | ${pkgs.coreutils}/bin/head -n1)"
+      fi
+
+      case "$INSTALLED" in
+        *"${twgVersion}"*)
+          "$TWG" consent --agree >/dev/null 2>&1 || true
+          ;;
+        *)
+          # Never fail the switch over this: a network blip or an Atlassian
+          # outage must not block an otherwise good rebuild.
+          echo "==> WARNING: twg ${twgVersion} is not installed; Atlassian tooling will be unavailable." >&2
+          ;;
+      esac
     )
   '';
 

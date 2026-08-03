@@ -121,7 +121,9 @@ The environment is built around [pi](https://pi.dev/) as the primary agent harne
 
 **Session hooks** (`home/.pi/agent/hook/hooks.yaml`) run on every new pi session: warm up the AXI CLIs, and run `no-mistakes init` when inside a git repo so each repo is gated automatically without manual per-repo setup.
 
-**MCP servers** (`home/.config/mcp/mcp.json`): Context7 for library documentation, and Atlassian for Jira and Confluence. Secrets are referenced as `${VAR}` and resolved from the environment at connection time, never stored in the file.
+**MCP servers** (`home/.config/mcp/mcp.json`): Context7 for library documentation. Secrets are referenced as `${VAR}` and resolved from the environment at connection time, never stored in the file.
+
+**Atlassian tooling.** Jira and Confluence are reached through the [`twg` CLI](https://developer.atlassian.com/cloud/twg-cli/), not an MCP server, and `home/AGENTS.md` instructs every agent to use it and never the Rovo MCP. A CLI keeps the tool definitions out of the model's context until they are actually needed, and one authenticated binary serves every harness. `twg` is pinned to an exact version in `home.nix` and installed during activation; run `twg login` once by hand afterwards, since its OAuth flow is interactive and cannot run inside a rebuild.
 
 **Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Global agent skills live in `home/.agents/skills/`.
 
