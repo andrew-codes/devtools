@@ -13,3 +13,6 @@
 - Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
   If you see one, even if it is not caused by what you are working on right now, still get it fixed.
 - Before using "dynamic workflows", "ultra code" or any harness feature that immediately spawns a large swarm of subagents, always explain the tradeoffs and ask the user for explicit approval.. I
+- For anything Atlassian (Jira issues, Confluence pages, search), always use the `twg` CLI.
+  Never use the Rovo MCP server or any other Atlassian MCP tool, even when one is connected and looks convenient.
+  If `twg` is missing or a command fails, say so and stop - do not fall back to an MCP.

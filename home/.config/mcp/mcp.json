@@ -5,21 +5,6 @@
       "headers": {
         "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
       }
-    },
-    "mcp-atlassian": {
-      "command": "uvx",
-      "args": [
-        "mcp-atlassian"
-      ],
-      "env": {
-        "JIRA_URL": "https://smithsimms.atlassian.net",
-        "JIRA_USERNAME": "${ATLASSIAN_USERNAME}",
-        "JIRA_API_TOKEN": "${ATLASSIAN_TOKEN}",
-        "CONFLUENCE_URL": "https://smithsimms.atlassian.net/wiki",
-        "CONFLUENCE_USERNAME": "${ATLASSIAN_USERNAME}",
-        "CONFLUENCE_API_TOKEN": "${ATLASSIAN_TOKEN}",
-        "MCP_VERBOSE": "false"
-      }
     }
   }
 }
