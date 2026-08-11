@@ -36,7 +36,7 @@ native Windows.
 | `setup.sh` dispatch | same | **Implemented.** `./setup.sh` detects `msys`/`cygwin` and execs `setup/windows.sh`. |
 | Mac App Store apps (`mas-apps.nix`, `mas`) | - | **Skipped.** No Mac App Store on Windows. The one entry (Dynamic Wallpaper Library) is a wallpaper app, not dev tooling. |
 | Homebrew + `nix-homebrew` | winget | **Implemented.** winget is the default; the two exceptions below say why. |
-| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13). `.gitconfig-windows` pins `core.sshCommand` to `%SystemRoot%\System32\OpenSSH\ssh.exe` because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
+| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13). `.gitconfig-windows` pins `core.sshCommand` to the literal `C:/Windows/System32/OpenSSH/ssh.exe` (git config takes no environment expansion) because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
 
 ## Applications (`configuration.nix` casks and brews)
 

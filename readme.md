@@ -48,7 +48,7 @@ Nix does not run natively on Windows, so `setup/windows.sh` carries by itself wh
 4. Installs applications and CLI tools with `winget`.
 5. Installs the two things winget cannot deliver -- the Hack Nerd Font and `kubeseal` -- from their pinned upstream releases.
 6. Installs Node via Volta and the global agent CLIs, then the Go CLIs.
-7. Links every dotfile, stubs `~/.env`, merges Claude Code's settings and MCP servers, installs the AXI session hooks, applies the Windows system defaults, and wires up 1Password commit signing.
+7. Links every dotfile, stubs `~/.env`, merges Claude Code's settings and MCP servers, installs the AXI session hooks, applies the Windows system defaults, installs the Windows OpenSSH client if it is missing (git needs it to reach 1Password's agent), and wires up 1Password commit signing.
 
 Expect UAC prompts during the winget step. Re-running is safe and is the supported way to apply later changes.
 
