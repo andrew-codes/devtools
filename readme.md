@@ -29,9 +29,11 @@ The macOS script:
 1. Installs [Determinate Nix](https://determinate.systems/) if `nix` is not already present.
 2. Symlinks the repo to `~/.dotfiles`, which every config path resolves through.
 3. Offers to rewrite the `user = "..."` line in `flake.nix` to match your macOS username.
-4. Runs the first `darwin-rebuild switch` against the flake.
+4. Trusts the Homebrew taps that already have something installed from them, so out-of-band installs survive later rebuilds. On a first-ever run there is no `brew` yet, so this is a no-op.
+5. Acquires the Mac App Store apps listed in `mas-apps.nix` with `mas get`, then waits for each to land on disk.
+6. Runs the first `darwin-rebuild switch` against the flake.
 
-Sign in to the Mac App Store first if you want the `masApps` entries to install; `mas` cannot authenticate on its own.
+Sign in to the Mac App Store before step 5; `mas` cannot authenticate on its own, and it prompts for an admin password when it has real work to do. App Store apps are acquired here, as the real user in the real login session, rather than through nix-darwin's `homebrew.masApps` -- that option runs outside the per-user launchd session `mas` needs, so it would fail on every rebuild. `homebrew.masApps` is deliberately left empty.
 
 ### Applying Changes Later
 
@@ -169,8 +171,9 @@ Claude Code's `settings.json` is the exception: the AXI `setup hooks` commands w
 
 ```text
 flake.nix              Inputs (nixpkgs, nix-darwin, home-manager, nix-homebrew) and the "mac" host
-configuration.nix      System level: macOS defaults, Homebrew packages, Mac App Store apps
+configuration.nix      System level: macOS defaults, Homebrew formulae and casks
 home.nix               User level: packages, zsh, dotfile symlinks, activation scripts
+mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix-darwin)
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
 setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
 rebuild.sh             Apply changes (also on PATH as devtools-rebuild)
@@ -187,7 +190,8 @@ home/                  Every tracked dotfile, symlinked into place
 | To add | Edit |
 | --- | --- |
 | A CLI from nixpkgs | `home.packages` in `home.nix` |
-| A GUI app or Homebrew formula | `homebrew.casks` / `brews` / `masApps` in `configuration.nix` |
+| A GUI app or Homebrew formula | `homebrew.casks` / `brews` in `configuration.nix` |
+| A Mac App Store app | `mas-apps.nix`, then re-run `setup/macOS.sh` (not `homebrew.masApps`) |
 | A global npm CLI | `globalNpmPackages` in `home.nix` (semver range, upgrades in place) |
 | A Go CLI | `goPackages` in `home.nix` (pinned to a release tag) |
 | A required secret | `secretEnvVars` in `home.nix`; it is stubbed into `~/.env` on the next rebuild |

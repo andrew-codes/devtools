@@ -1,6 +1,5 @@
 # env files
 *.env
-!sample.env
 
 default.profraw
 

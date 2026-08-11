@@ -183,7 +183,6 @@ in
       m = "git switch main";
       cc = "claude --dangerously-skip-permissions";
       co = "codex --full-auto";
-      aup = "lsof -nP -i4TCP:$1 | grep LISTEN";
     };
   };
 
