@@ -1,0 +1,9 @@
+hooks:
+  # Warm up the axi tool binaries and (inside a git repo) refresh the
+  # no-mistakes gate. The actions live in a shared script so Claude Code can run
+  # the exact same session-start behaviour from its own settings.json. Edit
+  # session-start.sh, not this file, to change what runs.
+  - id: harness-session-start
+    event: session.created
+    actions:
+      - bash: "$HOME/.pi/agent/hook/session-start.sh"

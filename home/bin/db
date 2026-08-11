@@ -1,0 +1,3 @@
+#!/usr/bin/env zsh
+git push origin --delete $1
+git branch -D $1

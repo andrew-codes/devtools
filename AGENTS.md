@@ -1,57 +1,24 @@
-An Ansible-driven devtools setup that bootstraps a developer workbench on macOS arm64 and Windows 11 amd64 from a single bash entry-point (`setup.sh`).
+# Project notes for agents
 
-Documentation located: https://docs.home.smith-simms.family/wiki/external/NDFmMWRkNzk5MTYzNDZiYWE5M2M0YjE1YzMyMThhYjM
-Update this documentation as new features are updated.
+Deliberate decisions in this repo - do NOT silently revert them:
 
-# Setup
+- `homebrew.onActivation.cleanup = "none"` in `configuration.nix` is intentional. These machines carry Homebrew packages that are deliberately not managed here - notably non-development oriented apps, like `snagit` and `moonlight`. `uninstall` or `zap` would delete all of them on the next rebuild. This setting previously was `zap` to force declaring every package in Nix; that traded away too much for reproducibility we do not get anyway, since much of the machine predates this config. Declare new packages in `configuration.nix` regardless.
+- Never commit `.no-mistakes/` validation evidence to this public repo. `.no-mistakes/` is gitignored; if a validation pipeline stages evidence into a branch, drop it before merging.
+- Claude Code and pi share one harness configuration; there is no Claude-specific copy to edit. Skills live in `home/.agents/skills/`, subagents in `home/.pi/agent/agents/`, session-start actions in `home/.pi/agent/hook/session-start.sh` (referenced by both `hooks.yaml` and `home/.config/.claude/settings.json`), and MCP servers in `home/.config/mcp/mcp.json` (synced into Claude's stateful `~/.claude.json` by `home.activation.syncClaudeMcp` in `home.nix`). Edit the shared source, not `~/.claude/*`.
+- A path under `~` that a third-party installer writes to must not be an out-of-store symlink into this repo: those writes follow symlinks straight into the tracked, public checkout. `home.nix` handles the three known cases differently on purpose - suppress the write (`--skip-skills` for the twg installer), merge instead of link (`syncClaudeMcp`, `syncClaudeSettings`), or accept the write because the target is unmanaged. Check which applies before adding a `home.file` entry or an installer call.
 
-Run `./setup.sh` from the repo root. Logs are written to `workbench.log`.
+## Validating changes without mutating the machine
 
-# Conventions
+This repo configures a real machine and agent sessions usually run on that machine. `setup.sh`, `setup/macOS.sh`, `rebuild.sh`, `darwin-rebuild switch`, `brew`, `mas`, `pi install`, and `npm install -g` all change live state, so none of them are validation steps. Use instead:
 
-All playbooks must be **idempotent** — safe to re-run multiple times.
+- `nix flake check` and `nix eval .#darwinConfigurations.mac.system.outPath` - evaluate the entire configuration without activating it.
+- `shellcheck` for the bash scripts, but `zsh -n` for `rebuild.sh` and everything in `home/bin/`; shellcheck rejects zsh outright (SC1071).
 
-## Platform guards
+This repo has no CI: there is no `.github/` directory, so pull requests legitimately report zero checks. Do not add a workflow to make a pipeline look green.
 
-- macOS: `when: ansible_facts['system'] == 'Darwin'`
-- Windows: `when: ansible_facts['os_family'] == 'Windows'`
+## Maintaining this file
 
-## Package managers
-
-- macOS: `community.general.homebrew` or `community.general.homebrew_cask`
-- Windows: `chocolatey.chocolatey.win_chocolatey` — do not use winget
-
-## Windows-specific modules
-
-- Shell: `ansible.windows.win_shell` (not `ansible.builtin.shell` or `command`)
-- File copy: `ansible.windows.win_copy` (not `ansible.builtin.copy`)
-
-## Windows PATH refresh
-
-Each `win_shell` task runs in its own PowerShell session. Tools installed via Chocolatey are shimmed into the Chocolatey bin dir and are available immediately. Tools installed by nvm (Node, npm) write to the registry PATH and are **not** visible in the current session without a refresh. Any `win_shell` task that calls `nvm`, `npm`, `node`, or similar nvm-managed binaries must begin with:
-
-```powershell
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-```
-
-## bashrc blocks
-
-Use `ansible.builtin.blockinfile` with `marker: "# {mark} devtools:<id>"`. This produces idempotent `# BEGIN devtools:<id>` / `# END devtools:<id>` markers in `~/.bashrc`.
-
-## Variables
-
-All configuration comes from environment variables via `ansible/group_vars/all.yml` using `lookup('env', 'VAR_NAME')`. Add new variables there with sensible defaults.
-
-## Repo files in playbooks
-
-The setup script passes `devtools_repo_root` as an Ansible extra var (`-e`). Use it to reference files inside the repo.
-
-## Bin scripts
-
-Bin scripts for git-shortcuts, projects, and bash-utilities live under `workbench/<tool>/bin/`. Playbooks use `ansible.builtin.find` + `ansible.builtin.copy` (with `remote_src: true`) to install them to `tools_bin_home`.
-
-# Resources
-
-- [Architecture](.agents/architecture.md) — platforms, directory structure, how setup.sh works
-- [Environment Variables](.agents/environment-variables.md) — all variables and defaults
-- [Adding a New Tool](.agents/adding-tools.md) — playbook template and site playbook registration
+Keep this file for knowledge useful to almost every future agent session in this project.
+Do not repeat what the codebase already shows; point to the authoritative file or command instead.
+Prefer rewriting or pruning existing entries over appending new ones.
+When updating this file, preserve this bar for all agents and keep entries concise.
