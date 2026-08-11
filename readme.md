@@ -88,6 +88,7 @@ Installed via Homebrew and the Mac App Store:
 | App | Purpose |
 | --- | --- |
 | [WezTerm](https://wezterm.org/) | Terminal emulator |
+| [tmux](https://github.com/tmux/tmux) | Terminal multiplexer |
 | [1Password](https://1password.com/) + CLI | Passwords, SSH agent, commit signing |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Containers |
 | [Raycast](https://raycast.com/) | Launcher (replaces Spotlight) |
@@ -105,7 +106,7 @@ The environment is built around [pi](https://pi.dev/) as the primary agent harne
 **Agent CLIs** (installed globally, `--ignore-scripts` for supply-chain safety):
 
 - `pi` - the coding agent itself
-- [AXI](https://axi.md/) tools, token-efficient CLIs designed for agent use: `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`
+- [AXI](https://axi.md/) tools, token-efficient CLIs designed for agent use: `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi` (HTML artifacts as a review surface), `tasks-axi` (task and backlog manager)
 - [`no-mistakes`](https://kunchenguid.github.io/no-mistakes/) - AI-gated push pipeline (review, test, lint before code lands)
 - [`treehouse`](https://github.com/kunchenguid/treehouse) - pooled, reusable git worktrees
 
@@ -119,7 +120,18 @@ The environment is built around [pi](https://pi.dev/) as the primary agent harne
 | `pi-yaml-hooks` | YAML-defined lifecycle hooks |
 | `codex-fast-mode`, `openai-server-compaction` | Model and context tuning |
 
+**pi extensions written here**, symlinked into `~/.pi/agent/extensions/` where pi auto-discovers them:
+
+| Extension | Capability |
+| --- | --- |
+| `terminal-status-title.js` | Live session name and agent status in the terminal title |
+| `axi-ambient-context.js` | Appends `lavish-axi` and `tasks-axi` ambient context to pi's system prompt |
+
 **Session hooks** (`home/.pi/agent/hook/hooks.yaml`) run on every new pi session: warm up the AXI CLIs, and run `no-mistakes init` when inside a git repo so each repo is gated automatically without manual per-repo setup.
+
+**AXI ambient context.** `lavish-axi` and `tasks-axi` can put their current state -- live Lavish review sessions, the task backlog -- in front of the agent from the first turn, instead of costing a tool call to discover. Each ships a `setup hooks` command that wires this into Claude Code, Codex, OpenCode and GitHub Copilot CLI; activation runs both on every rebuild, which is a no-op once installed and repairs the hook path after a reinstall moves the binaries. Neither supports pi, so `home/.pi/agent/extensions/axi-ambient-context.js` does the same job there through pi's `before_agent_start` event.
+
+Because those commands write into `~/.claude/settings.json`, that one file is applied by merge during activation rather than symlinked out of the repo like the rest -- otherwise every hook install rewrote the tracked file with a machine-specific path. Editing `home/.config/.claude/settings.json` therefore needs a rebuild to take effect.
 
 **MCP servers** (`home/.config/mcp/mcp.json`): Context7 for library documentation. Secrets are referenced as `${VAR}` and resolved from the environment at connection time, never stored in the file.
 
@@ -147,7 +159,9 @@ Dark mode, fast key repeat, auto-hiding dock and menu bar, all file extensions v
 
 ### Edit-in-Place Configs
 
-These are symlinked out of the repo, so edits apply immediately with no rebuild: WezTerm, Neovim, herdr, pi (settings, models, theme, extensions, hooks), Claude Code settings, and the global gitignore.
+These are symlinked out of the repo, so edits apply immediately with no rebuild: WezTerm, Neovim, herdr, pi (settings, models, theme, extensions, hooks), and the global gitignore.
+
+Claude Code's `settings.json` is the exception: the AXI `setup hooks` commands write into it, and their writes follow symlinks, so it is merged in during activation and needs a rebuild instead.
 
 ---
 

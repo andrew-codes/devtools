@@ -11,7 +11,17 @@ let
     "quota-axi@^0.1.17"                       # https://www.npmjs.com/package/quota-axi
     "npm-axi@^0.1.1"                          # https://www.npmjs.com/package/npm-axi
     "lavish-axi@^0.1.45"                      # https://www.npmjs.com/package/lavish-axi
+    "tasks-axi@^0.2.5"                        # https://www.npmjs.com/package/tasks-axi
   ];
+  # The subset of the AXI CLIs above that ship an `axi <tool> setup hooks`
+  # command: it installs a SessionStart hook so the tool's ambient context
+  # (Lavish's live review sessions, the tasks backlog) is in front of the agent
+  # from the first turn instead of needing a tool call. Both are documented as
+  # explicit opt-in, idempotent, and self-repairing after a reinstall --
+  # confirmed against `<tool> setup --help` for the versions pinned above -- so
+  # installAxiAgentHooks below can run them on every rebuild. Pi is not one of
+  # the harnesses they support; see the axi-ambient-context extension instead.
+  axiAmbientContextTools = [ "lavish-axi" "tasks-axi" ];
   # Go modules installed via `go install`, pinned to a released tag. Their
   # own docs lead with an unpinned `curl | sh` from main with no checksum
   # verification; `go install @<tag>` instead goes through Go's module
@@ -202,8 +212,14 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
     ".config/zsh/bin-completion".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/bin-completion";
-    ".claude/settings.json".source =
-      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/.claude/settings.json";
+    # No ".claude/settings.json" entry here on purpose -- it is applied by
+    # home.activation.syncClaudeSettings below, for the same reason
+    # ~/.claude.json is: a third-party tool writes into it. `lavish-axi setup
+    # hooks` / `tasks-axi setup hooks` add their SessionStart entries to
+    # ~/.claude/settings.json, and writeFileSync follows symlinks, so while that
+    # path was an out-of-store symlink every hook install landed in the tracked
+    # repo file -- rewriting it with a machine-specific absolute path and
+    # leaving the checkout permanently dirty.
     # Claude Code reads the same harness sources as pi: skills and subagents use
     # a shared on-disk format, so both harnesses symlink to one source of truth.
     # (MCP servers can't be symlinked into Claude's stateful ~/.claude.json; they
@@ -222,6 +238,12 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/settings.json";
     ".pi/agent/extensions/terminal-status-title.js".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/extensions/terminal-status-title.js";
+    # Pi's own equivalent of what `<tool> setup hooks` installs for the other
+    # harnesses. Pi is not one of the harnesses those commands support, and none
+    # of the extensions in .pi/agent/settings.json can stand in for it, so this
+    # one is ours; the file header records why.
+    ".pi/agent/extensions/axi-ambient-context.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/extensions/axi-ambient-context.js";
     ".pi/agent/hook/hooks.yaml".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/hook/hooks.yaml";
     # Session-start actions shared by both harnesses: pi runs it from hooks.yaml,
@@ -474,4 +496,101 @@ in
       fi
     fi
   '';
+
+  # Apply this repo's Claude Code settings to ~/.claude/settings.json.
+  #
+  # This is a copy-and-merge rather than the symlink every other authored file
+  # here gets, because ~/.claude/settings.json is not exclusively ours: the
+  # `<tool> setup hooks` commands run by installAxiAgentHooks below write their
+  # SessionStart entries into it, and their writes follow symlinks. Pointing the
+  # path at the repo therefore let a third-party installer rewrite a tracked,
+  # public file with a machine-specific absolute path -- the same reason
+  # ~/.claude.json is merged rather than linked, and the same reason the twg
+  # installer above is invoked with --skip-skills.
+  #
+  # The tradeoff is that editing home/.config/.claude/settings.json no longer
+  # takes effect without a rebuild, unlike the symlinked configs.
+  #
+  # `$live * $repo` deep-merges with this repo winning, so settings Claude Code
+  # writes itself survive. hooks.SessionStart is an array, so the merge replaces
+  # it outright and drops the axi entries -- installAxiAgentHooks runs straight
+  # after and re-adds them, which is also what keeps a stale hook path repaired
+  # after an npm reinstall moves the binaries.
+  #
+  # Ordered after linkGeneration, not the usual writeBoundary, because this path
+  # was a home.file entry until the change above dropped it. On the first switch
+  # after that, linkGeneration's orphan cleanup visits ~/.claude/settings.json
+  # looking for the previous generation's symlink. Running first would leave it
+  # a regular file by then, which the cleanup refuses to delete but reports as
+  # "does not link into a Home Manager generation. Skipping delete." Writing
+  # after the cleanup keeps that warning off an otherwise clean switch.
+  home.activation.syncClaudeSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    CLAUDE_SETTINGS="${config.home.homeDirectory}/.claude/settings.json"
+    SETTINGS_SRC="${dotfiles}/home/.config/.claude/settings.json"
+    JQ="${pkgs.jq}/bin/jq"
+
+    if [ -f "$SETTINGS_SRC" ]; then
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "${config.home.homeDirectory}/.claude"
+
+      # Belt and braces for the generation that drops the old home.file entry:
+      # if anything ever leaves a symlink here again, remove it rather than
+      # writing through it into the repo.
+      if [ -L "$CLAUDE_SETTINGS" ]; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/rm -f "$CLAUDE_SETTINGS"
+      fi
+
+      # A missing current file merges against an empty object, so a fresh
+      # machine and a re-run take the same path. /dev/null can't stand in for
+      # it: `jq -s` would slurp a one-element array and shift the operands.
+      TMP="$(${pkgs.coreutils}/bin/mktemp)"
+      EMPTY="$(${pkgs.coreutils}/bin/mktemp)"
+      echo '{}' > "$EMPTY"
+      CURRENT="$EMPTY"
+      if [ -f "$CLAUDE_SETTINGS" ]; then
+        CURRENT="$CLAUDE_SETTINGS"
+      fi
+
+      if "$JQ" -s '.[0] * .[1]' "$CURRENT" "$SETTINGS_SRC" > "$TMP"; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/mv "$TMP" "$CLAUDE_SETTINGS"
+      else
+        ${pkgs.coreutils}/bin/rm -f "$TMP"
+        echo "==> syncClaudeSettings: jq merge failed; left ~/.claude/settings.json unchanged." >&2
+      fi
+      ${pkgs.coreutils}/bin/rm -f "$EMPTY"
+    fi
+  '';
+
+  # Install the AXI SessionStart hooks for every harness the tools themselves
+  # support: Claude Code (~/.claude/settings.json), Codex (~/.codex/hooks.json
+  # plus the [features] hooks flag in ~/.codex/config.toml), OpenCode, and
+  # GitHub Copilot CLI. Letting each tool own its own wiring keeps this repo out
+  # of the business of hand-writing four harnesses' hook formats, and each
+  # command is idempotent and repairs a stale binary path, so running it on
+  # every rebuild is a no-op once everything is in place.
+  #
+  # Ordered after the npm installs (the binaries have to exist) and after
+  # syncClaudeSettings, whose merge drops the SessionStart entries these
+  # commands then put back.
+  #
+  # Pi gets the same context from home/.pi/agent/extensions/axi-ambient-context.js
+  # instead; none of these tools support it as a hook target.
+  home.activation.installAxiAgentHooks =
+    lib.hm.dag.entryAfter [ "installGlobalNpmPackages" "syncClaudeSettings" ] ''
+      # Subshell so the exports stay contained; all activation steps share one
+      # shell. Volta's own shims need VOLTA_HOME, and the tools resolve the hook
+      # command they write by looking themselves up on PATH.
+      (
+        export VOLTA_HOME="${config.home.homeDirectory}/.volta"
+        export PATH="$VOLTA_HOME/bin:$PATH"
+
+        # Skipped rather than fatal when a binary is missing, and never fatal on
+        # failure: an optional context integration must not fail the switch.
+        for tool in ${lib.concatStringsSep " " axiAmbientContextTools}; do
+          if [ -x "$VOLTA_HOME/bin/$tool" ]; then
+            $DRY_RUN_CMD "$VOLTA_HOME/bin/$tool" setup hooks >/dev/null \
+              || echo "==> WARNING: \`$tool setup hooks\` failed; agents start without its ambient context." >&2
+          fi
+        done
+      )
+    '';
 }

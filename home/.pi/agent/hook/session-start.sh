@@ -9,7 +9,7 @@
 # fail the hook or block the session from starting.
 
 # Warm up the axi tool binaries so their first real invocation is fast.
-for tool in gh-axi chrome-devtools-axi quota-axi npm-axi lavish-axi; do
+for tool in gh-axi chrome-devtools-axi quota-axi npm-axi lavish-axi tasks-axi; do
   "$HOME/.volta/bin/$tool" --version >/dev/null 2>&1 || true
 done
 

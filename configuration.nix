@@ -84,6 +84,10 @@
       "weaveworks/tap/gitops"
       "datawire/blackbird/telepresence"
       "mas"  # for driving the App Store by hand; see mas-apps.nix
+      # nixpkgs also ships tmux, but Homebrew is what's wanted here: it tracks
+      # upstream releases closely and builds against the system libraries the
+      # terminal already uses. brew bundle no-ops when it's already installed.
+      "tmux"
     ];
     casks = [
       "wezterm"
