@@ -64,7 +64,7 @@ Two files hold values that are specific to a single machine or are secret, so th
 - **zsh** with autosuggestions (`Ctrl-F` to accept), syntax highlighting, and a [starship](https://starship.rs/) prompt showing directory, git branch/status, and command duration.
 - **Secret loading.** `~/.env` is sourced and exported at startup so child processes (agents, MCP servers) inherit it.
 - **Completions.** Tab-completion for the custom commands below, loaded through `bashcompinit`.
-- Aliases: `..`, `add`, `m`, `cc`, `co`, `aup`.
+- Aliases: `..`, `add`, `m`, `cc`, `co`.
 
 ### Custom Commands
 
@@ -75,11 +75,12 @@ Scripts in `home/bin/` are symlinked individually into `~/.local/bin`.
 | Agents | `firstmate` (launch pi inside the firstmate repo) |
 | Git | `gco` `db` `fa` `glg` `gnxt` `gwta` `lb` `nb` `pmb` `pull` `push` `rba` `rbc` `rbi` `rbs` `rh` `rs` `sb` `st` `stash` |
 | Docker | `denv` `dka` |
-| Ports | `kaup` (kill whatever is listening on a port) |
+| Projects | `proj` `oproj` `projs` (cd into, open, and list repos under `$REPO_HOME`) |
+| Ports | `aup` (show what is listening on a port) `kaup` (kill it) |
 
 ### CLI Toolchain
 
-Installed from nixpkgs: `ripgrep`, `fd`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font.
+Installed from nixpkgs: `ripgrep`, `fd`, `eza`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font.
 
 Node.js is managed by [Volta](https://volta.sh/), which pins each global CLI to the Node version it was installed with, so changing your default Node version never breaks an installed tool.
 

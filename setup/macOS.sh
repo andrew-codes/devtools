@@ -85,6 +85,7 @@ MAS_BIN="$(nix build --no-link --print-out-paths --impure --expr \
    in f.inputs.nixpkgs.legacyPackages.aarch64-darwin.mas")/bin/mas"
 
 # Emit "<id> <name>" per line; empty when mas-apps.nix is an empty set.
+# shellcheck disable=SC2016  # ${n} below is Nix interpolation; the shell must not expand it.
 nix eval --raw --file "$SCRIPT_DIR/mas-apps.nix" \
   --apply 'apps: builtins.concatStringsSep "\n"
     (map (n: (toString apps.${n}) + " " + n) (builtins.attrNames apps))' \
