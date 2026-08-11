@@ -180,7 +180,6 @@ home/                  Every tracked dotfile, symlinked into place
   .pi/agent/           pi harness config
   .config/mcp/         MCP server definitions
   .agents/skills/      Global agent skills
-ansible/, workbench/   Legacy pre-Nix setup, kept for the unmigrated Windows path
 ```
 
 ## Customizing
