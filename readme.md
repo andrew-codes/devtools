@@ -75,7 +75,7 @@ Scripts in `home/bin/` are symlinked individually into `~/.local/bin`.
 | Agents | `firstmate` (launch pi inside the firstmate repo) |
 | Git | `gco` `db` `fa` `glg` `gnxt` `gwta` `lb` `nb` `pmb` `pull` `push` `rba` `rbc` `rbi` `rbs` `rh` `rs` `sb` `st` `stash` |
 | Docker | `denv` `dka` |
-| Projects | `proj` `oproj` `projs` (cd into, open, and list repos under `$REPO_HOME`) |
+| Projects | `oproj` `projs` (open and list repos under `$REPO_HOME`) |
 | Ports | `aup` (show what is listening on a port) `kaup` (kill it) |
 
 ### CLI Toolchain
