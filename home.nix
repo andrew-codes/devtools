@@ -285,8 +285,9 @@ in
 
     # Personal host entries live in ~/.ssh/config.local (untracked, Included
     # from here) since this repo is public. OS-specific bits (the 1Password
-    # IdentityAgent path on macOS; nothing needed on WSL) come via
-    # ~/.ssh/config-os, same split as .gitconfig-os above.
+    # IdentityAgent socket on macOS; on Windows 1Password serves the OpenSSH
+    # named pipe instead) come via ~/.ssh/config-os, same split as
+    # .gitconfig-os above.
     ".ssh/config".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.ssh/config";
     ".ssh/config-os".source =

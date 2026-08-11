@@ -36,6 +36,7 @@ native Windows.
 | `setup.sh` dispatch | same | **Implemented.** `./setup.sh` detects `msys`/`cygwin` and execs `setup/windows.sh`. |
 | Mac App Store apps (`mas-apps.nix`, `mas`) | - | **Skipped.** No Mac App Store on Windows. The one entry (Dynamic Wallpaper Library) is a wallpaper app, not dev tooling. |
 | Homebrew + `nix-homebrew` | winget | **Implemented.** winget is the default; the two exceptions below say why. |
+| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13). `.gitconfig-windows` pins `core.sshCommand` to `%SystemRoot%\System32\OpenSSH\ssh.exe` because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
 
 ## Applications (`configuration.nix` casks and brews)
 
@@ -51,7 +52,7 @@ native Windows.
 | `raycast` | `Microsoft.PowerToys` | **Implemented, substituted.** Raycast ships no winget package. PowerToys Run is the equivalent keystroke launcher. |
 | `tmux` | - | **Skipped.** Git for Windows ships no tmux and it needs a POSIX pty. WezTerm's own tabs and panes, plus herdr, cover the use. |
 | `mas` | - | **Skipped.** macOS-only by definition. |
-| `herdr` | - | **Deferred.** Upstream publishes macOS and Linux binaries only; Windows is a beta whose sole install path is an unpinned `irm https://herdr.dev/install.ps1 \| iex`. That is below the bar this repo holds remote installers to (see the `twgVersion` comment in `home.nix`), so the script prints the command instead of running it. Its config is linked either way. |
+| `herdr` | - | **Deferred.** Upstream publishes macOS and Linux binaries only; Windows is a beta whose sole install path is an unpinned `irm https://herdr.dev/install.ps1 \| iex`. That is below the bar this repo holds remote installers to (see the `twgVersion` comment in `home.nix`), so the script prints the command instead of running it. Its `~/.config/herdr` config is linked either way. |
 | `weaveworks/tap/gitops` | - | **Deferred.** No winget package, and Weaveworks wound down in 2024. `flux` covers the maintained part of that workflow. |
 | `datawire/blackbird/telepresence` | - | **Deferred.** No winget package; the Windows install needs an elevated daemon service, so run Ambassador's own installer on demand. |
 
@@ -125,7 +126,7 @@ config in this repo takes effect with no rebuild - the same contract
 | `~/.config/wezterm`, `~/.agents/skills`, `~/.claude/{skills,agents,CLAUDE.md}`, `~/.codex/AGENTS.md`, `~/.pi/agent/*`, `~/.gitconfig`, `~/.gitignore`, `~/.ssh/config`, `~/.config/mcp/mcp.json`, `~/.config/1Password/ssh/agent.toml` | identical paths | **Implemented.** |
 | `~/.config/nvim` | `%LOCALAPPDATA%\nvim` | **Implemented, moved.** Neovim resolves `stdpath('config')` there on Windows. |
 | `~/.config/zsh/bin-completion` | `~/.config/bash/bin-completion` | **Implemented, moved.** bash, not zsh. |
-| `~/.config/herdr` | `~/.config/herdr` **and** `%APPDATA%\herdr` | **Implemented, both.** herdr's Windows config path is undocumented upstream; both point at the same tracked file. |
+| `~/.config/herdr` | `~/.config/herdr` only | **Implemented, single link.** herdr's Windows config path is undocumented upstream, but the `%APPDATA%\herdr` candidate is deliberately not linked: `%APPDATA%\<app>` is where a Windows app writes runtime state, and those writes would follow the symlink into this tracked public checkout. If herdr turns out to read `%APPDATA%`, copy the config there rather than linking it. |
 | `~/.gitconfig-os` | `home/.gitconfig-windows` | **Implemented.** Same include scheme as macOS. |
 | `~/.ssh/config-os` | `home/.ssh/config-windows` | **Implemented.** Same include scheme as macOS. |
 | `~/.gitconfig.local` (untracked signing key) | same, plus `gpg.ssh.program` | **Implemented.** The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. |
@@ -157,7 +158,9 @@ priority order:
    dependency, Go needs a C toolchain that Git for Windows does not ship.
 3. **pi on Windows.** `@earendil-works/pi-coding-agent` installs from npm, but
    it is untested here.
-4. **herdr's config path**, if herdr is installed by hand - see above.
+4. **herdr's config path**, if herdr is installed by hand. Only `~/.config/herdr`
+   is linked; if the Windows build reads `%APPDATA%\herdr` instead, copy the
+   config there - never link it, or herdr's own state writes land in this repo.
 5. **1Password `agent.toml`** names the `andrew-mbp` key item. Add this
    machine's item to `home/.config/1Password/ssh/agent.toml`.
 6. **`core.editor = zed --wait`** in the shared `~/.gitconfig` assumes Zed, and

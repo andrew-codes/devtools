@@ -18,8 +18,19 @@
 
 set -euo pipefail
 
-# The repo root, one level up from this script's own directory.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The repo root, one level up from this script's own directory. Resolved
+# through the symlink first, the same thing rebuild.sh's ${0:A:h} does on
+# macOS: the supported way to re-run this is ~/.local/bin/devtools-rebuild,
+# which is a link to this file, and a plain dirname would land in ~/.local.
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+
+# Cheap guard, because getting this wrong is silent and destructive: Step 3
+# would repoint ~/.dotfiles at the wrong directory and Step 8 would then
+# replace every correct dotfile symlink with a dangling one.
+if [ ! -f "$SCRIPT_DIR/setup/windows.sh" ]; then
+  echo "Error: could not locate the repo root (resolved $SCRIPT_DIR)." >&2
+  exit 1
+fi
 
 # ---------------------------------------------------------------------------
 # What gets installed.
@@ -163,7 +174,6 @@ if ! command -v winget >/dev/null 2>&1; then
 fi
 
 LOCALAPPDATA_DIR="$(cygpath -u "${LOCALAPPDATA:?LOCALAPPDATA is not set}")"
-APPDATA_DIR="$(cygpath -u "${APPDATA:?APPDATA is not set}")"
 
 TMP_ROOT="$(mktemp -d)"
 cleanup() { rm -rf "$TMP_ROOT"; }
@@ -333,7 +343,6 @@ else
   if curl -fsSL --retry 2 -o "$FONT_ZIP" \
     "https://github.com/ryanoasis/nerd-fonts/releases/download/v${HACK_NERD_FONT_VERSION}/Hack.zip"; then
     mkdir -p "$FONT_EXTRACT" "$FONT_DIR"
-    mkdir -p "$FONT_EXTRACT" "$FONT_DIR"
     # Git Bash's tar cannot read zip archives; PowerShell's Expand-Archive is
     # always present and can.
     powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
@@ -462,11 +471,13 @@ link "$DOTFILES/home/.config/nvim" "$LOCALAPPDATA_DIR/nvim"
 # natively from here.
 link "$DOTFILES/home/bin-completion" "$HOME/.config/bash/bin-completion"
 # herdr's config location on Windows is not documented upstream, and its
-# Windows build is a beta. Link both candidates -- the XDG path macOS uses and
-# the %APPDATA% path Windows-native Rust CLIs usually pick -- at the same
-# tracked file, so whichever it reads, it reads this one.
+# Windows build is a beta. Only the XDG path macOS uses is linked. The
+# %APPDATA%\herdr link is deliberately not created: %APPDATA%\<app> is where a
+# Windows app writes runtime state, and a third-party write through an
+# out-of-store symlink lands in this tracked public checkout -- the pattern
+# AGENTS.md warns about. If herdr on Windows turns out to read %APPDATA%
+# instead, copy the config there; never link it.
 link "$DOTFILES/home/.config/herdr" "$HOME/.config/herdr"
-link "$DOTFILES/home/.config/herdr" "$APPDATA_DIR/herdr"
 
 # Files.
 link "$DOTFILES/home/.pi/agent/themes/rose-pine-moon.json" "$HOME/.pi/agent/themes/rose-pine-moon.json"
@@ -609,7 +620,40 @@ reg_sz "HKCU\\Control Panel\\Keyboard" KeyboardSpeed 31  # KeyRepeat
 reg_dword "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad" TapsEnabled 0
 echo "    applied; Explorer settings show up after a sign-out or an Explorer restart"
 
-echo "==> Step 13: 1Password commit signing"
+echo "==> Step 13: Windows OpenSSH client"
+# home/.gitconfig-windows pins core.sshCommand to this exact binary, because it
+# is the only ssh that can reach 1Password's named-pipe agent. It ships as an
+# optional Windows feature, so a machine without it fails every git fetch and
+# push with a bare "cannot run" error. Resolve it from SystemRoot rather than
+# hardcoding C:, and install the inbox capability when it is missing -- not the
+# winget OpenSSH package, which installs somewhere else entirely and would not
+# satisfy the pinned path.
+SYSTEM_ROOT_DIR="$(cygpath -u "${SystemRoot:-${SYSTEMROOT:-C:\\Windows}}")"
+OPENSSH_CLIENT="$SYSTEM_ROOT_DIR/System32/OpenSSH/ssh.exe"
+if [ -f "$OPENSSH_CLIENT" ]; then
+  echo "    already installed ($OPENSSH_CLIENT)"
+else
+  echo "    not installed; enabling the OpenSSH Client capability (expect one UAC prompt)"
+  OPENSSH_PS1="$TMP_ROOT/install-openssh-client.ps1"
+  cat >"$OPENSSH_PS1" <<'PS1'
+$name = 'OpenSSH.Client~~~~0.0.1.0'
+$cap = Get-WindowsCapability -Online -Name $name -ErrorAction SilentlyContinue
+if ($cap -and $cap.State -ne 'Installed') {
+  Add-WindowsCapability -Online -Name $name | Out-Null
+}
+PS1
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+    "Start-Process -Verb RunAs -Wait -FilePath powershell.exe -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','$(cygpath -w "$OPENSSH_PS1")'" \
+    >/dev/null 2>&1 || true
+
+  if [ -f "$OPENSSH_CLIENT" ]; then
+    echo "    installed"
+  else
+    warn "the Windows OpenSSH client is still missing from $OPENSSH_CLIENT; git over SSH will fail because .gitconfig-windows routes core.sshCommand through that exact path. From an elevated PowerShell run: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0"
+  fi
+fi
+
+echo "==> Step 14: 1Password commit signing"
 # The signer's path embeds this machine's username, so it belongs in the
 # untracked ~/.gitconfig.local next to the signing key -- not in the tracked
 # .gitconfig-windows. `git config --file` edits that file surgically, so an

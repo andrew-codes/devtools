@@ -123,22 +123,34 @@ if [ -f "$HOME/.env" ]; then
   set +a
 fi
 
-# Say so, every shell, until each stubbed secret actually has a value. Keep the
-# list in step with secretEnvVars in home.nix and setup/windows.sh.
-_secret_vars=(
-  CONTEXT7_API_KEY # mcp.json: context7 headers
-)
-_missing_secrets=""
-for _var in "${_secret_vars[@]}"; do
-  if [ -z "${!_var:-}" ]; then
-    _missing_secrets="${_missing_secrets:+$_missing_secrets, }$_var"
+# Say so, every shell, until each stubbed secret actually has a value. The keys
+# are read out of ~/.env rather than listed here, so the required-secret list
+# stays declared in the two places that actually stub it: secretEnvVars in
+# home.nix and SECRET_ENV_VARS in setup/windows.sh. The file was just sourced
+# under `set -a`, so the environment is what says whether a key has a value --
+# which also honours one exported from somewhere else.
+if [ -f "$HOME/.env" ]; then
+  _missing_secrets=""
+  while IFS= read -r _line; do
+    case "$_line" in
+    '' | '#'*) continue ;;
+    esac
+    _var="${_line%%=*}"
+    # Not a `KEY=` line at all, or not a usable variable name.
+    [ "$_var" != "$_line" ] || continue
+    case "$_var" in
+    *[!A-Za-z0-9_]*) continue ;;
+    esac
+    if [ -z "${!_var:-}" ]; then
+      _missing_secrets="${_missing_secrets:+$_missing_secrets, }$_var"
+    fi
+  done <"$HOME/.env"
+  if [ -n "$_missing_secrets" ]; then
+    echo "⚠  Unset secrets in ~/.env: $_missing_secrets" >&2
+    echo "   Set them there before using tooling that needs them." >&2
   fi
-done
-if [ -n "$_missing_secrets" ]; then
-  echo "⚠  Unset secrets in ~/.env: $_missing_secrets" >&2
-  echo "   Set them there before using tooling that needs them." >&2
+  unset _missing_secrets _line _var
 fi
-unset _missing_secrets _secret_vars _var
 
 # ---------------------------------------------------------------------------
 # Aliases (home.nix's shellAliases)

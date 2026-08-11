@@ -234,7 +234,7 @@ Anything that changes what is installed or configured needs a decision on both p
 | A Mac App Store app | `mas-apps.nix`, then re-run `setup/macOS.sh` (not `homebrew.masApps`) |
 | A global npm CLI | `globalNpmPackages` in `home.nix` and `GLOBAL_NPM_PACKAGES` in `setup/windows.sh` |
 | A Go CLI | `goPackages` in `home.nix` and `GO_PACKAGES` in `setup/windows.sh` (pinned to a release tag) |
-| A required secret | `secretEnvVars` in `home.nix`, `SECRET_ENV_VARS` in `setup/windows.sh`, and `_secret_vars` in `home/.bashrc`; it is stubbed into `~/.env` on the next rebuild |
+| A required secret | `secretEnvVars` in `home.nix` and `SECRET_ENV_VARS` in `setup/windows.sh`; it is stubbed into `~/.env` on the next rebuild, and the shells warn about it until it has a value |
 | A custom command | Drop a bash executable in `home/bin/`; it is picked up automatically on both platforms |
 | A pi extension | `packages` in `home/.pi/agent/settings.json` |
 | An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi and Claude Code |

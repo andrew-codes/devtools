@@ -5,12 +5,21 @@ if [ -z "$1" ]; then
 fi
 
 if command -v lsof >/dev/null 2>&1; then
+  HAVE_LSOF=1
+else
+  HAVE_LSOF=0
+fi
+
+if [ "$HAVE_LSOF" -eq 1 ]; then
   PIDS="$(lsof -nP -i4TCP:"$1" | grep LISTEN | awk '{print $2}' | sort -u)"
 else
   # Windows: no lsof, and Git Bash's kill works on its own process ids rather
   # than native Windows ones, so both halves of this come from Windows' own
-  # tools. See aup for the same netstat parse.
-  PIDS="$(netstat -ano |
+  # tools. See aup for the same netstat parse. netstat is a native program, so
+  # its CRLF line endings would otherwise leave a \r on every pid and make
+  # taskkill fail. Note the taskkill error goes to stderr, so the kill would
+  # look like it worked.
+  PIDS="$(netstat -ano | tr -d '\r' |
     awk -v port=":$1" '$1 == "TCP" && $2 ~ port "$" && $4 == "LISTENING" { print $5 }' | sort -u)"
 fi
 
@@ -20,7 +29,7 @@ if [ -z "$PIDS" ]; then
 fi
 
 for pid in $PIDS; do
-  if command -v lsof >/dev/null 2>&1; then
+  if [ "$HAVE_LSOF" -eq 1 ]; then
     kill -9 "$pid"
   else
     MSYS_NO_PATHCONV=1 taskkill /F /PID "$pid" >/dev/null

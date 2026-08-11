@@ -6,6 +6,9 @@
 	# the native client can reach 1Password's agent, which listens on the
 	# \\.\pipe\openssh-ssh-agent named pipe rather than a unix socket.
 	# https://developer.1password.com/docs/ssh/get-started/
+	#
+	# That client is an optional Windows feature, so setup/windows.sh step 13
+	# installs it (Add-WindowsCapability OpenSSH.Client) and warns if it cannot.
 	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
 [gpg "ssh"]
 	# No `program` here on purpose. 1Password's signer lives under
