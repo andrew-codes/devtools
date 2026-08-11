@@ -1,8 +1,15 @@
 [core]
-	sshCommand = ssh.exe
+	# Windows' own OpenSSH, by absolute path.
+	#
+	# Not a bare `ssh.exe`: Git Bash puts Git's bundled /usr/bin ahead of the
+	# Windows directories, so that would resolve to Git's own ssh -- and only
+	# the native client can reach 1Password's agent, which listens on the
+	# \\.\pipe\openssh-ssh-agent named pipe rather than a unix socket.
+	# https://developer.1password.com/docs/ssh/get-started/
+	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
 [gpg "ssh"]
-	# 1Password generates this path per-machine: open the SSH key in
-	# 1Password for Windows, "Configure Commit Signing" -> "Configure for
-	# Windows Subsystem for Linux (WSL)", and paste the value it gives you.
-	# See https://developer.1password.com/docs/ssh/integrations/wsl/
-	program =
+	# No `program` here on purpose. 1Password's signer lives under
+	# %LOCALAPPDATA%, whose path embeds this machine's username, so
+	# setup/windows.sh resolves it and writes it into ~/.gitconfig.local --
+	# untracked, alongside the signing key, the same split .gitconfig already
+	# uses for anything machine-specific.

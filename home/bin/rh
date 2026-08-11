@@ -1,9 +1,9 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 if ! [ -z "$1" ]; then
   if ! [ -z "$2" ]; then
-    git reset --hard $1/$2
+    git reset --hard "$1/$2"
   else
-    git reset --hard $1
+    git reset --hard "$1"
   fi
 else
   git reset --hard

@@ -9,8 +9,11 @@
 # fail the hook or block the session from starting.
 
 # Warm up the axi tool binaries so their first real invocation is fast.
+# Through $VOLTA_HOME rather than a hard-coded ~/.volta: both platforms put it
+# there, but a hook can run without the shell's environment, and Volta's own
+# default on Windows is %LOCALAPPDATA%\Volta.
 for tool in gh-axi chrome-devtools-axi quota-axi npm-axi lavish-axi tasks-axi; do
-  "$HOME/.volta/bin/$tool" --version >/dev/null 2>&1 || true
+  "${VOLTA_HOME:-$HOME/.volta}/bin/$tool" --version >/dev/null 2>&1 || true
 done
 
 # `no-mistakes init` is idempotent (refreshes an existing gate rather than

@@ -1,8 +1,29 @@
-#!/usr/bin/env zsh
-PID=$(lsof -nP -i4TCP:$1 | grep LISTEN | awk '{print $2}')
-if [ -z "$PID" ]; then
+#!/usr/bin/env bash
+if [ -z "$1" ]; then
+  echo "Usage: kaup <port>"
+  exit 1
+fi
+
+if command -v lsof >/dev/null 2>&1; then
+  PIDS="$(lsof -nP -i4TCP:"$1" | grep LISTEN | awk '{print $2}' | sort -u)"
+else
+  # Windows: no lsof, and Git Bash's kill works on its own process ids rather
+  # than native Windows ones, so both halves of this come from Windows' own
+  # tools. See aup for the same netstat parse.
+  PIDS="$(netstat -ano |
+    awk -v port=":$1" '$1 == "TCP" && $2 ~ port "$" && $4 == "LISTENING" { print $5 }' | sort -u)"
+fi
+
+if [ -z "$PIDS" ]; then
   echo "No process listening on port $1"
   exit 1
 fi
-kill -9 ${=PID}
-echo "Killed process $PID listening on port $1"
+
+for pid in $PIDS; do
+  if command -v lsof >/dev/null 2>&1; then
+    kill -9 "$pid"
+  else
+    MSYS_NO_PATHCONV=1 taskkill /F /PID "$pid" >/dev/null
+  fi
+done
+echo "Killed process $(echo "$PIDS" | tr '\n' ' ')listening on port $1"

@@ -1,6 +1,20 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 if [ -z "$1" ]; then
   echo "Usage: aup <port>"
   exit 1
 fi
-lsof -nP -i4TCP:"$1" | grep LISTEN
+
+if command -v lsof >/dev/null 2>&1; then
+  lsof -nP -i4TCP:"$1" | grep LISTEN
+else
+  # Windows has no lsof. netstat -ano carries the same facts (local address,
+  # state, owning pid) and tasklist turns the pid into a process name, which is
+  # the column lsof output is actually read for.
+  netstat -ano |
+    awk -v port=":$1" '$1 == "TCP" && $2 ~ port "$" && $4 == "LISTENING" { print $2, $4, $5 }' |
+    while read -r local_addr state pid; do
+      name="$(MSYS_NO_PATHCONV=1 tasklist /FI "PID eq $pid" /NH /FO CSV 2>/dev/null |
+        head -n1 | cut -d, -f1 | tr -d '"')"
+      printf '%s\t%s\t%s\t%s\n' "${name:-?}" "$pid" "$state" "$local_addr"
+    done
+fi

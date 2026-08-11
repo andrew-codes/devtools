@@ -4,6 +4,10 @@ let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
   # Global npm CLIs installed via Volta. Bump a version here to upgrade it;
   # each is a semver range that npm itself resolves and satisfies in place.
+  #
+  # setup/windows.sh carries this same list -- Windows cannot evaluate Nix, so
+  # there is nothing for it to import. Bump both together. The same goes for
+  # axiAmbientContextTools, goPackages and secretEnvVars below.
   globalNpmPackages = [
     "@earendil-works/pi-coding-agent@^0.83.0" # https://www.npmjs.com/package/@earendil-works/pi-coding-agent
     "gh-axi@^0.1.29"                          # https://www.npmjs.com/package/gh-axi
@@ -186,18 +190,11 @@ in
     };
   };
 
-  programs.starship = {
-    enable = true;
-    settings = {
-      add_newline = false;
-      format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
-      character = {
-        success_symbol = "[❯](purple)";
-        error_symbol = "[❯](red)";
-      };
-      cmd_duration.format = "[$duration]($style) ";
-    };
-  };
+  # No `settings` here on purpose: those would be rendered into a read-only
+  # store file, and Windows has no way to evaluate them. The prompt config is a
+  # tracked starship.toml symlinked below instead, so one file serves both
+  # platforms and stays editable in place.
+  programs.starship.enable = true;
 
   # Edit-in-place: the real file stays in my repo, ~/.config just points at it.
   home.file = {
@@ -205,6 +202,8 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
     ".config/wezterm".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/wezterm";
+    ".config/starship.toml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/starship.toml";
     ".config/nvim".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/nvim";
     ".config/herdr".source =
