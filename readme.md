@@ -198,3 +198,5 @@ home/                  Every tracked dotfile, symlinked into place
 | A required secret | `secretEnvVars` in `home.nix`; it is stubbed into `~/.env` on the next rebuild |
 | A custom command | Drop an executable in `home/bin/`; it is picked up automatically |
 | A pi extension | `packages` in `home/.pi/agent/settings.json` |
+| An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi and Claude Code |
+| A subagent | Add `home/.pi/agent/agents/<name>.md`; shared by pi and Claude Code |
