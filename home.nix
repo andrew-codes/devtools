@@ -80,6 +80,7 @@ in
     jq        # json on the command line
     lazygit
     neovim
+    tree-sitter # CLI nvim-treesitter needs to build parsers (nvim's config lives in home/.config/nvim)
     yq
     uv
     shfmt

@@ -68,6 +68,7 @@ native Windows.
 | `yq` | `MikeFarah.yq` | **Implemented.** |
 | `lazygit` | `JesseDuffield.lazygit` | **Implemented.** |
 | `neovim` | `Neovim.Neovim` | **Implemented.** |
+| `tree-sitter` | `tree-sitter.tree-sitter-cli` | **Implemented.** CLI nvim-treesitter needs to build parsers (`home/.config/nvim`, used for MDX highlighting among others). |
 | `uv` | `astral-sh.uv` | **Implemented.** |
 | `shfmt` | `mvdan.shfmt` | **Implemented.** |
 | `gh` | `GitHub.cli` | **Implemented.** |

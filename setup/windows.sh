@@ -68,6 +68,7 @@ WINGET_PACKAGES=(
   MikeFarah.yq            # pkgs.yq
   JesseDuffield.lazygit   # pkgs.lazygit
   Neovim.Neovim           # pkgs.neovim
+  tree-sitter.tree-sitter-cli # pkgs.tree-sitter; nvim-treesitter needs it to build parsers
   astral-sh.uv            # pkgs.uv
   mvdan.shfmt             # pkgs.shfmt
   GitHub.cli              # pkgs.gh
