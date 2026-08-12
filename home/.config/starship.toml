@@ -1,0 +1,16 @@
+# Prompt configuration, shared by both platforms.
+#
+# Tracked here rather than declared as `programs.starship.settings` in home.nix
+# so Windows gets the same prompt: nothing on that side can evaluate Nix. Both
+# platforms symlink this file to ~/.config/starship.toml, so edits take effect
+# in the next shell with no rebuild.
+
+add_newline = false
+format = "$directory$git_branch$git_status$cmd_duration$line_break$character"
+
+[character]
+success_symbol = "[❯](purple)"
+error_symbol = "[❯](red)"
+
+[cmd_duration]
+format = "[$duration]($style) "

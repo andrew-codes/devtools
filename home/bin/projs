@@ -1,6 +1,7 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
+# shellcheck disable=SC2010  # repo directories are plain names; the ls listing is the point
 if ! [ -z "$1" ]; then
-  ls ${REPO_HOME} | grep "$1"
+  ls "${REPO_HOME}" | grep "$1"
 else
-  ls ${REPO_HOME}
+  ls "${REPO_HOME}"
 fi

@@ -1,2 +1,8 @@
-#!/usr/bin/env zsh
-docker kill ${=$(docker ps -q)}
+#!/usr/bin/env bash
+containers="$(docker ps -q)"
+if [ -z "$containers" ]; then
+  echo "No running containers"
+  exit 0
+fi
+# shellcheck disable=SC2086  # deliberate word splitting: one argument per container id
+docker kill $containers
