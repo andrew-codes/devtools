@@ -1,5 +1,5 @@
 {
-  "model": "opus[1m]",
+  "model": "sonnet",
   "hooks": {
     "SessionStart": [
       {
@@ -7,6 +7,16 @@
           {
             "type": "command",
             "command": "$HOME/.pi/agent/hook/session-start.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/andrew/.volta/tools/image/packages/lavish-axi/bin/lavish-axi",
+            "timeout": 10
           }
         ]
       }
