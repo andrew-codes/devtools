@@ -31,13 +31,16 @@ let
   # verification; `go install @<tag>` instead goes through Go's module
   # system, which verifies against sum.golang.org.
   goPackages = [
-    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.41.2" # https://github.com/kunchenguid/no-mistakes/releases
-    # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1) is broken
-    # upstream -- they tagged v2 releases without bumping go.mod's module
-    # path to ".../treehouse/v2" as Go's semantic import versioning
-    # requires, so `go install` rejects every v2.x ref with "invalid
-    # version: module contains a go.mod file, so module path must match
-    # major version". Bump this once upstream fixes go.mod on a new tag.
+    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.48.0" # https://github.com/kunchenguid/no-mistakes/releases
+    # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1, the latest
+    # tag as of 2026-08-12) is broken upstream -- they tagged v2 releases
+    # without bumping go.mod's module path to ".../treehouse/v2" as Go's
+    # semantic import versioning requires, so `go install` rejects every
+    # v2.x ref with "invalid version: module contains a go.mod file, so
+    # module path must match major version". Checked go.mod on both v2.0.0
+    # and v2.1.1 via the GitHub contents API; both still declare module
+    # "github.com/kunchenguid/treehouse" with no /v2 suffix, so this is
+    # still broken. Bump this once upstream fixes go.mod on a new tag.
     "github.com/kunchenguid/treehouse@v1.8.0"                     # https://github.com/kunchenguid/treehouse/releases
   ];
   # Secrets referenced by tooling that reads them from the environment --
