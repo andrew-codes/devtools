@@ -84,10 +84,8 @@ in
     yq
     uv
     shfmt
-    kubeseal
-    gh
-    fluxcd     # flux CLI
-    kubectl
+    # `work` branch: kubeseal, gh, fluxcd, kubectl intentionally omitted from
+    # this variant.
     terraform
     ansible
     volta      # node.js version management
@@ -98,7 +96,9 @@ in
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.REPO_HOME = "${config.home.homeDirectory}/developer/repos";
   home.sessionVariables.VOLTA_HOME = "${config.home.homeDirectory}/.volta";
-  home.sessionVariables.SSH_AUTH_SOCK = "${config.home.homeDirectory}/.1password/agent.sock";
+  # `work` branch: no SSH_AUTH_SOCK override - 1Password isn't installed on
+  # this variant, so its agent socket doesn't exist. Falls back to whatever
+  # ssh-agent the OS or the user provides.
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin" # custom bin/ commands (db, fa, ...) symlinked here
     "${config.home.homeDirectory}/.volta/bin"
@@ -129,8 +129,9 @@ in
         "yarn"
         "encode64"
         "eza"
-        "fluxcd"
-        "gh"
+        # `work` branch: fluxcd and gh plugins dropped along with the
+        # binaries they wrap - their aliases/completions would be dead
+        # weight without gh/fluxcd installed.
         "git-escape-magic"
       ];
     };

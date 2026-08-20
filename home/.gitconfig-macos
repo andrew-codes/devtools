@@ -1,4 +1,6 @@
-[gpg]
-	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
-[gpg "ssh"]
-	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+# `work` branch: 1Password isn't installed on this variant, so op-ssh-sign
+# doesn't exist and commit signing would fail outright (main's [commit]
+# gpgsign = true is set before this include, so it's overridden here rather
+# than dropped upstream on the branch that still has 1Password).
+[commit]
+	gpgsign = false

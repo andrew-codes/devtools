@@ -92,13 +92,13 @@
     casks = [
       "wezterm"
       "claude-code"
-      "1password"
-      "1password-cli"
       "docker-desktop"
       "raycast"
       "logi-options+"
-      "lens"
     ];
+    # `work` branch: 1password, 1password-cli, and lens intentionally omitted
+    # from this variant (see home.nix for the SSH/signing fallout of dropping
+    # 1Password, and home/.gitconfig-macos for commit-signing).
     # No `masApps` here on purpose -- brew bundle can't install Mac App Store
     # apps from inside activation. The app list lives in mas-apps.nix and is
     # applied by setup/macOS.sh; that file explains why.

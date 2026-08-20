@@ -13,5 +13,6 @@
 # user, in the real session, where mas works. Find an app's id with:
 #   mas search "App Name"
 {
-  "Dynamic Wallpaper Library" = 1582358382;
+  # Dynamic Wallpaper Library intentionally omitted on the `work` branch: not
+  # installed in the work-environment variant of this config.
 }
