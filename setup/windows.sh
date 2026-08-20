@@ -83,16 +83,16 @@ WINGET_PACKAGES=(
 
 # Pinned, because winget has no package for either. See Step 5.
 HACK_NERD_FONT_VERSION="3.5.0" # https://github.com/ryanoasis/nerd-fonts/releases
-KUBESEAL_VERSION="0.38.4"      # https://github.com/bitnami-labs/sealed-secrets/releases
+KUBESEAL_VERSION="0.39.1"      # https://github.com/bitnami-labs/sealed-secrets/releases
 
 # Mirrors globalNpmPackages in home.nix.
 GLOBAL_NPM_PACKAGES=(
-  "@earendil-works/pi-coding-agent@^0.83.0"
-  "gh-axi@^0.1.29"
-  "chrome-devtools-axi@^0.1.28"
-  "quota-axi@^0.1.17"
+  "@earendil-works/pi-coding-agent@^0.84.2"
+  "gh-axi@^0.1.30"
+  "chrome-devtools-axi@^0.1.29"
+  "quota-axi@^0.1.29"
   "npm-axi@^0.1.1"
-  "lavish-axi@^0.1.45"
+  "lavish-axi@^0.1.53"
   "tasks-axi@^0.2.5"
 )
 
@@ -101,7 +101,7 @@ AXI_AMBIENT_CONTEXT_TOOLS=(lavish-axi tasks-axi)
 
 # Mirrors goPackages in home.nix.
 GO_PACKAGES=(
-  "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.41.2"
+  "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.53.0"
   "github.com/kunchenguid/treehouse@v1.8.0"
 )
 
