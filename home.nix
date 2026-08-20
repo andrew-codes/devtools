@@ -9,12 +9,12 @@ let
   # there is nothing for it to import. Bump both together. The same goes for
   # axiAmbientContextTools, goPackages and secretEnvVars below.
   globalNpmPackages = [
-    "@earendil-works/pi-coding-agent@^0.83.0" # https://www.npmjs.com/package/@earendil-works/pi-coding-agent
-    "gh-axi@^0.1.29"                          # https://www.npmjs.com/package/gh-axi
-    "chrome-devtools-axi@^0.1.28"             # https://www.npmjs.com/package/chrome-devtools-axi
-    "quota-axi@^0.1.17"                       # https://www.npmjs.com/package/quota-axi
+    "@earendil-works/pi-coding-agent@^0.84.2" # https://www.npmjs.com/package/@earendil-works/pi-coding-agent
+    "gh-axi@^0.1.30"                          # https://www.npmjs.com/package/gh-axi
+    "chrome-devtools-axi@^0.1.29"             # https://www.npmjs.com/package/chrome-devtools-axi
+    "quota-axi@^0.1.29"                       # https://www.npmjs.com/package/quota-axi
     "npm-axi@^0.1.1"                          # https://www.npmjs.com/package/npm-axi
-    "lavish-axi@^0.1.45"                      # https://www.npmjs.com/package/lavish-axi
+    "lavish-axi@^0.1.53"                      # https://www.npmjs.com/package/lavish-axi
     "tasks-axi@^0.2.5"                        # https://www.npmjs.com/package/tasks-axi
   ];
   # The subset of the AXI CLIs above that ship an `axi <tool> setup hooks`
@@ -31,7 +31,7 @@ let
   # verification; `go install @<tag>` instead goes through Go's module
   # system, which verifies against sum.golang.org.
   goPackages = [
-    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.48.0" # https://github.com/kunchenguid/no-mistakes/releases
+    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.53.0" # https://github.com/kunchenguid/no-mistakes/releases
     # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1, the latest
     # tag as of 2026-08-12) is broken upstream -- they tagged v2 releases
     # without bumping go.mod's module path to ".../treehouse/v2" as Go's
@@ -63,7 +63,7 @@ let
   # acceptable: the installer resolves a versioned binary and verifies it
   # against Atlassian's published SHA256SUMS for that same version, so nothing
   # floating or unchecked is executed. Bump this to upgrade.
-  twgVersion = "1.1.1"; # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
+  twgVersion = "1.2.5"; # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
 in
 
 {
