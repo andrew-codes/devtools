@@ -455,6 +455,62 @@ in
     )
   '';
 
+  # Dia's skill format is plain text with no YAML frontmatter and no external
+  # file references, unlike this repo's Claude/pi skills. Flatten the tracked
+  # write-as-andrew skill (home/.agents/skills/write-as-andrew, itself
+  # symlinked into ~/.agents/skills above) into one self-contained text file:
+  # strip SKILL.md's frontmatter, then append every file under references/ so
+  # nothing there needs a second read. Generated into
+  # ~/.local/state rather than the repo checkout, since it's a derived
+  # artifact and must never dirty the tracked, public checkout. Ordered after
+  # writeBoundary like installTwg: the source is a static tracked file, so no
+  # other activation step needs to run first.
+  home.activation.buildDiaSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    SKILL_DIR="${dotfiles}/home/.agents/skills/write-as-andrew"
+    GENERATED_DIR="${config.home.homeDirectory}/.local/state/devtools/generated/dia-skills"
+    GENERATED="$GENERATED_DIR/write-as-andrew.txt"
+    DIA_SKILLS_DIR="${config.home.homeDirectory}/.config/dia/skills"
+    DIA_LINK="$DIA_SKILLS_DIR/write-as-andrew.txt"
+    AWK="${pkgs.gawk}/bin/awk"
+
+    if [ -f "$SKILL_DIR/SKILL.md" ]; then
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "$GENERATED_DIR"
+
+      TMP="$(${pkgs.coreutils}/bin/mktemp)"
+
+      # Drop the `---`-delimited frontmatter header: print everything after the
+      # second `---` line.
+      "$AWK" '
+        /^---$/ { delim++; next }
+        delim >= 2 { print }
+      ' "$SKILL_DIR/SKILL.md" > "$TMP"
+
+      if [ -d "$SKILL_DIR/references" ]; then
+        while IFS= read -r -d $'\0' ref; do
+          {
+            echo ""
+            echo "## Appendix: $(${pkgs.coreutils}/bin/basename "$ref")"
+            echo ""
+            ${pkgs.coreutils}/bin/cat "$ref"
+          } >> "$TMP"
+        done < <(${pkgs.findutils}/bin/find "$SKILL_DIR/references" -type f -print0 | LC_ALL=C ${pkgs.coreutils}/bin/sort -z)
+      fi
+
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/mv "$TMP" "$GENERATED"
+
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "$DIA_SKILLS_DIR"
+
+      # Belt and braces: a previous run, or something else entirely, may have
+      # left a stale symlink or a plain file at this path.
+      if [ -e "$DIA_LINK" ] || [ -L "$DIA_LINK" ]; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/rm -f "$DIA_LINK"
+      fi
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/ln -sf "$GENERATED" "$DIA_LINK"
+    else
+      echo "==> buildDiaSkills: $SKILL_DIR/SKILL.md not found; skipping." >&2
+    fi
+  '';
+
   # Stub every secretEnvVars key into ~/.env without touching values that are
   # already set, so adding a key to that list later tops up an existing file
   # rather than needing a hand edit. The file itself is never tracked.
