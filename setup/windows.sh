@@ -101,7 +101,7 @@ AXI_AMBIENT_CONTEXT_TOOLS=(lavish-axi tasks-axi)
 
 # Mirrors goPackages in home.nix.
 GO_PACKAGES=(
-  "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.53.0"
+  "github.com/andrew-codes/no-mistakes/cmd/no-mistakes@main"
   "github.com/kunchenguid/treehouse@v1.8.0"
 )
 

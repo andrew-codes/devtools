@@ -31,7 +31,9 @@ let
   # verification; `go install @<tag>` instead goes through Go's module
   # system, which verifies against sum.golang.org.
   goPackages = [
-    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.53.0" # https://github.com/kunchenguid/no-mistakes/releases
+    # Installed from Andrew's fork, not upstream kunchenguid/no-mistakes.
+    # Pinned to @main rather than a tag: the fork has no tags of its own yet.
+    "github.com/andrew-codes/no-mistakes/cmd/no-mistakes@main" # https://github.com/andrew-codes/no-mistakes
     # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1, the latest
     # tag as of 2026-08-12) is broken upstream -- they tagged v2 releases
     # without bumping go.mod's module path to ".../treehouse/v2" as Go's
