@@ -2,6 +2,7 @@
 
 - Never use the em dash "—". Use plain dash "-" instead
 - When writing commit messages, NEVER auto-add your agent name as co-author
+- When writing something for me, such as documentation, blog articles, PR descriptions, commit messages, etc., do so my mimicking my voice. Use the /write-as-andrew skill.
 - Never manually modify CHANGELOG.md files or any files that are marked as auto-generated
 - When making technical decisions, do not give much weight to development cost.
   Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.
