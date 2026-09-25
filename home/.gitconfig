@@ -22,3 +22,8 @@
 	# Machine-specific signing key: not tracked or symlinked, since each dev
 	# machine has its own. See rebuild.sh's post-activation reminder.
 	path = ~/.gitconfig.local
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
