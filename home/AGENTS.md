@@ -19,3 +19,4 @@
   Never use the `twg` CLI. Always use `twg-axi` instead.
   Never use the Rovo MCP server or any other Atlassian MCP tool, even when one is connected and looks convenient.
   If `twg-axi` is missing or a command fails, say so and stop - do not fall back to an MCP.
+- When spawned as a Firstmate crewmate, use the crewmate-model-fit skill once near the start of a task to check whether your assigned model fits the task.
