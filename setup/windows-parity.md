@@ -85,13 +85,13 @@ native Windows.
 
 | macOS | Windows | Decision |
 | --- | --- | --- |
-| `globalNpmPackages` via Volta's npm (`pi`, `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi`, `tasks-axi`) | same list, same `--ignore-scripts` | **Implemented** (step 6). The list is duplicated from `home.nix` because Nix cannot evaluate here; bump both together. |
+| `globalNpmPackages` via Volta's npm (`pi`, `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi`, `tasks-axi`) | same list, same `--ignore-scripts` | **Implemented** (step 6). The list is duplicated from `home.nix` because Nix cannot evaluate here; bump both together. `@andrew-codes/twg-axi` is deliberately excluded from this Windows list - see the `twg` CLI row below, which it depends on. |
 | `goPackages` (`no-mistakes`, `treehouse`) | `go install`, same pinned tags | **Implemented** (step 7). If either needs cgo, `go install` fails and the script says which C toolchain to add. |
 | pi extensions (`home/.pi/agent/settings.json`) | same file, linked | **Implemented.** pi installs them itself from the linked settings. |
 | `~/.claude/settings.json` merge | same jq merge | **Implemented** (step 10), for the same reason: the AXI hook installers write into that file and their writes follow symlinks. |
 | `~/.claude.json` MCP merge | same jq merge | **Implemented** (step 10). |
 | AXI `setup hooks` | same | **Implemented** (step 11). |
-| `twg` CLI | - | **Skipped, with consequences.** Atlassian's installer hard-fails on anything that is not Darwin or Linux ("Only macOS and Linux are supported"), and there is no Windows build. `home/AGENTS.md` tells agents to use `twg` and never an Atlassian MCP, so on Windows agents have **no** Atlassian tooling - they should say so and stop, which is what that rule already prescribes. |
+| `twg` CLI, `@andrew-codes/twg-axi` | - | **Skipped, with consequences.** Atlassian's `twg` installer hard-fails on anything that is not Darwin or Linux ("Only macOS and Linux are supported"), and there is no Windows build. `twg-axi` is a wrapper around `twg` and needs it present, so it is skipped on Windows for the same reason (see the `globalNpmPackages` row above) and is not added to `setup/windows.sh`. `home/AGENTS.md` tells agents to use `twg-axi` and never an Atlassian MCP, so on Windows agents have **no** Atlassian tooling - they should say so and stop, which is what that rule already prescribes. |
 | Claude Code hooks running bash | `CLAUDE_CODE_GIT_BASH_PATH` | **Implemented.** Every hook here is a bash script; Claude Code on Windows needs to be told where bash is. Set in the user environment and in `~/.bashrc`. |
 
 ## Shell

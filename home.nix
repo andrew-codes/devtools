@@ -16,6 +16,7 @@ let
     "npm-axi@^0.1.1"                          # https://www.npmjs.com/package/npm-axi
     "lavish-axi@^0.1.53"                      # https://www.npmjs.com/package/lavish-axi
     "tasks-axi@^0.2.5"                        # https://www.npmjs.com/package/tasks-axi
+    "@andrew-codes/twg-axi@^0.1.0"            # https://www.npmjs.com/package/@andrew-codes/twg-axi
   ];
   # The subset of the AXI CLIs above that ship an `axi <tool> setup hooks`
   # command: it installs a SessionStart hook so the tool's ambient context
