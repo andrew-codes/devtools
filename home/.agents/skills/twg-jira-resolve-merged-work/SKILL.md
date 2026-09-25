@@ -4,6 +4,8 @@ description: >
   Clean up stale or unresolved Jira workitems. Dry-run single items, lists, boards,
   sprints, epics, or projects by matching Jira keys/titles to merged PRs, repos,
   Rovo/search-code hits, and assignee activity.
+metadata:
+  internal: true
 ---
 
 # twg-jira-resolve-merged-work

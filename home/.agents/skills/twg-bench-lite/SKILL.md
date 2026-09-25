@@ -3,6 +3,8 @@ name: twg-bench-lite
 description: >
   Run a lightweight single-prompt A/B comparison of free Atlassian/local MCP
   context vs TWG CLI graph context using paired read-only agent sessions.
+metadata:
+  internal: true
 ---
 
 # twg-bench-lite

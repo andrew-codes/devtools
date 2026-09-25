@@ -4,6 +4,8 @@ description: >
   Use with root `twg` for code search, repositories using an API/package,
   implementation and reverse-dependency discovery, PR status and reviews, repo
   contributors, hot areas, and issue-to-PR lookups.
+metadata:
+  internal: true
 ---
 
 # twg-engineering-work

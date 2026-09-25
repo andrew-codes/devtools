@@ -2,6 +2,8 @@
 name: version-control
 description: Manage Git repositories and collaborative workflows — branching strategies, commit hygiene, conflict resolution, pull requests, hooks, and .gitignore management.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Version Control with Git

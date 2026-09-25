@@ -2,6 +2,8 @@
 name: analytics-reporting
 description: Generate comprehensive marketing analytics reports by collecting KPIs, analyzing trends, and delivering actionable insights with attribution modeling and funnel analysis.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Analytics Reporting

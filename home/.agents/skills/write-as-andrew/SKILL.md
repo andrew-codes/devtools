@@ -2,6 +2,8 @@
 name: write-as-andrew
 description: Write everyday prose in Andrew Smith's collaborative voice - PR descriptions, docs, commit messages, code review comments, Slack messages, and other day-to-day writing done on his behalf. This is his default writing style. For blog posts and long-form opinion essays, use write-blog-post instead.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Write as Andrew
