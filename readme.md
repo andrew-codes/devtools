@@ -166,9 +166,9 @@ Because those commands write into `~/.claude/settings.json`, that one file is ap
 
 **MCP servers** (`home/.config/mcp/mcp.json`): Context7 for library documentation. Secrets are referenced as `${VAR}` and resolved from the environment at connection time, never stored in the file.
 
-**Atlassian tooling.** Jira and Confluence are reached through the [`twg` CLI](https://developer.atlassian.com/cloud/twg-cli/), not an MCP server, and `home/AGENTS.md` instructs every agent to use it and never the Rovo MCP. A CLI keeps the tool definitions out of the model's context until they are actually needed, and one authenticated binary serves every harness. `twg` is pinned to an exact version in `home.nix` and installed during activation; run `twg login` once by hand afterwards, since its OAuth flow is interactive and cannot run inside a rebuild.
+**Atlassian tooling.** Jira and Confluence are reached through the [`twg` CLI](https://developer.atlassian.com/cloud/twg-cli/), not an MCP server, and `home/AGENTS.md` instructs every agent to use the `twg-axi` wrapper -- a drop-in CLI that mirrors `twg`'s command surface exactly but returns TOON instead of JSON -- and never the Rovo MCP. A CLI keeps the tool definitions out of the model's context until they are actually needed, and one authenticated binary serves every harness. `twg` is pinned to an exact version in `home.nix` and installed during activation as `twg-axi`'s dependency; run `twg login` once by hand afterwards, since its OAuth flow is interactive and cannot run inside a rebuild.
 
-Atlassian ships no Windows build -- its installer refuses to run anywhere but macOS and Linux -- so on Windows there is no `twg`. The rule in `home/AGENTS.md` already covers that case: agents say so and stop rather than falling back to an MCP.
+Atlassian ships no Windows build -- its installer refuses to run anywhere but macOS and Linux -- so on Windows there is no `twg`, and `twg-axi` is skipped there too since it wraps `twg`. The rule in `home/AGENTS.md` already covers that case: agents say so and stop rather than falling back to an MCP.
 
 **Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Global agent skills live in `home/.agents/skills/`.
 
