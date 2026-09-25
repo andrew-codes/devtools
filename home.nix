@@ -459,7 +459,7 @@ in
 
   # Dia's skill format is plain text with no YAML frontmatter and no external
   # file references, unlike this repo's Claude/pi skills. Flatten the tracked
-  # write-as-andrew skill (home/.agents/skills/write-as-andrew, itself
+  # write-blog-post skill (home/.agents/skills/write-blog-post, itself
   # symlinked into ~/.agents/skills above) into one self-contained text file:
   # strip SKILL.md's frontmatter, then append every file under references/ so
   # nothing there needs a second read. Generated into
@@ -468,11 +468,11 @@ in
   # writeBoundary like installTwg: the source is a static tracked file, so no
   # other activation step needs to run first.
   home.activation.buildDiaSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    SKILL_DIR="${dotfiles}/home/.agents/skills/write-as-andrew"
+    SKILL_DIR="${dotfiles}/home/.agents/skills/write-blog-post"
     GENERATED_DIR="${config.home.homeDirectory}/.local/state/devtools/generated/dia-skills"
-    GENERATED="$GENERATED_DIR/write-as-andrew.txt"
+    GENERATED="$GENERATED_DIR/write-blog-post.txt"
     DIA_SKILLS_DIR="${config.home.homeDirectory}/.config/dia/skills"
-    DIA_LINK="$DIA_SKILLS_DIR/write-as-andrew.txt"
+    DIA_LINK="$DIA_SKILLS_DIR/write-blog-post.txt"
     AWK="${pkgs.gawk}/bin/awk"
 
     if [ -f "$SKILL_DIR/SKILL.md" ]; then
