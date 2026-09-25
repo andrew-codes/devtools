@@ -191,7 +191,7 @@ in
       ".." = "cd ..";
       add = "git add .";
       m = "git switch main";
-      cc = "claude --dangerously-skip-permissions";
+      cc = "claude --dangerously-skip-permissions --remote-control";
       co = "codex --full-auto";
     };
   };

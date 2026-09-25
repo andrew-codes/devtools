@@ -158,5 +158,5 @@ fi
 alias ..="cd .."
 alias add="git add ."
 alias m="git switch main"
-alias cc="claude --dangerously-skip-permissions"
+alias cc="claude --dangerously-skip-permissions --remote-control"
 alias co="codex --full-auto"
