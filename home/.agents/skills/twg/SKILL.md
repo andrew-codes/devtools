@@ -8,6 +8,8 @@ description: >
   catch-ups; dependency maps; code search, repository, or PR discovery; incidents,
   on-call, or reliability;
   and deep internal research across connected sources, docs, work, and people.
+metadata:
+  internal: true
 ---
 
 # twg

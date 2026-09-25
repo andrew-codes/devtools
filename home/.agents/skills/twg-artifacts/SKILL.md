@@ -4,6 +4,8 @@ description: >
   Use with root `twg` when a user wants to share, publish, send, or update a
   standalone local or generated file as an Atlassian Artifact. Do not use for
   Jira or Confluence attachments.
+metadata:
+  internal: true
 ---
 
 # TWG artifacts

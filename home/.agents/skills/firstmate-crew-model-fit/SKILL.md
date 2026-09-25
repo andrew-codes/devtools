@@ -1,6 +1,11 @@
 ---
-name: crewmate-model-fit
-description: Use once, near the start of a task, when you are a task worker spawned by Firstmate (your very first message says "You are a crewmate: an autonomous worker agent managed by firstmate" and gives you a status file to report progress through) - assess whether the model you were launched with fits your assigned task's size and complexity, and escalate a recommendation to switch if there is a clear, significant mismatch.
+name: firstmate-crew-model-fit
+description: >-
+  Use once, near the start of a task, when you are a task worker spawned by Firstmate (your very
+  first message says "You are a crewmate: an autonomous worker agent managed by firstmate" and
+  gives you a status file to report progress through) - assess whether the model you were
+  launched with fits your assigned task's size and complexity, and escalate a recommendation to
+  switch if there is a clear, significant mismatch.
 disable-model-invocation: false
 ---
 

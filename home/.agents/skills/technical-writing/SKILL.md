@@ -2,6 +2,8 @@
 name: technical-writing
 description: Write clear, concise, and accurate technical documentation including API references, user guides, tutorials, changelogs, and architecture docs, tailored to the target audience.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Technical Writing

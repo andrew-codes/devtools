@@ -2,6 +2,8 @@
 name: social-media-posting
 description: Create, adapt, and schedule social media content across platforms with platform-specific formatting, engagement hooks, and strategic posting cadence.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Social Media Posting

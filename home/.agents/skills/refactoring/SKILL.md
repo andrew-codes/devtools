@@ -2,6 +2,8 @@
 name: refactoring
 description: Improve code quality and maintainability through systematic identification of code smells and application of proven refactoring patterns.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Code Refactoring

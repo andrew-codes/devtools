@@ -4,6 +4,8 @@ description: >
   Use with root `twg` for deep context, dependency maps, related entities,
   project-to-repo discovery, OOO catch-ups, and
   "catch me up" requests around a concrete anchor.
+metadata:
+  internal: true
 ---
 
 # twg-context-discovery

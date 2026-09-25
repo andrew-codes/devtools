@@ -2,6 +2,8 @@
 name: proofread
 description: Proofread and correct text for grammar, spelling, punctuation, style, clarity, and consistency, with support for multiple style guides and readability analysis.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Proofreading

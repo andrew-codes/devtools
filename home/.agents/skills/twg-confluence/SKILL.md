@@ -4,6 +4,8 @@ description: >
   Use with root `twg` for Confluence content, spaces, hierarchy, authoring,
   editing, comments, versions, permissions, exports, and CQL. Applies
   Confluence semantics and safe write rules.
+metadata:
+  internal: true
 ---
 
 # twg-confluence

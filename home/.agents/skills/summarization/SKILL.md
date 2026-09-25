@@ -2,6 +2,8 @@
 name: summarization
 description: Summarize text using extractive, abstractive, hierarchical, and multi-document techniques, producing concise outputs at configurable detail levels.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Summarization

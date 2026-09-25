@@ -2,6 +2,8 @@
 name: review-code
 description: Perform thorough code reviews on files or pull requests, checking for bugs, security vulnerabilities, performance issues, and style violation.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Code Review

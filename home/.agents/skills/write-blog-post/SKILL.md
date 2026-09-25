@@ -2,6 +2,8 @@
 name: write-blog-post
 description: Write blog posts and long-form opinion essays in Andrew Smith's own voice, derived from his published pre-2026 articles. Use when drafting or revising a blog post or essay that will be published under his name on andrew.codes.
 disable-model-invocation: false
+metadata:
+  internal: true
 ---
 
 # Write a blog post

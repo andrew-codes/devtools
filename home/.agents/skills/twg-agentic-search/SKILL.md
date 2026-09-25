@@ -4,6 +4,8 @@ description: >
   Use with root `twg` for deep iterative enterprise/company knowledge search and
   internal research with Rovo Search across connected apps/connectors including
   Confluence, Jira, Drive, Slack, Bitbucket, and GitHub.
+metadata:
+  internal: true
 ---
 
 # twg-agentic-search

@@ -4,6 +4,8 @@ description: >
   Use when named or when the user requests additional context for code review.
   Review Bitbucket/GitHub PRs or local changes using TWG context, create JSON
   and Markdown, and post only when requested.
+metadata:
+  internal: true
 ---
 
 # twg-code-review

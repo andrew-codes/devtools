@@ -4,6 +4,8 @@ description: >
   Use with root `twg` for status rollups, personal work summaries, and
   decision-readiness or go/no-go briefs. Routes to `pr-tree`, `org-tree`,
   `work-tree`, or `workitem-tree`.
+metadata:
+  internal: true
 ---
 
 # twg-status-rollups
