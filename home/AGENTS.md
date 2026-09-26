@@ -20,3 +20,7 @@
   Never use the Rovo MCP server or any other Atlassian MCP tool, even when one is connected and looks convenient.
   If `twg-axi` is missing or a command fails, say so and stop - do not fall back to an MCP.
 - When spawned as a Firstmate crewmate, use the firstmate-crew-model-fit skill once near the start of a task to check whether your assigned model fits the task.
+- For any screenshot, browser automation, or visual/UI verification task, ALWAYS use the `chrome-devtools-axi` CLI.
+  It runs headless by default and captures via the DevTools Protocol, never the real screen.
+  Never use an OS-level screen-capture utility (macOS `screencapture` or equivalent) for this - it captures the real, shared desktop.
+  If `chrome-devtools-axi` is missing or a command fails, say so and stop - do not fall back to an OS-level screenshot tool.
