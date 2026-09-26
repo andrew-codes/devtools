@@ -85,8 +85,8 @@ native Windows.
 
 | macOS | Windows | Decision |
 | --- | --- | --- |
-| `globalNpmPackages` via Volta's npm (`pi`, `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi`, `tasks-axi`) | same list, same `--ignore-scripts` | **Implemented** (step 6). The list is duplicated from `home.nix` because Nix cannot evaluate here; bump both together. `@andrew-codes/twg-axi` is deliberately excluded from this Windows list - see the `twg` CLI row below, which it depends on. |
-| `goPackages` (`no-mistakes`, `treehouse`) | `go install`, same pinned tags | **Implemented** (step 7). If either needs cgo, `go install` fails and the script says which C toolchain to add. |
+| `globalNpmPackages` via Volta's npm (`pi`, `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi`, `tasks-axi`) | same list, same `--ignore-scripts` | **Implemented** (step 6). The list is duplicated from `home.nix` because Nix cannot evaluate here; bump both together. `@andrew-codes/twg-axi` is deliberately excluded from this Windows list - see the `twg` CLI row below, which it depends on. `backpass` and its `acpx` dependency are also deliberately excluded here: backpass's own README states it supports macOS and Linux only, with no Windows build, so both are skipped on `setup/windows.sh` for the same reason `twg-axi` is. |
+| `goPackages` (`no-mistakes`, `treehouse`) | `go install`, same pinned tags | **Implemented** (step 7). If either needs cgo, `go install` fails and the script says which C toolchain to add. `no-mistakes` installs from upstream `kunchenguid/no-mistakes`, pinned to its latest release tag. |
 | pi extensions (`home/.pi/agent/settings.json`) | same file, linked | **Implemented.** pi installs them itself from the linked settings. |
 | `~/.claude/settings.json` merge | same jq merge | **Implemented** (step 10), for the same reason: the AXI hook installers write into that file and their writes follow symlinks. |
 | `~/.claude.json` MCP merge | same jq merge | **Implemented** (step 10). |

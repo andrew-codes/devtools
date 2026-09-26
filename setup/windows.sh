@@ -95,13 +95,16 @@ GLOBAL_NPM_PACKAGES=(
   "lavish-axi@^0.1.53"
   "tasks-axi@^0.2.5"
 )
+# backpass and its acpx dependency are macOS/Linux only per backpass's own
+# README, so they are deliberately excluded here -- see the globalNpmPackages
+# row in setup/windows-parity.md.
 
 # Mirrors axiAmbientContextTools in home.nix.
 AXI_AMBIENT_CONTEXT_TOOLS=(lavish-axi tasks-axi)
 
 # Mirrors goPackages in home.nix.
 GO_PACKAGES=(
-  "github.com/andrew-codes/no-mistakes/cmd/no-mistakes@main"
+  "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.84.0"
   "github.com/kunchenguid/treehouse@v1.8.0"
 )
 
