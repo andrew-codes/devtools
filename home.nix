@@ -17,6 +17,8 @@ let
     "lavish-axi@^0.1.53"                      # https://www.npmjs.com/package/lavish-axi
     "tasks-axi@^0.2.5"                        # https://www.npmjs.com/package/tasks-axi
     "@andrew-codes/twg-axi@^0.1.0"            # https://www.npmjs.com/package/@andrew-codes/twg-axi
+    "backpass@^0.1.28"                        # https://www.npmjs.com/package/backpass
+    "acpx@^0.19.3"                            # https://www.npmjs.com/package/acpx
   ];
   # The subset of the AXI CLIs above that ship an `axi <tool> setup hooks`
   # command: it installs a SessionStart hook so the tool's ambient context
@@ -32,9 +34,9 @@ let
   # verification; `go install @<tag>` instead goes through Go's module
   # system, which verifies against sum.golang.org.
   goPackages = [
-    # Installed from Andrew's fork, not upstream kunchenguid/no-mistakes.
-    # Pinned to @main rather than a tag: the fork has no tags of its own yet.
-    "github.com/andrew-codes/no-mistakes/cmd/no-mistakes@main" # https://github.com/andrew-codes/no-mistakes
+    # Pinned to v1.84.0, upstream's latest tag: `go install @<tag>` verifies
+    # against sum.golang.org, unlike an unpinned `curl | sh` installer.
+    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.84.0" # https://github.com/kunchenguid/no-mistakes/releases
     # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1, the latest
     # tag as of 2026-08-12) is broken upstream -- they tagged v2 releases
     # without bumping go.mod's module path to ".../treehouse/v2" as Go's
