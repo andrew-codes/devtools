@@ -49,6 +49,17 @@
     finder.CreateDesktop = false;          # clean desktop
     trackpad.Clicking = false;              # tap to click
   };
+  # claude-code and claude-code@latest install the same app, so Homebrew
+  # refuses to install the latter while the former is still around. Run this
+  # ahead of the homebrew module's own activation (which just runs `brew
+  # bundle` over the casks list above and, with cleanup = "none", never
+  # uninstalls a cask dropped from that list) so the swap doesn't need
+  # `onActivation.cleanup` turned on for every other unlisted package too.
+  system.activationScripts.preActivation.text = ''
+    if /opt/homebrew/bin/brew list --cask claude-code &>/dev/null; then
+      /opt/homebrew/bin/brew uninstall --cask claude-code || true
+    fi
+  '';
   # Raycast replaces Spotlight search, so keep Spotlight's own indexing off.
   system.activationScripts.postActivation.text = ''
     mdutil -i off -d / >/dev/null
@@ -91,7 +102,7 @@
     ];
     casks = [
       "wezterm"
-      "claude-code"
+      "claude-code@latest"
       "1password"
       "1password-cli"
       "docker-desktop"

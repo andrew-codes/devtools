@@ -48,7 +48,7 @@ native Windows.
 | `docker-desktop` | `Docker.DockerDesktop` | **Implemented.** |
 | `lens` | `Mirantis.Lens` | **Implemented.** |
 | `logi-options+` | `Logitech.OptionsPlus` | **Implemented.** |
-| `claude-code` | `Anthropic.ClaudeCode` | **Implemented.** |
+| `claude-code@latest` | `Anthropic.ClaudeCode` | **Implemented.** `Anthropic.ClaudeCode` has no separate stable/latest split like the two Homebrew casks - it's a single winget package bumped on every release. |
 | `raycast` | `Microsoft.PowerToys` | **Implemented, substituted.** Raycast ships no winget package. PowerToys Run is the equivalent keystroke launcher. |
 | `tmux` | - | **Skipped.** Git for Windows ships no tmux and it needs a POSIX pty. WezTerm's own tabs and panes, plus herdr, cover the use. |
 | `mas` | - | **Skipped.** macOS-only by definition. |

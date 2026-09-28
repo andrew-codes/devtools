@@ -56,7 +56,7 @@ WINGET_PACKAGES=(
   Docker.DockerDesktop    # cask docker-desktop
   Mirantis.Lens           # cask lens
   Logitech.OptionsPlus    # cask logi-options+
-  Anthropic.ClaudeCode    # cask claude-code
+  Anthropic.ClaudeCode    # cask claude-code@latest
   Microsoft.PowerToys     # stands in for cask raycast; PowerToys Run is the
                           # keystroke launcher, and Raycast ships no Windows
                           # package on winget
