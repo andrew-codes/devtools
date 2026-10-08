@@ -504,6 +504,25 @@ link "$DOTFILES/home/.config/starship.toml" "$HOME/.config/starship.toml"
 # bash is the shell here, so these two stand in for programs.zsh in home.nix.
 link "$DOTFILES/home/.bash_profile" "$HOME/.bash_profile"
 link "$DOTFILES/home/.bashrc" "$HOME/.bashrc"
+# Dracula theme for Claude Code (needs >= 2.1.118). home.nix fetches it with
+# pkgs.fetchurl; Windows has no Nix, so download the same pinned revision and
+# verify the same hash. A copy, not a link: the theme is not a repo file.
+# Keep DRACULA_CLAUDE_REV and DRACULA_CLAUDE_SHA256 in step with home.nix.
+DRACULA_CLAUDE_REV=2575775736ad2a53fde1734fde0b4fcb59bd509f
+DRACULA_CLAUDE_SHA256=ad7038a5450bc0b36b1cdb359af95cd2f85b96e649c14b3b7ee6ac656efa899e
+DRACULA_CLAUDE_DEST="$HOME/.claude/themes/dracula.json"
+if [ -f "$DRACULA_CLAUDE_DEST" ] &&
+  [ "$(sha256sum "$DRACULA_CLAUDE_DEST" | cut -d' ' -f1)" = "$DRACULA_CLAUDE_SHA256" ]; then
+  echo "    Claude Code Dracula theme (installed)"
+elif curl -fsSL --retry 2 -o "$TMP_ROOT/dracula-claude.json" \
+  "https://raw.githubusercontent.com/dracula/claude-code-cli/$DRACULA_CLAUDE_REV/Dracula.json" &&
+  [ "$(sha256sum "$TMP_ROOT/dracula-claude.json" | cut -d' ' -f1)" = "$DRACULA_CLAUDE_SHA256" ]; then
+  mkdir -p "$(dirname "$DRACULA_CLAUDE_DEST")"
+  cp -f "$TMP_ROOT/dracula-claude.json" "$DRACULA_CLAUDE_DEST"
+  echo "    Claude Code Dracula theme (installed $DRACULA_CLAUDE_REV)"
+else
+  warn "could not download or verify the Claude Code Dracula theme; skipped"
+fi
 # Re-running this script is the rebuild, so devtools-rebuild points at it
 # rather than at rebuild.sh (which is zsh and darwin-rebuild only).
 link "$DOTFILES/setup/windows.sh" "$HOME/.local/bin/devtools-rebuild"
