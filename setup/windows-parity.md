@@ -132,6 +132,7 @@ config in this repo takes effect with no rebuild - the same contract
 | `~/.ssh/config-os` | `home/.ssh/config-windows` | **Implemented.** Same include scheme as macOS. |
 | `~/.gitconfig.local` (untracked signing key) | same, plus `gpg.ssh.program` | **Implemented.** The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. |
 | `~/.claude/settings.json` | merged, not linked | **Implemented.** Same reason as macOS. |
+| `~/.claude/themes/dracula.json` (Dracula theme, `dracula/claude-code-cli` pinned commit) | same path, copied | **Implemented, copied.** macOS uses `pkgs.fetchurl` with a fixed hash; Windows has no Nix, so step 8 downloads the same commit and verifies the same sha256 (bump both together). Selecting it is still `/theme` inside `claude`. |
 
 ## System defaults (`system.defaults`)
 

@@ -235,6 +235,15 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
     ".claude/agents".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
+    # Dracula theme for Claude Code (needs >= 2.1.118), picked with /theme.
+    # Fetched at a pinned commit and linked file by file from the store, not
+    # symlinked into a clone: ~/.claude/themes stays a real directory.
+    # setup/windows.sh pins the same revision and hash. To bump: change rev,
+    # then `nix store prefetch-file --json <raw url>` for the new hash.
+    ".claude/themes/dracula.json".source = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/dracula/claude-code-cli/2575775736ad2a53fde1734fde0b4fcb59bd509f/Dracula.json";
+      hash = "sha256-rXA4pUULwLNrHNs1mvlc0vhbluZJwUs7fuasZW76iZ4=";
+    };
 
     # Keep Pi's credential and runtime state local by linking only authored files.
     ".pi/agent/themes/rose-pine-moon.json".source =
