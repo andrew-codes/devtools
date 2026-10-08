@@ -453,6 +453,24 @@ fi
 PATH="$VOLTA_HOME/bin:$PATH"
 export PATH
 
+# Dracula for eza (https://draculatheme.com/eza). Windows-native processes
+# (PowerShell, cmd) read the user environment, not ~/.bashrc, so set the page's
+# three values there; home/.bashrc exports the same ones for bash.
+for _eza_var in \
+  'EZA_COLORS=da=2;34:xx=95:ur=36:su=95:sf=36:pi=96' \
+  'EZA_WINDOWS_ATTRIBUTES=short' \
+  'EZA_ICONS_AUTO=always'; do
+  _eza_name="${_eza_var%%=*}"
+  _eza_value="${_eza_var#*=}"
+  _eza_current="$(powershell.exe -NoProfile -Command \
+    "[Environment]::GetEnvironmentVariable('$_eza_name','User')" 2>/dev/null | tr -d '\r')"
+  if [ "$_eza_current" != "$_eza_value" ]; then
+    win setx "$_eza_name" "$_eza_value" >/dev/null
+    echo "    set user $_eza_name=$_eza_value"
+  fi
+done
+unset _eza_var _eza_name _eza_value _eza_current
+
 if have_file "$VOLTA_HOME/bin/npm"; then
   echo "    node (installed)"
 elif command -v volta >/dev/null 2>&1; then

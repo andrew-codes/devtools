@@ -40,6 +40,14 @@ export EDITOR="nvim"
 export REPO_HOME="$HOME/developer/repos"
 export VOLTA_HOME="${VOLTA_HOME:-$HOME/.volta}"
 
+# Dracula for eza, the Windows variant from https://draculatheme.com/eza. The
+# macOS value in home.nix is the "universal" one; the page gives Windows a
+# shorter set. setup/windows.sh also setx's these for non-bash processes; this
+# is the fallback for a shell started before setup ran.
+export EZA_COLORS="da=2;34:xx=95:ur=36:su=95:sf=36:pi=96"
+export EZA_WINDOWS_ATTRIBUTES="short"
+export EZA_ICONS_AUTO="always"
+
 # Everything in this environment hooks agents through bash scripts, and Claude
 # Code on Windows will not run one until it is told where bash lives.
 # setup/windows.sh sets this in the Windows user environment, so this is only
@@ -160,3 +168,5 @@ alias add="git add ."
 alias m="git switch main"
 alias cc="claude --dangerously-skip-permissions --remote-control"
 alias co="codex --full-auto"
+# Always-colored eza; a separate name so plain `eza` stays pipe-safe (see home.nix).
+alias zl="eza -lagX --icons --color=always"

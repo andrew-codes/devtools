@@ -111,7 +111,8 @@ and what HO-243 requires WezTerm to launch. `home/.bashrc` is the peer of
 | zsh syntax highlighting | - | **Skipped.** No bash equivalent without `ble.sh`. |
 | oh-my-zsh `colored-man-pages` | `LESS_TERMCAP_*` | **Implemented.** |
 | oh-my-zsh `sudo`, `pj`, `docker`, `yarn`, `encode64`, `eza`, `fluxcd`, `gh`, `git-escape-magic` | - | **Skipped.** These are zsh plugins; the binaries they wrap are all installed, only the aliases and completions they add are missing. |
-| `shellAliases` (`..`, `add`, `m`, `cc`, `co`) | same aliases in `~/.bashrc` | **Implemented.** |
+| `shellAliases` (`..`, `add`, `m`, `cc`, `co`, `zl`) | same aliases in `~/.bashrc` | **Implemented.** `zl` is the Dracula page's always-colored eza alias. |
+| `EZA_COLORS` (Dracula, "universal" value) | page's Windows value, `setx` in `setup/windows.sh` plus `EZA_WINDOWS_ATTRIBUTES` and `EZA_ICONS_AUTO`, and exported in `~/.bashrc` | **Implemented.** Windows deliberately uses the page's shorter Windows set, not the macOS one. |
 | `~/.env` sourcing + unset-secret warning | same in `~/.bashrc` | **Implemented.** |
 | `home.sessionPath` (`~/.local/bin`, `~/.volta/bin`, `~/go/bin`) | same, re-added idempotently in `~/.bashrc` | **Implemented.** The *Windows* user PATH is deliberately left alone; winget and Volta manage their own entries. |
 | `EDITOR`, `REPO_HOME`, `VOLTA_HOME` | same | **Implemented.** |
