@@ -4,8 +4,6 @@ description: >
   Use with root `twg` for deep iterative enterprise/company knowledge search and
   internal research with Rovo Search across connected apps/connectors including
   Confluence, Jira, Drive, Slack, Bitbucket, and GitHub.
-metadata:
-  internal: true
 ---
 
 # twg-agentic-search
@@ -33,20 +31,21 @@ PATH failures.
    the requested source.
 2. Confirm or infer the Atlassian site. Ask only when no configured or explicit
    site is available and the ambiguity would change the search.
-3. If app/source availability changes the plan, run
-   `twg rovo list-apps -o json`. Use the
-   returned built-ins, connectors, readiness, and auth/setup actions to decide
-   scope; do not start setup or login unless the user asked for it.
-4. Start with one query that combines the concrete topic with the requested
-   artifact or decision type. Use at most one canonical/authoritative or
-   recent/update-oriented refinement when the first result set mixes scopes,
-   lacks primary sources, or misses the requested time signal. Do not fan out
-   exact-title searches for every candidate already returned by the primary
-   query. If a result identifies a canonical, moved, or superseding source,
-   follow that relationship and retain the user's requested source semantics.
+3. For unanchored work or knowledge, begin with Jira and Confluence built-ins.
+   Expand to Drive, SharePoint, Bitbucket, GitHub, or another connector only
+   when the request names that source or the current evidence leaves a material
+   gap. If availability is unknown, run
+   `twg rovo list-apps -o json`; reuse readiness/auth and do not list apps before
+   every query, start setup/login, or fabricate an empty result when unavailable.
+4. Start with one query combining the topic and requested artifact or decision.
+   Add a focused canonical/authoritative or recent refinement when results mix
+   scopes, lack primary sources, or miss the requested time signal. Continue
+   only while it can change identity, scope, authority, or freshness. Do not fan
+   out exact-title searches for every returned candidate. Follow canonical,
+   moved, or superseding source relationships while retaining requested semantics.
 5. Choose filters deliberately. Default to Confluence and Jira built-ins for
-   official/internal knowledge. Broaden to Slack, Google Drive, Bitbucket,
-   GitHub, or other connectors only when useful and available. Use app, type,
+   official/internal knowledge. Broaden to Slack, Google Drive, SharePoint,
+   Bitbucket, GitHub, or other connectors only when useful and available. Use app, type,
    recency, owner/contributor/assignee/reporter/status, title-only, label/space,
    and site filters when they narrow evidence without hiding likely answers.
 6. Search with bounded output:
@@ -75,10 +74,10 @@ provenance need more detail.
   When a native key or URL is known, hydrate it directly; use another search or
   a document-body fetch only when the native result lacks a material field or
   narrative needed for the answer.
-- For document or PRD discovery, select at most five sources across those roles.
-  Hydrate one source per role unless a material conflict requires a second.
-  Stop once the roles, current delivery, and important conflicts are supported,
-  even when search returns more candidates.
+- For document or PRD discovery, select a small, diverse set across needed
+  roles. Hydrate one per role; add another only for a material conflict, missing
+  field, current-delivery question, or requested relationship. Stop when roles,
+  current delivery, and conflicts are supported or unavailable.
 - Prefer official spaces, owned project pages, current Jira issues, and recent
   decision records over personal drafts or stale chat mentions, unless the user
   explicitly asked for informal signal.

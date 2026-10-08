@@ -4,8 +4,6 @@ description: >
   Use with root `twg` to route owners, subject-matter experts, maintainers,
   reviewers, approvers, decision authorities, Heads of Engineering, or
   escalation paths for a topic, area, ask, project, service, or component.
-metadata:
-  internal: true
 ---
 
 # twg-responsibility-routing
@@ -48,7 +46,11 @@ use that reference directly.
 ## Find Responsibility And Authority
 
 - Use `twg responsibility get <reference>` for declared owners, teams,
-  maintainers, approvers, reviewers, or escalation roles.
+  maintainers, approvers, reviewers, or escalation roles. It takes an ARI, URL,
+  or key, not a person's name.
+- For a person's manager, resolve the account with `twg people search --name "<name>"`,
+  then run `twg user manager <account-id>`. Never infer reporting lines from
+  tickets or documents.
 - Use `twg responsibility infer <reference>` only when declared responsibility
   is missing or the user asks for evidence-based candidates. Preserve confidence,
   reason codes, evidence window, and declared-versus-observed status.
@@ -60,6 +62,11 @@ use that reference directly.
   cross-surface breadth, `workitem-tree` for Jira work, or `pr-tree` for PR
   authorship/review. Tree counts help validate reach and organizational scope;
   they do not by themselves prove expertise, ownership, or approval authority.
+- Load `../twg/references/USER-IDENTIFIERS.md` for selector boundaries. Use
+  `user manager-chain --identifier --depth` for bounded mixed-identity chains
+  when advertised and enabled; `org-tree --account-id --up-only` remains a
+  first-party tree. Preserve returned identities for artifact queries.
+  Reporting relationships identify contacts, not approval authority.
 - For an approval ask, inspect the artifact that defines the decision: project or
   goal ownership, Jira workflow/approver fields, charter, decision record, or
   accountable team. State separately who can recommend, who must be consulted,

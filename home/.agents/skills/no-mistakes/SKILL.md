@@ -2,8 +2,6 @@
 name: no-mistakes
 description: Validate your code changes through the no-mistakes pipeline - automated code review, tests, lint, docs, push, PR, and CI - before they reach the configured push target. Use when the user asks to run no-mistakes, gate or ship or validate their changes, push safely, asks you to do a task and then validate it, or invokes /no-mistakes.
 user-invocable: true
-metadata:
-  internal: true
 ---
 
 # no-mistakes
@@ -103,9 +101,9 @@ the same way once the work is committed on a feature branch.
 - You must be on a **feature branch**, not the repository's default branch.
 - The repository must already be initialized with `no-mistakes init`.
 - The daemon must have a runnable configured pipeline agent: a supported native
-  agent binary, the `agent: cursor` ACP alias, or an explicit `acp:<target>` through
-  `acpx`. You are the AXI driver, not
-  an implicit pipeline-agent backend. If none is available, the run fails
+  agent binary, the `agent: cursor` or `agent: devin` ACP alias, or an explicit
+  `acp:<target>` through `acpx`. You are the AXI driver, not an
+  implicit pipeline-agent backend. If none is available, the run fails
   before its first step; `no-mistakes doctor` reports the configuration problem.
 
 If any of these is not met, `axi run` returns an `error:` with the exact command
@@ -214,6 +212,9 @@ Run the pipeline and decide on its findings as they come up:
 
     Extra flags on `respond`:
     - `--wait` bounds the hold (default 8m).
+    - `--reason "the operator's explanation"` records an explicitly authorized Test exception with `--step test --action approve`.
+      This does not grant approval authority; escalate ask-user findings as before.
+      Without a reason, Test approval remains effective; an approval past a failing command, `no-go`, or `inconclusive` verdict is reported as an exception with no operator reason supplied.
     - `--add-finding '<json>'` (with `--action fix`) folds a finding you
       spotted yourself - one the pipeline did not surface - into the fix round,
       as a JSON finding object. Use it for a problem you noticed that is not in
@@ -233,6 +234,9 @@ Run the pipeline and decide on its findings as they come up:
      configured idle timeout elapses, so a human can watch it in the TUI.
    - `passed` - the pipeline completed under the requested steps, including any
      explicit per-run skips. This alone is not evidence that a PR was merged.
+   - `passed-with-override` - the pipeline completed with an explicitly approved Test exception or CI failure.
+     Report the exception, not a clean pass.
+     Test evidence is in `run.test_override_reason`, including when CI readiness returns `checks-passed`; do not omit it from the summary.
    - `passed-with-skips` - publication or CI verification automatically skipped.
      Report the missing evidence and its cause from `run.automatic_skips`,
      bound to the full `run.head_sha`. This is neither CI readiness nor a
@@ -262,6 +266,7 @@ If it reports `next_action.code` is `continue_active_run`, the pipeline still ow
 When `next_action.code` is `recover_custody`, run its exact `next_action.command` rather than reconstructing one. That is `no-mistakes axi sync --recover` to take a still-available preserved pipeline head, or `no-mistakes axi sync --recover --keep-local` in two keep-local cases: when an accessible gate confirms the verified preserved head is missing and you are explicitly discarding those unpublished commits, or when a bound archive proves divergent later work remains preserved while recovery keeps the branch at the exact reported required head and never selects, merges, or replays the archive. Do not substitute plain `--recover` or `rerun` for a reported keep-local action. `no-mistakes rerun` can resume validating a still-available ordinary preserved head instead, subject to the clean-head check above.
 Ordinary recovery takes that head by fast-forward, or by adopting a diverged preserved head proven to carry every local change - the ordinary result of the pipeline rebasing your commits onto a newer base - after anchoring your pre-recovery head under `refs/no-mistakes/recover-local/<run>`.
 The ordinary containment proof is deliberately narrow, so a rebase whose fix rounds also rewrote your own lines refuses instead of being adopted: when nothing can tell a deliberate pipeline fix from a dropped change, the decision is yours.
+When `next_action.code` is `adopt_published`, a custody-returned branch was rebased after its gate lane stopped moving: run `no-mistakes axi sync --adopt-published`. It verifies the configured push target already has the exact rebased local head, preserves the old lane head, and updates only that stale gate lane. If the target differs or changes during verification, it refuses without replacing the lane.
 A `branch_sync.state` of `user_owned` means the run went terminal before changing the submitted head and cancellation released the branch: the exact branch and head are yours and immediately usable for whichever delivery path is authorized - no sync action is needed, and a repeated `--recover` there is a harmless no-op.
 A dirty worktree, or divergence that cannot be proven contained, makes the recovery refuse with explicit choices; `--keep-local` keeps your current head while the preserved commits stay anchored under `refs/no-mistakes/recover/<run>`. The same flag is the recovery when an accessible gate confirms that the verified preserved head is missing and recovery refs are compatible: it returns custody at the current local head without requiring that object.
 If synchronization is blocked, process that structured state instead of improvising reset, stash, merge, rebase, force, or branch replacement.
@@ -332,6 +337,13 @@ reported edit, then send `--action fix` to retry the unfinished step.
 The [protected-path reference](https://kunchenguid.github.io/no-mistakes/reference/repo-config/#protected_paths)
 owns the staging guard's scope and limitations.
 
+A `test-agent-unvalidated-work` finding means a timed-out Test agent left
+commits or changes no Test turn validated. Approval is rejected, so `--yes`
+stops at that gate without responding. Relay what the finding names and do
+not skip Test, which would publish that work. Ask the operator to choose:
+`--action fix` spends another agent budget to validate the work, and
+`no-mistakes axi abort` stops the run.
+
 ## Inspecting state
 
 ```sh
@@ -340,6 +352,7 @@ no-mistakes axi status        # full detail plus cached branch_sync when relevan
 no-mistakes axi sync --check  # freshly verify an offered synchronization plan
 no-mistakes axi sync          # apply only an offered guarded synchronization
 no-mistakes axi sync --recover  # return custody after a terminal run left unpublished pipeline commits
+no-mistakes axi sync --adopt-published  # adopt an exactly published rebased head into its stale gate lane
 no-mistakes axi logs --step <name> --full   # full log output of one step
 no-mistakes axi abort         # cancel the current-branch active run
 no-mistakes axi abort --run <id>   # cancel a specific run by id (works outside its worktree)
@@ -376,6 +389,6 @@ Read the `action` column per row: decide `r1` (auto-fix) on your own
 judgment - `respond --action fix --findings r1` hands it to the pipeline to
 fix - but stop and escalate `r2` (ask-user) to the user before responding. A
 final state
-instead shows `outcome: <checks-passed|passed|passed-with-skips|failed|cancelled>` with no
+instead shows `outcome: <checks-passed|passed|passed-with-override|passed-with-skips|failed|cancelled>` with no
 `findings` table. Field names and exact columns can vary by step and version,
 so read the actual `findings` header rather than assuming this layout.

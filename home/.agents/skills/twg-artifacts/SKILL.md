@@ -1,11 +1,9 @@
 ---
 name: twg-artifacts
 description: >
-  Use with root `twg` when a user wants to share, publish, send, or update a
-  standalone local or generated file as an Atlassian Artifact. Do not use for
-  Jira or Confluence attachments.
-metadata:
-  internal: true
+  Use with root `twg` to find IDs of prior Atlassian Artifacts you created, or
+  share, publish, send, update, or delete standalone local or generated files with coworkers.
+  Not for Jira or Confluence attachments.
 ---
 
 # TWG artifacts
@@ -21,6 +19,13 @@ Use `twg artifacts file create <path>` when the user wants to share a
 standalone local or generated file with coworkers, such as a generated HTML
 report, Markdown document, or presentation. Return the created artifact URL
 and metadata.
+
+## Thumbnail
+
+Pass `--thumbnail <png-path>` on create or update when a representative preview
+is available. On macOS, an agent can generate one from the artifact file with
+`qlmanage -t -s 512 -o <output-directory> <artifact-file>`, then pass the
+generated PNG to `--thumbnail`.
 
 ## HTML files
 
@@ -53,8 +58,34 @@ only unreviewed drafts stay private. -->
 If the user explicitly wants the file attached to a Jira work item or
 Confluence page, use that product's attachment commands instead.
 
+For a prior artifact you created whose ID is unknown, use
+`twg artifacts file list -o json --limit 20` to find it among artifacts created
+by your account (not tenant-wide). If `data.pageInfo.hasNextPage` is true,
+continue with `--after <endCursor>` from `data.pageInfo.endCursor` (limit max 100).
 Use `twg artifacts file get <artifact-id>` only to retrieve metadata for an
 existing artifact.
+
+Use `twg artifacts file delete <artifact-id> --yes` only when the user has
+explicitly asked to permanently delete that exact artifact. Read or otherwise
+verify the artifact ID first. Deletion cannot be undone; never infer `--yes`
+from a general cleanup request.
+
+Use `twg artifacts file share <artifact-id> --account-id <account-id>` to grant
+specific users access to an existing private artifact. Repeat `--account-id` or
+pass a comma-separated list. The command accepts Atlassian account IDs and full
+`ari:cloud:identity::user/...` ARIs and validates them before changing access.
+If the artifact is open or shared, change it to private before adding explicit
+user grants.
+
+Use `twg artifacts file unshare <artifact-id> --account-id <account-id>` to
+revoke named user grants, or `--all` to revoke every explicit audience grant,
+including users, groups, and teams. Revocation does not change the artifact's
+general access. Named account IDs are validated before access changes are made.
+The validation checks the artifact's current explicit grants, so a grant can be
+removed even when the user's profile is hidden or the account is closed.
+It requires confirmation; pass `--yes` in agent mode or only after the user has
+approved the complete resolved audience set. `--all` is never inferred from an
+empty user list.
 
 Use `twg artifacts file update <artifact-id> [path]` to change an existing
 artifact. Pass a replacement file path to publish new content; omit it to

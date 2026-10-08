@@ -4,8 +4,6 @@ description: >
   Use with root `twg` for code search, repositories using an API/package,
   implementation and reverse-dependency discovery, PR status and reviews, repo
   contributors, hot areas, and issue-to-PR lookups.
-metadata:
-  internal: true
 ---
 
 # twg-engineering-work
@@ -61,6 +59,8 @@ activity/comment/task commands never apply to GitHub PRs.
 - For person/repo status, collect merged/open PRs for the people, repos, and
   window.
 - Code: load `references/code-search.md`.
+- PRs: load `references/pull-requests.md`.
+- Pipelines and builds: load `references/pipelines.md`.
 - For person-scoped summaries beyond PRs (Jira, docs, meetings, planning,
   notifications), use `twg-status-rollups` plus
   `../twg-status-rollups/references/personal-work-summary.md`.
@@ -79,21 +79,20 @@ Hydrate a PR set in one call, never one call per PR.
   default 15); raise it and check returned timestamps before claiming window
   coverage. `pipeline get` only for failures whose logs matter.
   `commits`/`deployments` batch by ARI.
-- Only approval/comment timestamps need per-PR
-  `bitbucket pull-requests activity`; past ~10 PRs, sample and state it. With no
-  `--type` it returns approval, update, and comment events together, so never
-  call it again per event type.
+- Native checks/comments: `bitbucket pull-requests get <id...> --statuses --comments`.
+- Review history: `bitbucket pull-requests activity <id...>`. Omit `--type` to
+  include all event types; `--limit` applies per PR.
+- Group IDs by repository. Both accept 25 IDs with shared `--workspace` and
+  `--repo`. Use `--agent-fields @compact`; report per-PR errors and `partial`.
 
 ## Evidence Policy
 
 - Hydrate PR comments, tasks, pipeline status, and diff only for stale,
   blocked, central, or high-impact PRs.
-- For PR rollups, stop once themes, repos/services, owners, and recency are
-  identified; more PRs of the same theme add nothing.
+- Stop PR rollups once themes, repos/services, owners, and recency are identified.
 - For review status, include age, requested reviewers, comments/tasks, approval
   state, CI/pipeline state, and last activity where exposed.
-- For repo/team reports, group by repo, service, or workstream, not person
-  counts.
+- Group repo/team reports by service or workstream.
 - Infer themes from PR titles, descriptions, and linked issues, not PR counts.
 - Keep Bitbucket, GitHub, and Atlassian auth failures separate.
 - If PR graph or repo-wide queries repeatedly fail, make one narrower fallback
@@ -104,9 +103,10 @@ Hydrate a PR set in one call, never one call per PR.
 
 ### Review Queue
 
-Query reviewer-scoped open PRs; sort by waiting time, requested action,
-unresolved tasks/comments, failing CI, and relevance. Hydrate only PRs needing
-action.
+Classify reviewer-scoped PRs: reviewable now (requested, unapproved, unblocked),
+fix-before-review/merge (blocking feedback, tasks or failing CI), already
+reviewed. Rank reviewable first; distinguish pre-merge-only tasks, avoid
+assumed approvals.
 
 ### Stale Reviews / Review Bottlenecks
 
@@ -131,10 +131,10 @@ Group into themes and repos/services, and call out gaps where PR-only evidence
 omits Jira, docs, planning, or customer context. For one person with a broader
 prompt, use `twg-status-rollups`.
 
-## Output Shape
+## Answer
 
-Queues: PR, repo, owner, state, reason, next action, evidence.
-Reports: workstreams, contributors, bottlenecks, risks, gaps, and stable artifact URLs/IDs.
+Answer directly with links, blockers, next actions, and gaps. Use tables
+only when comparison helps.
 
 ## Anti-Patterns
 
@@ -143,4 +143,3 @@ Reports: workstreams, contributors, bottlenecks, risks, gaps, and stable artifac
   query route covers the set.
 - Do not fetch every PR body, diff, or comment in a large queue.
 - Do not treat PR counts as impact.
-- Do not mix Bitbucket, GitHub, and Atlassian auth failures.

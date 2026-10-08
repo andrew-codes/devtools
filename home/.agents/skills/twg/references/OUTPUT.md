@@ -87,12 +87,21 @@ Act on `error.repair` and `error.retry.guidance` directly. Bulk diagnostics
 
 The YAML summary is a pointer, not the answer.
 
-- If `stdout_inline` is present, you may answer from it.
-- If `output_files.compact` is present, inspect that compact JSON first. It is
-  generated from the command's advertised output contract and is usually enough
-  for routing, titles, owners, statuses, URLs, and dates.
-- If `stdout_stats` or `stdout_shape` is present and `output_files.compact` is
-  absent or insufficient, filter `output_files.stdout` with targeted `jq`.
+- Use sufficient `stdout_inline` first. If it is absent or insufficient, inspect
+  only the compact or full output file returned by this invocation and permitted
+  by the host; load this reference when the envelope needs interpretation. The
+  compact file is generated from the command's advertised output contract and is
+  usually enough for routing, titles, owners, statuses, URLs, and dates.
+- If `stdout_stats` or `stdout_shape` is present and compact output is absent or
+  insufficient, a targeted projection of `output_files.stdout` is allowed only
+  where the host permits local inspection. This does not authorize arbitrary host
+  files, credentials, another comparison arm, or a file not returned by the same
+  invocation.
+- A restricted host may allow inspection of sandbox-local files returned by the
+  same invocation even when it does not allow arbitrary shell commands. Follow
+  the host policy: use supported output options first, then inspect only those
+  returned files if permitted, or report that the presentation/coverage is
+  insufficient. Never infer absence from an unreadable file.
 - For answers that require item names, URLs, owners, statuses, blockers, dates, or
   evidence, read the JSON file even when the summary looks plausible.
 
@@ -157,8 +166,10 @@ projection. Do not retry multiple incompatible `.data.*`, `.result.*`, or
 array-vs-object guesses. Combine related facts in one `jq` projection per output
 file instead of running repeated `jq .` or one-field probes.
 
-If a local `jq` command fails, stop probing nearby paths. Re-read the compact
-file or the command's help-described view, then use at most one exact projection.
+If a permitted local `jq` command fails, stop probing nearby paths. Re-read the
+compact file or the command's help-described view, then use at most one exact
+projection. A failed projection is a presentation gap, not evidence that the
+underlying source returned no matching rows.
 A collection reported as `0` means "no rows returned". A collection absent from
 `stdout_stats.collections` means the payload holds no such array at all - not
 that the output contract changed. The exception is `collections_omitted`: when

@@ -4,15 +4,11 @@ description: >
   Use with root `twg` for Confluence content, spaces, hierarchy, authoring,
   editing, comments, versions, permissions, exports, and CQL. Applies
   Confluence semantics and safe write rules.
-metadata:
-  internal: true
 ---
 
 # twg-confluence
 
-Use with root `twg` when Confluence is the primary source or mutation target.
-This skill owns content-type, hierarchy, format, and concurrency semantics;
-live help owns exact command grammar.
+Use with root `twg` for Confluence-focused work. Live help owns command grammar.
 
 ## CLI launcher fallback
 
@@ -21,25 +17,19 @@ Run `twg <command>`. On shell `command not found`, use `$HOME/.local/bin/twg`
 tell user to add that directory to PATH. Do not treat auth or command errors as
 PATH failures.
 
-## Use When
-
-- Use for Confluence-anchored content or space reads and mutations: CQL,
-  bodies, hierarchy, versions, permissions, exports.
-- Do not load for a supporting Confluence link in a broader workflow.
-
 ## First Route
 
-| Intent                           | Route                                                                                  |
-| -------------------------------- | -------------------------------------------------------------------------------------- |
+| Intent                           | Route                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
 | Known content ID/URL             | `confluence content get`; [route embeds](references/content.md#embed-and-smart-link-reads) |
-| Several known pages              | One `docs get <id-or-url…>` for the whole set                                          |
-| Exact Confluence filtering       | Confluence search with CQL                                                             |
-| Date-filtered page/blogpost list | `confluence search query --cql` with `lastmodified`; `content list` has no date filter |
-| Fuzzy page/topic discovery       | Cross-product search, then native get                                                  |
-| Create or update content         | Unified `confluence content` surface                                                   |
-| Space metadata/lifecycle         | `confluence space`                                                                     |
-| Hierarchy                        | `confluence tree`                                                                      |
-| Export                           | Word returns a download directly; PDF requires export-status polling                   |
+| Several known pages              | One `confluence content get <id-or-url...>` for the selected set                           |
+| Exact Confluence filtering       | Confluence search with CQL                                                                 |
+| Date-filtered page/blogpost list | `confluence search query --cql` with `lastmodified`; `content list` has no date filter     |
+| Fuzzy page/topic discovery       | Cross-product search, then native get                                                      |
+| Create or update content         | Unified `confluence content` surface                                                       |
+| Space metadata/lifecycle         | `confluence space`                                                                         |
+| Hierarchy                        | `confluence tree`                                                                          |
+| Export                           | Word returns a download directly; PDF requires export-status polling                       |
 
 Use `twg help describe "<exact path>"` before an unfamiliar or consequential
 mutation.
@@ -48,16 +38,22 @@ mutation.
 
 [Pagination](references/pagination.md).
 
-- Use the unified content surface for content operations advertised by live
-  help; use `confluence space` for spaces and `confluence tree` for hierarchy.
 - Search snippets are discovery candidates. Read the selected content before
   summarizing or editing it.
-- `confluence content get` and `content versions list --id` are single-page.
-  For a page set, take metadata from one `confluence search query --cql` (title,
-  space, `lastmodified`, author), then hydrate bodies only for the pages whose
-  content changes the answer - batched through `docs get <id-or-url…>`, which
-  takes many IDs at once, with `--agent-fields @compact`. Never loop a
-  single-page route over a page list, and never re-run the CQL query per page.
+- Use CQL for metadata lists. Batch up to 25 known pages:
+  `confluence content get <id-or-url...> --detail full -o json`
+  Singles return `data.body`; batches return ordered `data.items` with `input`,
+  `ok`, and `data` or `error`. Check failures and conversion warnings.
+  Read each `body.outputFile` when present, otherwise `body.value`; omitted
+  text is in `output_files.stdout`. Search with surrounding lines for focused
+  questions; read full bodies for whole-page summaries. Reuse saved content.
+  `--include-metadata` adds provenance. `--body-only` and version reads are single-page.
+- Keep default HTML. Markdown can lose status markers, macros, and table
+  details. If `data.body.lossyConversion` is true and relevant details are
+  missing, fetch `--format html` once. Keep headings and table cells together
+  when reading HTML. Never infer missing status from prose.
+- `docs get` searches a user's document activity window, not page bodies;
+  it may miss accessible pages.
 - Page titles are supplied separately from bodies. Do not repeat the title as
   the first body heading.
 - Remix create returns an asset, not a page embed. Embed via the loaded HTML

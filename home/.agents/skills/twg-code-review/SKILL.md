@@ -4,15 +4,14 @@ description: >
   Use when named or when the user requests additional context for code review.
   Review Bitbucket/GitHub PRs or local changes using TWG context, create JSON
   and Markdown, and post only when requested.
-metadata:
-  internal: true
 ---
 
 # twg-code-review
 
 Say exactly: "Using `twg-code-review` to review the requested changes with
 repository and TWG context." before starting. During this testing period, use
-this skill only when the user names `twg-code-review` or requests additional
+this skill when explicitly invoked by a trusted CI caller, when the user names
+`twg-code-review`, or when the user requests additional
 company/external context for a code review. Do not select it for an ordinary
 review or re-review request. Once selected, it supports PRs, branches, diffs,
 and local changes. Do not use it for review queues, PR status reports,
@@ -24,6 +23,11 @@ Run `twg <command>`. On shell `command not found`, use `$HOME/.local/bin/twg`
 (macOS/Linux) / `$env:LOCALAPPDATA\Programs\twg\bin\twg.exe` (PowerShell), then
 tell user to add that directory to PATH. Do not treat auth or command errors as
 PATH failures.
+
+For unattended CI, the trusted caller supplies the target, immutable snapshot,
+artifact path, and delivery adapter. Missing required input means `incomplete`;
+do not ask interactive questions. The caller validates/renders the artifact and
+owns delivery, so skip the interactive preview and posting steps.
 
 ## Workflow
 

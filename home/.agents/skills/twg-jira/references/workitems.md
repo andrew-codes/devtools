@@ -1,5 +1,5 @@
 ---
-description: Read and mutate Jira workitems, comments, links, watchers, attachments, fields, and relationships.
+description: Read and mutate Jira workitems, comments, links, watchers, attachments, fields, change history, and relationships.
 ---
 
 # Jira Workitems
@@ -18,6 +18,8 @@ Inspect live help for the exact command contract.
 - Request only the extra fields needed for the answer.
 - Use typed context alongside the native read when relationships to documents,
   PRs, projects, goals, people, or external URLs matter.
+- Use `twg jira workitem changelog query --issue-id <KEY>` for status and field
+  history, such as when a workitem changed state and who changed it.
 - Treat search snippets as discovery evidence only.
 
 Custom field values are read through the workitem command:

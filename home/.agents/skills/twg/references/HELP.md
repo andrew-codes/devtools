@@ -149,6 +149,11 @@ twg -o text help describe "jira workitem query"
 | Relationships or dependencies                | `twg help context`, then `twg help describe "context"`                                                                                                                                              |
 | Assets / CMDB                                | `twg help assets`, then inspect object schema/type help before AQL                                                                                                                                  |
 
+For manager-chain/direct-report/peer selectors, partial person results, or
+person-to-artifact handoffs, load `USER-IDENTIFIERS.md`. It includes command and
+output recipes, selector boundaries, and the distinction between positional
+`context user` and first-party-only `collaborators`.
+
 For org, team, leadership, and dependency synthesis, do not fall back to
 implementation-only exploration just because the prompt says "graph",
 "dependency", or "relationship." Use typed context and product-native hydration
