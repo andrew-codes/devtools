@@ -84,6 +84,9 @@ WINGET_PACKAGES=(
 # Pinned, because winget has no package for either. See Step 5.
 HACK_NERD_FONT_VERSION="3.5.0" # https://github.com/ryanoasis/nerd-fonts/releases
 KUBESEAL_VERSION="0.39.1"      # https://github.com/bitnami-labs/sealed-secrets/releases
+# Keep in step with twgVersion in home.nix. Installed by Atlassian's install.ps1,
+# which checks the binary against the published SHA256SUMS-v<version> file.
+TWG_VERSION="1.3.5" # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
 
 # Mirrors globalNpmPackages in home.nix.
 GLOBAL_NPM_PACKAGES=(
@@ -94,6 +97,7 @@ GLOBAL_NPM_PACKAGES=(
   "npm-axi@^0.1.1"
   "lavish-axi@^0.1.53"
   "tasks-axi@^0.2.5"
+  "@andrew-codes/twg-axi@^0.1.0"
 )
 # backpass and its acpx dependency are macOS/Linux only per backpass's own
 # README, so they are deliberately excluded here -- see the globalNpmPackages
@@ -394,6 +398,41 @@ else
   else
     warn "could not download kubeseal v$KUBESEAL_VERSION"
   fi
+fi
+
+# twg: Atlassian publishes Windows x64 and arm64 binaries and an install.ps1
+# for them. The installer is run with an explicit -Version, so it fetches the
+# versioned binary and refuses to install it unless its SHA-256 matches the
+# entry in Atlassian's SHA256SUMS-v<version> -- the same guarantee home.nix
+# relies on. It lands in %LOCALAPPDATA%\Programs\twg\bin and adds that to the
+# user PATH. Flags mirror home.nix's installTwg: -SkipLogin because login is an
+# interactive browser OAuth flow (run `twg login` once by hand), -SkipSkills
+# because the skill files it writes would follow ~/.agents/skills and
+# ~/.claude/skills symlinks into this checkout, and -Yes, which the installer
+# only honours alongside those two, to record terms consent without a prompt.
+TWG_DIR="$LOCALAPPDATA_DIR/Programs/twg/bin"
+TWG_BIN="$TWG_DIR/twg.exe"
+if [ -f "$TWG_BIN" ] && "$TWG_BIN" -v 2>/dev/null | head -n1 | grep -qF "$TWG_VERSION"; then
+  echo "    twg (installed)"
+else
+  echo "    twg (installing v$TWG_VERSION)"
+  TWG_PS1="$TMP_ROOT/twg-install.ps1"
+  if curl -fsSL --retry 2 -o "$TWG_PS1" https://teamwork-graph.atlassian.com/cli/install.ps1; then
+    # Never fatal, same as home.nix: an Atlassian outage must not take the
+    # whole setup down. Judged on the binary below, not on the exit status.
+    powershell.exe -NoProfile -ExecutionPolicy Bypass \
+      -File "$(cygpath -w "$TWG_PS1")" \
+      -Version "$TWG_VERSION" -SkipLogin -SkipSkills -Yes </dev/null || true
+  fi
+fi
+if [ -f "$TWG_BIN" ] && "$TWG_BIN" -v 2>/dev/null | head -n1 | grep -qF "$TWG_VERSION"; then
+  # Re-running --agree is a no-op; it covers an install that predates -Yes.
+  "$TWG_BIN" consent --agree >/dev/null 2>&1 || true
+  # Step 6's twg-axi needs twg on PATH for its own checks in this session.
+  PATH="$TWG_DIR:$PATH"
+  export PATH
+else
+  warn "twg $TWG_VERSION is not installed; Atlassian tooling will be unavailable"
 fi
 
 echo "==> Step 6: Node toolchain and global agent CLIs"
@@ -719,7 +758,5 @@ cat <<'EOF'
     herdr        beta on Windows, and its installer is an unpinned
                  `irm https://herdr.dev/install.ps1 | iex`. Run that by hand
                  if you want it.
-    twg          upstream supports macOS and Linux only; its installer
-                 refuses to run on Windows.
     telepresence, weave gitops, tmux, ansible, mas, nix
 EOF

@@ -54,7 +54,7 @@ Expect UAC prompts during the winget step. Re-running is safe and is the support
 
 **[`setup/windows-parity.md`](setup/windows-parity.md) is the map**: every macOS package, config and system default, with what Windows does about it -- implemented, deliberately skipped with a reason, or deferred. Read it before adding anything to either platform.
 
-Two consequences worth knowing up front: the shell is **bash**, not zsh, and WezTerm launches it by default; and the `twg` CLI has no Windows build at all, so agents have no Atlassian tooling there.
+Two consequences worth knowing up front: the shell is **bash**, not zsh, and WezTerm launches it by default; and the `twg` CLI is installed there from Atlassian's Windows binary via `install.ps1`.
 
 ### Applying Changes Later
 
@@ -168,7 +168,7 @@ Because those commands write into `~/.claude/settings.json`, that one file is ap
 
 **Atlassian tooling.** Jira and Confluence are reached through the [`twg` CLI](https://developer.atlassian.com/cloud/twg-cli/), not an MCP server, and `home/AGENTS.md` instructs every agent to use the `twg-axi` wrapper -- a drop-in CLI that mirrors `twg`'s command surface exactly but returns TOON instead of JSON -- and never the Rovo MCP. A CLI keeps the tool definitions out of the model's context until they are actually needed, and one authenticated binary serves every harness. `twg` is pinned to an exact version in `home.nix` and installed during activation as `twg-axi`'s dependency; run `twg login` once by hand afterwards, since its OAuth flow is interactive and cannot run inside a rebuild.
 
-Atlassian ships no Windows build -- its installer refuses to run anywhere but macOS and Linux -- so on Windows there is no `twg`, and `twg-axi` is skipped there too since it wraps `twg`. The rule in `home/AGENTS.md` already covers that case: agents say so and stop rather than falling back to an MCP.
+On Windows, `setup/windows.sh` installs the same pinned `twg` version with Atlassian's `install.ps1`, which verifies the Windows binary against the published checksums, and installs `twg-axi` alongside it. Run `twg login` once by hand there too. If `twg` is missing, the rule in `home/AGENTS.md` still applies: agents say so and stop rather than falling back to an MCP.
 
 **Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Global agent skills live in `home/.agents/skills/`.
 

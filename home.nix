@@ -67,7 +67,8 @@ let
   # comes from a downloaded script. Pinning an exact version is what makes that
   # acceptable: the installer resolves a versioned binary and verifies it
   # against Atlassian's published SHA256SUMS for that same version, so nothing
-  # floating or unchecked is executed. Bump this to upgrade.
+  # floating or unchecked is executed. Bump this to upgrade, and bump TWG_VERSION
+  # in setup/windows.sh with it.
   twgVersion = "1.3.5"; # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
 in
 
