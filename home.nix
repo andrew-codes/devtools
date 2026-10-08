@@ -104,6 +104,14 @@ in
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.REPO_HOME = "${config.home.homeDirectory}/developer/repos";
   home.sessionVariables.VOLTA_HOME = "${config.home.homeDirectory}/.volta";
+  # Dracula for eza, the "universal" EZA_COLORS from https://draculatheme.com/eza
+  # (urrickhunt/Dracula-for-eza). That repo publishes no theme.yml, so the
+  # variable is the only official mechanism even though eza 0.23 reads themes.
+  # setup/windows.sh and home/.bashrc carry the page's Windows variant.
+  home.sessionVariables.EZA_COLORS = lib.concatStringsSep ":" [
+    "uu=36" "uR=31" "un=35" "gu=37" "da=2;34" "ur=34" "uw=95" "ux=36" "ue=36"
+    "gr=34" "gw=35" "gx=36" "tr=34" "tw=35" "tx=36" "xx=95"
+  ];
   home.sessionVariables.SSH_AUTH_SOCK = "${config.home.homeDirectory}/.1password/agent.sock";
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin" # custom bin/ commands (db, fa, ...) symlinked here
@@ -197,6 +205,10 @@ in
       m = "git switch main";
       cc = "claude --dangerously-skip-permissions --remote-control";
       co = "codex --full-auto";
+      # Always-colored eza, the Dracula page's own alias. A separate name on
+      # purpose: plain `eza` and the oh-my-zsh eza plugin's aliases (ls, ll, la,
+      # lS, ...) keep eza's automatic color, which turns itself off in pipes.
+      zl = "eza -lagX --icons --color=always";
     };
   };
 
