@@ -6,11 +6,39 @@
 # in the next shell with no rebuild.
 
 add_newline = false
+palette = "dracula"
 format = "$directory$git_branch$git_status$cmd_duration$line_break$character"
 
 [character]
 success_symbol = "[❯](purple)"
 error_symbol = "[❯](red)"
 
+[directory]
+style = "bold cyan"
+
+[git_branch]
+style = "bold pink"
+
+[git_status]
+style = "bold orange"
+
 [cmd_duration]
 format = "[$duration]($style) "
+style = "yellow"
+
+# Dracula palette, published values from https://github.com/dracula/starship
+# (starship.toml at 920e9f4). Selected by `palette` above; styles refer to
+# these entries by name. The upstream starship.theme.toml variant additionally
+# replaces the prompt layout, which is deliberately not used here.
+[palettes.dracula]
+background = "#282a36"
+current_line = "#44475a"
+foreground = "#f8f8f2"
+comment = "#6272a4"
+cyan = "#8be9fd"
+green = "#50fa7b"
+orange = "#ffb86c"
+pink = "#ff79c6"
+purple = "#bd93f9"
+red = "#ff5555"
+yellow = "#f1fa8c"
