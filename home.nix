@@ -258,6 +258,16 @@ in
       hash = "sha256-rXA4pUULwLNrHNs1mvlc0vhbluZJwUs7fuasZW76iZ4=";
     };
 
+    # Dracula theme for pi, selected by "theme" in home/.pi/agent/settings.json.
+    # Same approach as the Claude Code theme above: one pinned, hash-verified
+    # file from the store, so ~/.pi/agent/themes stays a real directory.
+    # setup/windows.sh pins the same revision and hash. To bump: change rev,
+    # then `nix store prefetch-file --json <raw url>` for the new hash.
+    ".pi/agent/themes/dracula.json".source = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/dracula/pi-coding-agent/4636a603d3c96395732a73ac84d1e7dee1368a55/dracula.json";
+      hash = "sha256-ZChULW9N5ehy741rWjtQxyXzp7fwb9yAXIrYDOTvE3I=";
+    };
+
     # Keep Pi's credential and runtime state local by linking only authored files.
     ".pi/agent/themes/rose-pine-moon.json".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/themes/rose-pine-moon.json";
