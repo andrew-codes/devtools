@@ -646,6 +646,38 @@ else
   fi
 fi
 
+# Dracula theme for lazygit (dracula/lazygit at f60ffa9e53d011739d86f0dcb681efacf3bc3cfb,
+# kept verbatim in home/.config/lazygit/dracula.yml, as home.nix's
+# syncLazygitTheme does). Merged into lazygit's own config rather than linked:
+# lazygit reads %APPDATA%\lazygit\config.yml on Windows, and %APPDATA%\<app>
+# is app-owned state. mikefarah yq `*` deep-merges with the repo winning and
+# keeps the user's other keys; theme arrays are replaced.
+LAZYGIT_THEME_SRC="$SCRIPT_DIR/home/.config/lazygit/dracula.yml"
+if ! command -v yq >/dev/null 2>&1; then
+  warn "yq is not on PATH (open a new shell after the winget installs); skipped the lazygit theme merge"
+else
+  LAZYGIT_DIR="${APPDATA:+$(cygpath -u "$APPDATA")/lazygit}"
+  LAZYGIT_DIR="${LAZYGIT_DIR:-$HOME/AppData/Roaming/lazygit}"
+  LAZYGIT_CONFIG="$LAZYGIT_DIR/config.yml"
+  mkdir -p "$LAZYGIT_DIR"
+  if [ -L "$LAZYGIT_CONFIG" ]; then
+    rm -f "$LAZYGIT_CONFIG"
+  fi
+  LAZYGIT_CURRENT="$TMP_ROOT/lazygit-current.yml"
+  if [ -f "$LAZYGIT_CONFIG" ]; then
+    cp "$LAZYGIT_CONFIG" "$LAZYGIT_CURRENT"
+  else
+    : >"$LAZYGIT_CURRENT"
+  fi
+  # shellcheck disable=SC2016 # $i is yq syntax
+  if yq eval-all '. as $i ireduce ({}; . * $i)' "$LAZYGIT_CURRENT" "$LAZYGIT_THEME_SRC" >"$TMP_ROOT/lazygit-config.yml"; then
+    mv "$TMP_ROOT/lazygit-config.yml" "$LAZYGIT_CONFIG"
+    echo "    merged Dracula theme into $LAZYGIT_CONFIG"
+  else
+    warn "yq merge failed; left $LAZYGIT_CONFIG unchanged"
+  fi
+fi
+
 echo "==> Step 11: AXI ambient-context hooks"
 # Each command is idempotent and repairs a stale binary path after a
 # reinstall, so running it every time is a no-op once everything is in place.
