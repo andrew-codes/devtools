@@ -580,6 +580,23 @@ elif curl -fsSL --retry 2 -o "$TMP_ROOT/dracula-claude.json" \
 else
   warn "could not download or verify the Claude Code Dracula theme; skipped"
 fi
+# Dracula theme for pi, selected by "theme" in the linked home/.pi/agent/settings.json.
+# Same pinned-copy approach as above; keep in step with home.nix.
+DRACULA_PI_REV=4636a603d3c96395732a73ac84d1e7dee1368a55
+DRACULA_PI_SHA256=6428542d6f4de5e872ef8d6b5a3b50c725f3a7b7f06fdc805c8ad80ce4ef1372
+DRACULA_PI_DEST="$HOME/.pi/agent/themes/dracula.json"
+if [ -f "$DRACULA_PI_DEST" ] &&
+  [ "$(sha256sum "$DRACULA_PI_DEST" | cut -d' ' -f1)" = "$DRACULA_PI_SHA256" ]; then
+  echo "    pi Dracula theme (installed)"
+elif curl -fsSL --retry 2 -o "$TMP_ROOT/dracula-pi.json" \
+  "https://raw.githubusercontent.com/dracula/pi-coding-agent/$DRACULA_PI_REV/dracula.json" &&
+  [ "$(sha256sum "$TMP_ROOT/dracula-pi.json" | cut -d' ' -f1)" = "$DRACULA_PI_SHA256" ]; then
+  mkdir -p "$(dirname "$DRACULA_PI_DEST")"
+  cp -f "$TMP_ROOT/dracula-pi.json" "$DRACULA_PI_DEST"
+  echo "    pi Dracula theme (installed $DRACULA_PI_REV)"
+else
+  warn "could not download or verify the pi Dracula theme; skipped"
+fi
 # Re-running this script is the rebuild, so devtools-rebuild points at it
 # rather than at rebuild.sh (which is zsh and darwin-rebuild only).
 link "$DOTFILES/setup/windows.sh" "$HOME/.local/bin/devtools-rebuild"
