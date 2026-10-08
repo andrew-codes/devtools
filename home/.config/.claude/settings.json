@@ -29,5 +29,5 @@
   "effortLevel": "medium",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-ansi"
+  "theme": "custom:dracula"
 }

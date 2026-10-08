@@ -235,7 +235,7 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
     ".claude/agents".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
-    # Dracula theme for Claude Code (needs >= 2.1.118), picked with /theme.
+    # Dracula theme for Claude Code (needs >= 2.1.118); selected by "theme" in home/.config/.claude/settings.json.
     # Fetched at a pinned commit and linked file by file from the store, not
     # symlinked into a clone: ~/.claude/themes stays a real directory.
     # setup/windows.sh pins the same revision and hash. To bump: change rev,
