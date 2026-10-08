@@ -634,6 +634,45 @@ in
     fi
   '';
 
+  # Dracula theme for lazygit, merged into lazygit's own config.yml rather than
+  # linked or overwritten: lazygit's config dir is per-platform (on macOS
+  # ~/Library/Application Support/lazygit, or $XDG_CONFIG_HOME/lazygit when set),
+  # so ask lazygit itself with `-cd`, and the user keeps whatever other keys they
+  # have there. `*` deep-merges with the repo winning; arrays are replaced, so
+  # the theme colours are exactly the published ones.
+  # Source: https://github.com/dracula/lazygit at f60ffa9e53d011739d86f0dcb681efacf3bc3cfb
+  # (home/.config/lazygit/dracula.yml, verbatim). Keep setup/windows.sh in step.
+  home.activation.syncLazygitTheme = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    THEME_SRC="${dotfiles}/home/.config/lazygit/dracula.yml"
+    YQ="${pkgs.yq-go}/bin/yq"
+
+    if [ -f "$THEME_SRC" ]; then
+      LAZYGIT_DIR="$(${pkgs.lazygit}/bin/lazygit -cd)"
+      LAZYGIT_CONFIG="$LAZYGIT_DIR/config.yml"
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "$LAZYGIT_DIR"
+
+      # Never write through a symlink into the repo (see AGENTS.md).
+      if [ -L "$LAZYGIT_CONFIG" ]; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/rm -f "$LAZYGIT_CONFIG"
+      fi
+
+      TMP="$(${pkgs.coreutils}/bin/mktemp)"
+      EMPTY="$(${pkgs.coreutils}/bin/mktemp)"
+      CURRENT="$EMPTY"
+      if [ -f "$LAZYGIT_CONFIG" ]; then
+        CURRENT="$LAZYGIT_CONFIG"
+      fi
+
+      if "$YQ" eval-all '. as $i ireduce ({}; . * $i)' "$CURRENT" "$THEME_SRC" > "$TMP"; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/mv "$TMP" "$LAZYGIT_CONFIG"
+      else
+        ${pkgs.coreutils}/bin/rm -f "$TMP"
+        echo "==> syncLazygitTheme: yq merge failed; left lazygit config.yml unchanged." >&2
+      fi
+      ${pkgs.coreutils}/bin/rm -f "$EMPTY"
+    fi
+  '';
+
   # Install the AXI SessionStart hooks for every harness the tools themselves
   # support: Claude Code (~/.claude/settings.json), Codex (~/.codex/hooks.json
   # plus the [features] hooks flag in ~/.codex/config.toml), OpenCode, and

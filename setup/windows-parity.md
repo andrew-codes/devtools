@@ -136,6 +136,7 @@ config in this repo takes effect with no rebuild - the same contract
 | `~/.gitconfig.local` (untracked signing key) | same, plus `gpg.ssh.program` | **Implemented.** The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. |
 | `~/.claude/settings.json` | merged, not linked | **Implemented.** Same reason as macOS. |
 | `~/.claude/themes/dracula.json` (Dracula theme, `dracula/claude-code-cli` pinned commit) | same path, copied | **Implemented, copied.** macOS uses `pkgs.fetchurl` with a fixed hash; Windows has no Nix, so step 8 downloads the same commit and verifies the same sha256 (bump both together). `theme` is set to `custom:dracula` in the shared `home/.config/.claude/settings.json`, which the step 10 merge applies on both platforms. |
+| lazygit Dracula theme (`dracula/lazygit` pinned commit, `home/.config/lazygit/dracula.yml`) | `%APPDATA%\lazygit\config.yml`, merged | **Implemented, merged.** macOS merges into the path `lazygit -cd` reports (`~/Library/Application Support/lazygit` by default) in `home.activation.syncLazygitTheme`; Windows reads `%APPDATA%\lazygit`. Both use mikefarah `yq` to deep-merge with the repo winning, so other keys in the file survive. Not linked: it is app-owned state. Step 10 skips with a warning if `yq` is not yet on PATH. |
 
 ## System defaults (`system.defaults`)
 
