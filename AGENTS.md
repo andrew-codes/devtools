@@ -26,6 +26,16 @@ Sessions normally run on the macOS machine, so the Windows path cannot be execut
 
 This repo has no CI: there is no `.github/` directory, so pull requests legitimately report zero checks. Do not add a workflow to make a pipeline look green.
 
+## Re-running the Windows parity sync
+
+Run this after changing the macOS path, or on request. Read the files rather than trusting `setup/windows-parity.md`; the point is to catch drift.
+
+1. List every macOS input: `configuration.nix` (brews, casks, `system.defaults`, activation scripts), `home.nix` (`home.packages`, `globalNpmPackages`, `goPackages`, `secretEnvVars`, `home.file`, `home.activation.*`), `mas-apps.nix`, `home/bin/`.
+2. Diff each against `setup/windows.sh` (`WINGET_PACKAGES`, `GLOBAL_NPM_PACKAGES`, `GO_PACKAGES`, `SECRET_ENV_VARS`, Step 8 links). Package names and version ranges must match `home.nix` exactly.
+3. Give every difference a row in `setup/windows-parity.md`: **Implemented**, **Skipped** (why it does not apply) or **Deferred** (what is in the way). If there is no Windows equivalent, say so; do not guess one.
+4. Verify against the real source, never from memory: winget ids with `gh api repos/microsoft/winget-pkgs/contents/manifests/<first-letter>/<Publisher>/<Package>` and npm packages with `npm view <pkg> version os engines` plus a read of the README's platform claims. Do not use a variable named `path` in zsh; it is tied to `PATH`.
+5. Run `bash -n` and `shellcheck` on `setup/windows.sh`. Nothing else on Windows can run from here, so the PR must list which steps went unexecuted.
+
 ## Maintaining this file
 
 Keep this file for knowledge useful to almost every future agent session in this project.
