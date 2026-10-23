@@ -59,6 +59,7 @@ let
   # `twg login` rather than reading an API token from the environment.
   secretEnvVars = [
     "CONTEXT7_API_KEY"   # mcp.json: context7 headers
+    "HA_TOKEN"           # read from the environment by a tool, not an MCP server
   ];
   # Atlassian's Teamwork Graph CLI. Agents use this for every Jira and
   # Confluence operation instead of an Atlassian MCP server -- see the rule in
