@@ -115,6 +115,7 @@ GO_PACKAGES=(
 # Mirrors secretEnvVars in home.nix.
 SECRET_ENV_VARS=(
   CONTEXT7_API_KEY # mcp.json: context7 headers
+  HA_TOKEN # read from the environment by a tool, not an MCP server
 )
 
 # ---------------------------------------------------------------------------
