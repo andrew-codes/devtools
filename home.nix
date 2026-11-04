@@ -317,19 +317,19 @@ in
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/gitignore";
 
     # Shared git config, with the 1Password signing bits pulled in via its own
-    # `[include] path = ~/.gitconfig-os`. Signing itself is on in the shared
+    # `[include] path = ~/.gitconfig.os`. Signing itself is on in the shared
     # file for every profile; only the signer program is per-profile, and a
-    # profile without 1Password gets an empty file here (see the .gitconfig-os
-    # note in home/.gitconfig-work). Its key always comes from the untracked
+    # profile without 1Password gets an empty file here (see the .gitconfig.os
+    # note in home/.gitconfig.work). Its key always comes from the untracked
     # ~/.gitconfig.local.
     ".gitconfig".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.gitconfig";
-    ".gitconfig-os".source =
+    ".gitconfig.os".source =
       config.lib.file.mkOutOfStoreSymlink
         "${dotfiles}/home/${
-          if !overlay.onePassword then ".gitconfig-work"
-          else if pkgs.stdenv.isDarwin then ".gitconfig-macos"
-          else ".gitconfig-windows"}";
+          if !overlay.onePassword then ".gitconfig.work"
+          else if pkgs.stdenv.isDarwin then ".gitconfig.macos"
+          else ".gitconfig.windows"}";
 
     ".local/bin/devtools-rebuild".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/rebuild.sh";
@@ -345,7 +345,7 @@ in
     # from here) since this repo is public. OS-specific bits (the 1Password
     # IdentityAgent socket on macOS; on Windows 1Password serves the OpenSSH
     # named pipe instead) come via ~/.ssh/config-os, same split as
-    # .gitconfig-os above, and a profile without 1Password gets an empty file.
+    # .gitconfig.os above, and a profile without 1Password gets an empty file.
     ".ssh/config".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.ssh/config";
     ".ssh/config-os".source =

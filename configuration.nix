@@ -69,9 +69,10 @@ in
   system.activationScripts.postActivation.text = ''
     mdutil -i off -d / >/dev/null
 
-    # user.signingkey is machine-specific (each dev machine has its own SSH
-    # signing key), so it isn't tracked or symlinked by this repo -- it's
-    # pulled in via ~/.gitconfig's `[include] path = ~/.gitconfig.local`.
+    # user.signingkey and user.email are machine-specific (each dev machine has
+    # its own SSH signing key, and this repo is public so the address is not
+    # tracked), so neither is symlinked by this repo -- they're pulled in via
+    # ~/.gitconfig's `[include] path = ~/.gitconfig.local`.
     if [ ! -f "/Users/${user}/.gitconfig.local" ]; then
       echo ""
       echo "==================================================================="
@@ -80,6 +81,18 @@ in
       echo ""
       echo "  [user]"
       echo "      signingkey = ssh-ed25519 AAAA..."
+      echo "==================================================================="
+    fi
+
+    # Warning only: activation carries on. A machine that predates this check
+    # got its address from the tracked ~/.gitconfig, which no longer sets one.
+    if ! ${pkgs.git}/bin/git config --file "/Users/${user}/.gitconfig.local" --get user.email >/dev/null 2>&1; then
+      echo ""
+      echo "==================================================================="
+      echo "NEXT STEP: ~/.gitconfig.local has no user.email, so commits on this"
+      echo "machine have no author address. Set it with:"
+      echo ""
+      echo "  git config --file ~/.gitconfig.local user.email you@example.com"
       echo "==================================================================="
     fi
   '';

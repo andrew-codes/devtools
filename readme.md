@@ -108,7 +108,7 @@ Two files hold values that are specific to a single machine or are secret, so th
 | File | Purpose |
 | --- | --- |
 | `~/.env` | Secrets. Auto-created with every required key stubbed empty. The shell warns on every startup until each has a value. |
-| `~/.gitconfig.local` | This machine's git SSH signing key. Setup prints a reminder if missing. On the personal profile on Windows it also holds the resolved 1Password signer path. |
+| `~/.gitconfig.local` | This machine's git SSH signing key and author email (`git config --file ~/.gitconfig.local user.email you@example.com`); the tracked config sets neither. Setup prints a reminder if either is missing. On the personal profile on Windows it also holds the resolved 1Password signer path. |
 | `~/.config/devtools/profile` | The machine's profile, `personal` or `work`. Written by `--profile`; see [Profiles](#profiles). |
 | `~/.ssh/config.local` | Optional. Personal SSH hosts, included from the tracked `~/.ssh/config`. |
 
@@ -214,13 +214,13 @@ Git config is layered so shared settings stay tracked while machine-specific and
 
 ```text
 ~/.gitconfig          tracked, shared settings
-  -> ~/.gitconfig-os      1Password signing paths (empty for the work profile)
-  -> ~/.gitconfig.local   machine-specific signing key, untracked
+  -> ~/.gitconfig.os      1Password signing paths (empty for the work profile)
+  -> ~/.gitconfig.local   machine-specific signing key and user.email, untracked
 ```
 
-`~/.gitconfig-os` points at `home/.gitconfig-macos` or `home/.gitconfig-windows` depending on the platform, or at the empty `home/.gitconfig-work` on the work profile. SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` (`config-macos`, `config-windows` or the empty `config-work`) and an untracked `~/.ssh/config.local` for personal hosts.
+`~/.gitconfig.os` points at `home/.gitconfig.macos` or `home/.gitconfig.windows` depending on the platform, or at the empty `home/.gitconfig.work` on the work profile. SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` (`config-macos`, `config-windows` or the empty `config-work`) and an untracked `~/.ssh/config.local` for personal hosts.
 
-On the personal profile 1Password acts as the SSH agent and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`. On macOS git reaches it through the `SSH_AUTH_SOCK` socket; on Windows it listens on the OpenSSH agent named pipe, which only the native `ssh.exe` can speak, so `.gitconfig-windows` sets `core.sshCommand` to it by absolute path. The work profile has none of this and signs with the key named in `~/.gitconfig.local`.
+On the personal profile 1Password acts as the SSH agent and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`. On macOS git reaches it through the `SSH_AUTH_SOCK` socket; on Windows it listens on the OpenSSH agent named pipe, which only the native `ssh.exe` can speak, so `.gitconfig.windows` sets `core.sshCommand` to it by absolute path. The work profile has none of this and signs with the key named in `~/.gitconfig.local`.
 
 ### System Defaults
 
