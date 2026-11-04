@@ -50,6 +50,12 @@ let
     # still broken. Bump this once upstream fixes go.mod on a new tag.
     "github.com/kunchenguid/treehouse@v1.8.0"                     # https://github.com/kunchenguid/treehouse/releases
   ];
+  # goPackages minus whatever the profile takes from somewhere else. Entries are
+  # matched by module path, so the pinned @version can change without touching
+  # profiles.nix.
+  activeGoPackages = lib.filter
+    (pkg: !(lib.elem (builtins.head (lib.splitString "@" pkg)) overlay.remove.goPackages))
+    goPackages;
   # Secrets referenced by tooling that reads them from the environment --
   # currently the MCP servers in home/.config/mcp/mcp.json. Values never live
   # in this public repo: activation stubs each key into ~/.env (untracked),
@@ -424,9 +430,38 @@ in
       export GOBIN="${config.home.homeDirectory}/go/bin"
       export PATH="${pkgs.git}/bin:/usr/bin:$PATH"
       ${lib.concatMapStringsSep "\n      " (pkg: ''
-        $DRY_RUN_CMD ${pkgs.go}/bin/go install "${pkg}" || true'') goPackages}
+        $DRY_RUN_CMD ${pkgs.go}/bin/go install "${pkg}" || true'') activeGoPackages}
     )
   '';
+
+  # The work profile's firstmate and no-mistakes, from the andrew-codes forks
+  # (`forkTools` in profiles.nix; the personal profile has no such step at all,
+  # so its evaluation is unchanged). Runs here, in activation, with the other
+  # developer tools -- not at evaluation time: cloning and building need the
+  # network, which a pure evaluation never has. The work is in
+  # setup/fork-tools.sh, shared with setup/windows.sh; it is read through
+  # ~/.dotfiles, not copied into the store, so editing it needs no rebuild.
+  #
+  # It keeps ~/developer/firstmate (which home/bin/firstmate launches in) and
+  # ~/.local/share/devtools/no-mistakes fast-forwarded to the forks' `main`,
+  # refuses to touch a checkout with local work, and rebuilds no-mistakes into
+  # ~/go/bin only when its commit changed. A refusal warns and the switch
+  # carries on: nothing here may fail a rebuild.
+  home.activation.installForkTools = lib.mkIf overlay.forkTools
+    (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      # Same environment as installGoPackages: go shells out to git and, for
+      # cgo dependencies, a C compiler, and activation does not inherit the
+      # interactive PATH. Subshell so it stays contained.
+      (
+        export PATH="${pkgs.git}/bin:${pkgs.go}/bin:${pkgs.coreutils}/bin:/usr/bin:/bin"
+        $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/fork-tools.sh" \
+          --firstmate-dir "${config.home.homeDirectory}/developer/firstmate" \
+          --no-mistakes-dir "${config.home.homeDirectory}/.local/share/devtools/no-mistakes" \
+          --gobin "${config.home.homeDirectory}/go/bin" \
+          --state-dir "${config.home.homeDirectory}/.local/state/devtools" \
+          || echo "==> WARNING: installForkTools finished with warnings (see above); the rest of the switch is unaffected." >&2
+      )
+    '');
 
   # Install the twg CLI (see twgVersion above for why this is a script and not
   # a package). Lands in ~/.local/bin, which home.sessionPath already exports.

@@ -16,10 +16,11 @@ When you add something to the macOS path, add a row here.
 
 A machine has a **profile**, `personal` or `work`. `personal` is everything
 installed before profiles existed and is the default whenever nothing selects
-one. `work` is the same base minus an overlay that only removes; nothing is
-added for either profile. `profiles.nix` holds the overlay for macOS, and
+one. `work` is the same base minus an overlay that removes, plus one difference
+that swaps rather than removes: firstmate and no-mistakes come from the
+`andrew-codes` forks (see the rows below). `profiles.nix` holds the overlay for macOS, and
 `setup/windows.sh` repeats it by hand (`WORK_OMIT_WINGET_PACKAGES`,
-`WITH_1PASSWORD`, `WITH_KUBESEAL`) because Nix cannot evaluate here. Change both
+`WORK_OMIT_GO_PACKAGES`, `WITH_1PASSWORD`, `WITH_KUBESEAL`, `WITH_FORK_TOOLS`) because Nix cannot evaluate here. Change both
 together.
 
 The profile is recorded outside the repo in `~/.config/devtools/profile` by
@@ -37,6 +38,9 @@ is read; otherwise `personal`. Any other value is rejected.
 | oh-my-zsh `fluxcd` plugin | - | **Skipped** on Windows: it is a zsh plugin (see Shell). On macOS it is dropped for `work`, since it wraps a CLI `work` does not get. |
 | `home.sessionVariables.SSH_AUTH_SOCK` -> 1Password socket | - | **Skipped** on Windows under every profile (see Shell). On macOS it is `personal` only. |
 | `~/.config/1Password/ssh/agent.toml` link | same link | **Implemented.** `personal` only on both platforms. |
+| `goPackages` `no-mistakes` (pinned upstream `go install`) | `GO_PACKAGES` `no-mistakes` (step 7) | **Implemented.** Not installed for `work`; both platforms filter it by module path (`remove.goPackages`, `WORK_OMIT_GO_PACKAGES`). `work` builds it from the fork instead, next row. |
+| `home.activation.installForkTools` (`work` only): `setup/fork-tools.sh` clones `andrew-codes/no-mistakes` and `andrew-codes/firstmate` (`main`), fast-forwards them, builds no-mistakes into `~/go/bin` | `setup/windows.sh` step 7 runs the same `setup/fork-tools.sh`, `WITH_FORK_TOOLS=1` for `work` | **Implemented.** One bash script shared by both platforms, so the guards and the update logic cannot drift. macOS runs it in home-manager activation beside the Go installs (no network at evaluation, and the `personal` evaluation has no such step); Windows runs it in step 7. Clones: `~/developer/firstmate` and `~/.local/share/devtools/no-mistakes`, over HTTPS. Updates are `git fetch` plus `git merge --ff-only` only, and a checkout with uncommitted changes, on another branch, diverged or ahead, mid merge/rebase, or whose `origin` is not the fork is left untouched with a warning while setup continues. no-mistakes is rebuilt only when its commit changed. On Windows, Go builds `no-mistakes.exe` with `GOEXE`, and a running daemon locks the old binary (the script warns; run `no-mistakes daemon stop` and re-run). Not executed on Windows by the author. |
+| `~/developer/firstmate` (assumed by `home/bin/firstmate`, installed by nothing) | same | **Implemented for `work`** by the row above. **Unchanged for `personal`**: devtools still installs nothing there on either platform. |
 | `~/.gitconfig-os` -> `.gitconfig-macos` / `.gitconfig-windows` (op-ssh-sign, `core.sshCommand`) | same | **Implemented.** `work` links the empty `home/.gitconfig-work` instead, so no signer program and no ssh pin is set. On Windows the link is replaced, so one left by an earlier `personal` run stops pointing at 1Password. |
 | `~/.ssh/config-os` -> `.ssh/config-macos` / `.ssh/config-windows` (1Password `IdentityAgent`) | same | **Implemented.** `work` links the empty `home/.ssh/config-work`. |
 | - | step 13, Windows OpenSSH client | **Implemented.** `personal` only: it exists solely so `core.sshCommand` can reach 1Password's named-pipe agent. `work` has no such pin and git uses its bundled ssh. |
@@ -48,6 +52,14 @@ signing program nor a key. The key always comes from the untracked
 `~/.gitconfig.local`, which `~/.gitconfig` includes unconditionally, so the
 missing-key reminder (`configuration.nix` on macOS, step 14 on Windows) applies
 to both profiles unchanged.
+
+A source-built no-mistakes reports its version as `main-<short sha>`, which it
+treats as a development build: no background update check, and `no-mistakes
+update` declines instead of swapping in an upstream release. Other installers
+of upstream (its `install.sh`/`install.ps1`, a release `go install`, the
+`personal` profile's setup) would still overwrite it. The way to update in
+`work` is to re-run setup (`devtools-rebuild`), which fast-forwards the fork and
+rebuilds.
 
 Not changed by a profile: what is already installed on a machine. Homebrew
 cleanup stays `none` and nothing here uninstalls, so moving a machine from
@@ -131,7 +143,7 @@ native Windows.
 | macOS | Windows | Decision |
 | --- | --- | --- |
 | `globalNpmPackages` via Volta's npm (`pi`, `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi`, `tasks-axi`, `twg-axi`) | same list, same `--ignore-scripts` | **Implemented** (step 6). The list is duplicated from `home.nix` because Nix cannot evaluate here; bump both together. `@andrew-codes/twg-axi` is included; it needs the `twg` CLI, see the row below. `backpass` and its `acpx` dependency are deliberately excluded here: backpass's own README states it supports macOS and Linux only, with no Windows build, so both are skipped on `setup/windows.sh`. |
-| `goPackages` (`no-mistakes`, `treehouse`) | `go install`, same pinned tags | **Implemented** (step 7). If either needs cgo, `go install` fails and the script says which C toolchain to add. `no-mistakes` installs from upstream `kunchenguid/no-mistakes`, pinned to its latest release tag. |
+| `goPackages` (`no-mistakes`, `treehouse`) | `go install`, same pinned tags | **Implemented** (step 7). If either needs cgo, `go install` fails and the script says which C toolchain to add. `no-mistakes` installs from upstream `kunchenguid/no-mistakes`, pinned to its latest release tag, on `personal`; `work` builds it from the `andrew-codes` fork instead (see Profiles). |
 | pi extensions (`home/.pi/agent/settings.json`) | same file, linked | **Implemented.** pi installs them itself from the linked settings. |
 | `~/.claude/settings.json` merge | same jq merge | **Implemented** (step 10), for the same reason: the AXI hook installers write into that file and their writes follow symlinks. |
 | `~/.claude.json` MCP merge | same jq merge | **Implemented** (step 10). |
@@ -223,7 +235,11 @@ priority order:
    installed by hand.
 7. **The `work` profile on Windows** (`--profile work`) was only dry-read, like
    the rest. Check that the winget list loses exactly the three ids above, that
-   steps 13 and 14 skip, that `~/.gitconfig-os` and `~/.ssh/config-os` end up
+   step 7 does not `go install` no-mistakes and instead runs `setup/fork-tools.sh`
+   (clones both forks, then builds `~/go/bin/no-mistakes.exe`; the guard and
+   update logic was tested on macOS against throwaway repositories, the Windows
+   path handling - `cygpath`, `MSYS_NO_PATHCONV`, replacing a running `.exe` -
+   was not run), that steps 13 and 14 skip, that `~/.gitconfig-os` and `~/.ssh/config-os` end up
    pointing at the `-work` files, and that a commit signs once
    `~/.gitconfig.local` has a key -- with no `gpg.ssh.program`, git falls back
    to the `ssh-keygen` bundled with Git for Windows.
