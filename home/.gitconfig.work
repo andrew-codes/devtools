@@ -6,6 +6,6 @@
 # with its default ssh-keygen. The key comes only from ~/.gitconfig.local,
 # which is untracked and per machine.
 #
-# The file has to exist: the tracked ~/.gitconfig includes ~/.gitconfig-os
-# unconditionally, and on Windows a stale ~/.gitconfig-os link from a previous
+# The file has to exist: the tracked ~/.gitconfig includes ~/.gitconfig.os
+# unconditionally, and on Windows a stale ~/.gitconfig.os link from a previous
 # `personal` run is only replaced by pointing it at something real.

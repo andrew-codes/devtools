@@ -34,7 +34,7 @@ export PATH
 # No SSH_AUTH_SOCK here on purpose. On macOS it points at 1Password's agent
 # socket (personal profile only); on Windows 1Password serves the OpenSSH
 # agent named pipe instead, which Git for Windows' own ssh cannot speak.
-# .gitconfig-windows routes git through the native ssh.exe, which finds that
+# .gitconfig.windows routes git through the native ssh.exe, which finds that
 # pipe with no variable set. The work profile has no 1Password at all.
 # ---------------------------------------------------------------------------
 export EDITOR="nvim"

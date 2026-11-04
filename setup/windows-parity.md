@@ -41,7 +41,7 @@ is read; otherwise `personal`. Any other value is rejected.
 | `goPackages` `no-mistakes` (pinned upstream `go install`) | `GO_PACKAGES` `no-mistakes` (step 7) | **Implemented.** Not installed for `work`; both platforms filter it by module path (`remove.goPackages`, `WORK_OMIT_GO_PACKAGES`). `work` builds it from the fork instead, next row. |
 | `home.activation.installForkTools` (`work` only): `setup/fork-tools.sh` clones `andrew-codes/no-mistakes` and `andrew-codes/firstmate` (`main`), fast-forwards them, builds no-mistakes into `~/go/bin` | `setup/windows.sh` step 7 runs the same `setup/fork-tools.sh`, `WITH_FORK_TOOLS=1` for `work` | **Implemented.** One bash script shared by both platforms, so the guards and the update logic cannot drift. macOS runs it in home-manager activation beside the Go installs (no network at evaluation, and the `personal` evaluation has no such step); Windows runs it in step 7. Clones: `~/developer/firstmate` and `~/.local/share/devtools/no-mistakes`, over HTTPS. Updates are `git fetch` plus `git merge --ff-only` only, and a checkout with uncommitted changes, on another branch, diverged or ahead, mid merge/rebase, or whose `origin` is not the fork is left untouched with a warning while setup continues. no-mistakes is rebuilt only when its commit changed. On Windows, Go builds `no-mistakes.exe` with `GOEXE`, and a running daemon locks the old binary (the script warns; run `no-mistakes daemon stop` and re-run). Not executed on Windows by the author. |
 | `~/developer/firstmate` (assumed by `home/bin/firstmate`, installed by nothing) | same | **Implemented for `work`** by the row above. **Unchanged for `personal`**: devtools still installs nothing there on either platform. |
-| `~/.gitconfig-os` -> `.gitconfig-macos` / `.gitconfig-windows` (op-ssh-sign, `core.sshCommand`) | same | **Implemented.** `work` links the empty `home/.gitconfig-work` instead, so no signer program and no ssh pin is set. On Windows the link is replaced, so one left by an earlier `personal` run stops pointing at 1Password. |
+| `~/.gitconfig.os` -> `.gitconfig.macos` / `.gitconfig.windows` (op-ssh-sign, `core.sshCommand`) | same | **Implemented.** `work` links the empty `home/.gitconfig.work` instead, so no signer program and no ssh pin is set. On Windows the link is replaced, so one left by an earlier `personal` run stops pointing at 1Password. |
 | `~/.ssh/config-os` -> `.ssh/config-macos` / `.ssh/config-windows` (1Password `IdentityAgent`) | same | **Implemented.** `work` links the empty `home/.ssh/config-work`. |
 | - | step 13, Windows OpenSSH client | **Implemented.** `personal` only: it exists solely so `core.sshCommand` can reach 1Password's named-pipe agent. `work` has no such pin and git uses its bundled ssh. |
 | - | step 14, 1Password commit signing (`gpg.ssh.program` in `~/.gitconfig.local`) | **Implemented.** `personal` only. `work` sets no signer; if a machine switched profiles and still carries 1Password's signer in `~/.gitconfig.local`, step 14 warns rather than editing that untracked file. |
@@ -71,9 +71,9 @@ Native Windows on x86_64 with **Git for Windows' bash** as the shell -- not
 WSL. That is what HO-243 asks for ("bash should be the default shell for
 wezterm", and the repo is cloned with Git for Windows before setup runs).
 
-`home/.gitconfig-windows` and `home/.ssh/config-windows` predate this work and
+`home/.gitconfig.windows` and `home/.ssh/config-windows` predate this work and
 were written for WSL. They keep their names and their place in the existing
-`~/.gitconfig` -> `~/.gitconfig-os` include scheme; only their contents moved to
+`~/.gitconfig` -> `~/.gitconfig.os` include scheme; only their contents moved to
 native Windows.
 
 ## Platform machinery
@@ -93,7 +93,7 @@ native Windows.
 | Homebrew + `nix-homebrew` | winget | **Implemented.** winget is the default; the two exceptions below say why. |
 | `home.activation.buildDiaSkills` (flattens `write-blog-post` into `~/.config/dia/skills`) | - | **Skipped.** Dia is a macOS-only browser: winget carries only its predecessor Arc (`TheBrowserCompany.Arc`), no Dia package. With no Dia there is nothing to read the generated file. |
 | `preActivation` swap of the `claude-code` cask for `claude-code@latest` | - | **Skipped.** Homebrew-only; winget has a single `Anthropic.ClaudeCode` package, so there is no second channel to conflict with. |
-| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13), `personal` profile only. `.gitconfig-windows` pins `core.sshCommand` to the literal `C:/Windows/System32/OpenSSH/ssh.exe` (git config takes no environment expansion) because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
+| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13), `personal` profile only. `.gitconfig.windows` pins `core.sshCommand` to the literal `C:/Windows/System32/OpenSSH/ssh.exe` (git config takes no environment expansion) because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
 
 ## Applications (`configuration.nix` casks and brews)
 
@@ -171,7 +171,7 @@ and what HO-243 requires WezTerm to launch. `home/.bashrc` is the peer of
 | `~/.env` sourcing + unset-secret warning | same in `~/.bashrc` | **Implemented.** |
 | `home.sessionPath` (`~/.local/bin`, `~/.volta/bin`, `~/go/bin`) | same, re-added idempotently in `~/.bashrc` | **Implemented.** The *Windows* user PATH is deliberately left alone; winget and Volta manage their own entries. |
 | `EDITOR`, `REPO_HOME`, `VOLTA_HOME` | same | **Implemented.** |
-| `SSH_AUTH_SOCK` -> 1Password socket (macOS `personal` only) | - | **Skipped.** 1Password on Windows serves the OpenSSH agent named pipe, which Git's bundled ssh cannot speak. `.gitconfig-windows` routes git through the native `ssh.exe`, which finds the pipe with no variable set. |
+| `SSH_AUTH_SOCK` -> 1Password socket (macOS `personal` only) | - | **Skipped.** 1Password on Windows serves the OpenSSH agent named pipe, which Git's bundled ssh cannot speak. `.gitconfig.windows` routes git through the native `ssh.exe`, which finds the pipe with no variable set. |
 | `bin-completion` via `bashcompinit` | sourced natively from `~/.config/bash/bin-completion` | **Implemented.** They were already bash `complete -F` scripts. |
 | `home/bin/*` custom commands | same files, linked into `~/.local/bin` | **Implemented.** Their shebangs moved from zsh to bash so they run on both platforms; `aup` and `kaup` gained `netstat`/`taskkill` branches because Windows has no `lsof`. |
 
@@ -188,9 +188,9 @@ config in this repo takes effect with no rebuild - the same contract
 | `~/.config/nvim` | `%LOCALAPPDATA%\nvim` | **Implemented, moved.** Neovim resolves `stdpath('config')` there on Windows. |
 | `~/.config/zsh/bin-completion` | `~/.config/bash/bin-completion` | **Implemented, moved.** bash, not zsh. |
 | `~/.config/herdr` | `~/.config/herdr` only | **Implemented, single link.** herdr's Windows config path is undocumented upstream, but the `%APPDATA%\herdr` candidate is deliberately not linked: `%APPDATA%\<app>` is where a Windows app writes runtime state, and those writes would follow the symlink into this tracked public checkout. If herdr turns out to read `%APPDATA%`, copy the config there rather than linking it. |
-| `~/.gitconfig-os` | `home/.gitconfig-windows` (`personal`) or `home/.gitconfig-work` (`work`) | **Implemented.** Same include scheme as macOS. |
+| `~/.gitconfig.os` | `home/.gitconfig.windows` (`personal`) or `home/.gitconfig.work` (`work`) | **Implemented.** Same include scheme as macOS. The file was `~/.gitconfig-os` (and `home/.gitconfig-*`) before the rename; step 8 removes a stale `~/.gitconfig-os` only when it is a link into this repo's `home/`, and otherwise warns and leaves it. |
 | `~/.ssh/config-os` | `home/.ssh/config-windows` (`personal`) or `home/.ssh/config-work` (`work`) | **Implemented.** Same include scheme as macOS. |
-| `~/.gitconfig.local` (untracked signing key) | same; on `personal` also `gpg.ssh.program` | **Implemented.** The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. `work` writes nothing there; the key is added by hand. |
+| `~/.gitconfig.local` (untracked signing key and `user.email`) | same; on `personal` also `gpg.ssh.program` | **Implemented.** The tracked `.gitconfig` sets no `user.email`; step 14 prints a reminder with the `git config --file` command when the file lacks one. The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. `work` writes nothing there; the key is added by hand. |
 | `~/.config/devtools/profile` (the recorded profile) | same | **Implemented.** Written by `setup/profile.sh`; outside the repo, never tracked. |
 | `~/.claude/settings.json` | merged, not linked | **Implemented.** Same reason as macOS. |
 | `~/.claude/themes/dracula.json` (Dracula theme, `dracula/claude-code-cli` pinned commit) | same path, copied | **Implemented, copied.** macOS uses `pkgs.fetchurl` with a fixed hash; Windows has no Nix, so step 8 downloads the same commit and verifies the same sha256 (bump both together). `theme` is set to `custom:dracula` in the shared `home/.config/.claude/settings.json`, which the step 10 merge applies on both platforms. |
@@ -239,7 +239,7 @@ priority order:
    (clones both forks, then builds `~/go/bin/no-mistakes.exe`; the guard and
    update logic was tested on macOS against throwaway repositories, the Windows
    path handling - `cygpath`, `MSYS_NO_PATHCONV`, replacing a running `.exe` -
-   was not run), that steps 13 and 14 skip, that `~/.gitconfig-os` and `~/.ssh/config-os` end up
+   was not run), that steps 13 and 14 skip, that `~/.gitconfig.os` and `~/.ssh/config-os` end up
    pointing at the `-work` files, and that a commit signs once
    `~/.gitconfig.local` has a key -- with no `gpg.ssh.program`, git falls back
    to the `ssh-keygen` bundled with Git for Windows.

@@ -364,6 +364,26 @@ link() {
   MSYS=winsymlinks:nativestrict ln -s "$target" "$link_path"
 }
 
+# Remove $1 only if it is a symlink resolving into directory $2. Anything else
+# at $1 (a regular file, or a link pointing elsewhere) is left and warned about.
+remove_stale_link() {
+  local stale="$1" repo_dir="$2" resolved
+  if [ -L "$stale" ]; then
+    resolved="$(readlink -f "$stale" 2>/dev/null || true)"
+    case "$resolved" in
+      "$(readlink -f "$repo_dir")"/*)
+        rm -f "$stale"
+        echo "    removed stale link $stale (-> $resolved)"
+        ;;
+      *)
+        warn "$stale is a link to $resolved, not into $repo_dir; left alone. It is no longer used (renamed to ${stale%-os}.os)"
+        ;;
+    esac
+  elif [ -e "$stale" ]; then
+    warn "$stale is a regular file, not a link into $repo_dir; left alone. It is no longer used (renamed to ${stale%-os}.os)"
+  fi
+}
+
 echo "==> Step 4: applications and CLI tools (winget)"
 # Install-if-missing, never force-upgrade. That matches macOS, where brew
 # bundle installs what is missing and leaves installed versions alone
@@ -641,17 +661,21 @@ link "$DOTFILES/home/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.codex/AGENTS.md"
 link "$DOTFILES/home/gitignore" "$HOME/.gitignore"
 link "$DOTFILES/home/.gitconfig" "$HOME/.gitconfig"
+# ~/.gitconfig.os used to be ~/.gitconfig-os. Drop the old link, but only when
+# it is a link into this repo's home/; a regular file or a link elsewhere is the
+# user's, so warn and leave it.
+remove_stale_link "$HOME/.gitconfig-os" "$DOTFILES/home"
 link "$DOTFILES/home/.ssh/config" "$HOME/.ssh/config"
 # The 1Password halves of git's and ssh's config. A profile without 1Password
 # links the empty -work files instead of leaving the paths alone, so a link left
 # by an earlier `personal` run stops pointing at 1Password's signer and
 # core.sshCommand pin.
 if [ "$WITH_1PASSWORD" -eq 1 ]; then
-  link "$DOTFILES/home/.gitconfig-windows" "$HOME/.gitconfig-os"
+  link "$DOTFILES/home/.gitconfig.windows" "$HOME/.gitconfig.os"
   link "$DOTFILES/home/.ssh/config-windows" "$HOME/.ssh/config-os"
   link "$DOTFILES/home/.config/1Password/ssh/agent.toml" "$HOME/.config/1Password/ssh/agent.toml"
 else
-  link "$DOTFILES/home/.gitconfig-work" "$HOME/.gitconfig-os"
+  link "$DOTFILES/home/.gitconfig.work" "$HOME/.gitconfig.os"
   link "$DOTFILES/home/.ssh/config-work" "$HOME/.ssh/config-os"
 fi
 link "$DOTFILES/home/.config/mcp/mcp.json" "$HOME/.config/mcp/mcp.json"
@@ -848,7 +872,7 @@ reg_dword "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PrecisionTouchPad
 echo "    applied; Explorer settings show up after a sign-out or an Explorer restart"
 
 echo "==> Step 13: Windows OpenSSH client"
-# home/.gitconfig-windows pins core.sshCommand to this exact binary, because it
+# home/.gitconfig.windows pins core.sshCommand to this exact binary, because it
 # is the only ssh that can reach 1Password's named-pipe agent. It ships as an
 # optional Windows feature, so a machine without it fails every git fetch and
 # push with a bare "cannot run" error. Resolve it from SystemRoot rather than
@@ -857,7 +881,7 @@ echo "==> Step 13: Windows OpenSSH client"
 # satisfy the pinned path.
 #
 # This exists only for that pin, so a profile without 1Password skips it: its
-# .gitconfig-work has no core.sshCommand and git uses its own bundled ssh.
+# .gitconfig.work has no core.sshCommand and git uses its own bundled ssh.
 SYSTEM_ROOT_DIR="$(cygpath -u "${SystemRoot:-${SYSTEMROOT:-C:\\Windows}}")"
 OPENSSH_CLIENT="$SYSTEM_ROOT_DIR/System32/OpenSSH/ssh.exe"
 if [ "$WITH_1PASSWORD" -eq 0 ]; then
@@ -881,7 +905,7 @@ PS1
   if [ -f "$OPENSSH_CLIENT" ]; then
     echo "    installed"
   else
-    warn "the Windows OpenSSH client is still missing from $OPENSSH_CLIENT; git over SSH will fail because .gitconfig-windows routes core.sshCommand through that exact path. From an elevated PowerShell run: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0"
+    warn "the Windows OpenSSH client is still missing from $OPENSSH_CLIENT; git over SSH will fail because .gitconfig.windows routes core.sshCommand through that exact path. From an elevated PowerShell run: Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0"
   fi
 fi
 
@@ -891,7 +915,7 @@ echo "==> Step 14: commit signing"
 if [ "$WITH_1PASSWORD" -eq 1 ]; then
   # The signer's path embeds this machine's username, so it belongs in the
   # untracked ~/.gitconfig.local next to the signing key -- not in the tracked
-  # .gitconfig-windows. `git config --file` edits that file surgically, so an
+  # .gitconfig.windows. `git config --file` edits that file surgically, so an
   # existing user.signingkey is left alone.
   OP_SSH_SIGN="$LOCALAPPDATA_DIR/1Password/app/8/op-ssh-sign.exe"
   if [ -f "$OP_SSH_SIGN" ]; then
@@ -919,6 +943,19 @@ NEXT STEP: add this machine's git signing key to ~/.gitconfig.local
 
   [user]
       signingkey = ssh-ed25519 AAAA...
+===================================================================
+EOF
+fi
+
+# Not in the tracked .gitconfig (this repo is public), so a machine that predates
+# this check, which got its address from there, needs it added. Warning only.
+if ! git config --file "$HOME/.gitconfig.local" --get user.email >/dev/null 2>&1; then
+  cat <<'EOF'
+
+===================================================================
+NEXT STEP: add this machine's git author email to ~/.gitconfig.local
+
+  git config --file ~/.gitconfig.local user.email you@example.com
 ===================================================================
 EOF
 fi
