@@ -50,7 +50,7 @@ Nix does not run natively on Windows, so `setup/windows.sh` carries by itself wh
 3. Symlinks the repo to `~/.dotfiles`.
 4. Installs applications and CLI tools with `winget`.
 5. Installs the two things winget cannot deliver -- the Hack Nerd Font and `kubeseal` (personal profile only) -- from their pinned upstream releases.
-6. Installs Node via Volta and the global agent CLIs, then the Go CLIs.
+6. Installs Node via Volta and the global agent CLIs, then the Go CLIs (the work profile gets firstmate and no-mistakes from the forks instead; see [Fork tools](#fork-tools-work-profile)).
 7. Links every dotfile, stubs `~/.env`, merges Claude Code's settings and MCP servers, installs the AXI session hooks, applies the Windows system defaults, and, on the personal profile, installs the Windows OpenSSH client if it is missing (git needs it to reach 1Password's agent) and wires up 1Password commit signing.
 
 Expect UAC prompts during the winget step. Re-running is safe and is the supported way to apply later changes.
@@ -71,12 +71,12 @@ On macOS that runs `rebuild.sh` (`darwin-rebuild switch`); on Windows it re-runs
 
 ### Profiles
 
-Not every machine gets the same tools: a work machine may not be allowed 1Password, for one. A **profile** is a shared base plus a small overlay that only removes things from it.
+Not every machine gets the same tools: a work machine may not be allowed 1Password, for one. A **profile** is a shared base plus a small overlay that removes things from it and, for `work`, takes two tools from forks instead of upstream.
 
 | Profile | What it is |
 | --- | --- |
 | `personal` | Everything in this repo. The default whenever nothing selects a profile, so existing machines behave as before. |
-| `work` | The base without 1Password and its CLI, gitops, telepresence, Dynamic Wallpaper Library, fluxcd and kubeseal. |
+| `work` | The base without 1Password and its CLI, gitops, telepresence, Dynamic Wallpaper Library, fluxcd and kubeseal, and with firstmate and no-mistakes taken from the `andrew-codes` forks (see [Fork tools](#fork-tools-work-profile)). |
 
 The overlay lives in `profiles.nix` (and is repeated by hand in `setup/windows.sh`, since Nix cannot run there). The `work` profile also drops everything that existed only to serve 1Password: the `SSH_AUTH_SOCK` override, the `~/.config/1Password/ssh/agent.toml` link, the `op-ssh-sign` signer and `core.sshCommand` pin in the OS-specific git config, the 1Password `IdentityAgent` in the OS-specific ssh config, and on Windows the OpenSSH client step and 1Password signing step.
 
@@ -85,6 +85,21 @@ Commit signing stays on for both: `commit.gpgsign` and `gpg.format = ssh` are in
 **Choosing a profile.** `setup.sh`, `setup/macOS.sh`, `setup/windows.sh` and `rebuild.sh` all accept `--profile personal|work` and reject anything else. The choice is written to `~/.config/devtools/profile` (outside the repo, one word) and read back when no flag is given; with neither, it is `personal`. On macOS `rebuild.sh` builds the flake output for that profile -- `mac-personal` or `mac-work`; plain `mac` is kept and is the personal one.
 
 A profile only controls what gets installed and configured. Switching a machine from `personal` to `work` does not uninstall anything that is already there (Homebrew cleanup stays `none`), and a `gpg.ssh.program` that `personal` wrote into `~/.gitconfig.local` on Windows needs removing by hand (setup warns).
+
+#### Fork tools (work profile)
+
+`personal` installs no-mistakes from upstream (`go install` of `kunchenguid/no-mistakes`, pinned to a release tag) and installs no copy of firstmate; `home/bin/firstmate` only expects a checkout at `~/developer/firstmate`. `work` instead tracks the `main` branch of two forks, unpinned:
+
+| Tool | Fork | Where it lives |
+| --- | --- | --- |
+| firstmate | `github.com/andrew-codes/firstmate` | cloned to `~/developer/firstmate` |
+| no-mistakes | `github.com/andrew-codes/no-mistakes` | cloned to `~/.local/share/devtools/no-mistakes` and built into `~/go/bin/no-mistakes`, the same place the personal install lands |
+
+All of it is `setup/fork-tools.sh`, one bash script shared by both platforms. On macOS it runs as the `installForkTools` step of home-manager's activation (`home.nix`, work profile only, next to the Go installs), so `devtools-rebuild` runs it and nothing happens during Nix evaluation, which stays pure. On Windows it runs from Step 7 of `setup/windows.sh`. Clones go over HTTPS (both repositories are public, so there is no credential), never with a token.
+
+Every run fast-forwards each clone to the fork's `main` and rebuilds no-mistakes only when its commit changed (or the installed binary is not the one built last time; the record lives in `~/.local/state/devtools/no-mistakes-built`). It never commits, resets, checks out, cleans or forces anything. A checkout is **left exactly as it is, with a warning, while the rest of setup carries on**, when it is not a git checkout of its own, has an `origin` other than the fork, has uncommitted changes (including untracked files), is mid merge or rebase, is not on `main`, or has local commits or has diverged from the fork's `main`. Fix the checkout and re-run.
+
+no-mistakes is built with `go build` from the clone because Go cannot `go install` a fork under a different path than its `go.mod` declares. The binary reports its version as `main-<short sha>` and is built without any telemetry host, as upstream's `go install` is. That string is not a release version, so no-mistakes treats the binary as a development build: it does no background update check, and `no-mistakes update` says self-update is unavailable instead of replacing it. Anything else that installs upstream (its `install.sh`, `go install` of a release, or the personal profile's setup) would overwrite the source-built binary with an upstream release. To update in the work profile, re-run setup (`devtools-rebuild`); it fast-forwards the fork and rebuilds. A running daemon keeps its old binary until `no-mistakes daemon restart`.
 
 ### Required Manual Steps
 
@@ -233,6 +248,7 @@ home.nix               User level: packages, zsh, dotfile symlinks, activation s
 mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix-darwin)
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
 setup/profile.sh       Resolves, validates and records the machine's profile
+setup/fork-tools.sh    The work profile's firstmate and no-mistakes, cloned and kept current from the forks
 setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
 setup/windows.sh       Setup and rebuild for Windows; stands in for nix-darwin and home-manager
 setup/windows-parity.md  Every macOS entry mapped to its Windows decision
@@ -253,7 +269,8 @@ Anything that changes what is installed or configured needs a decision on both p
 | To add | Edit |
 | --- | --- |
 | A CLI from nixpkgs | `home.packages` in `home.nix`, and `WINGET_PACKAGES` in `setup/windows.sh` |
-| Something one profile should not get | `remove` in `profiles.nix`, and `WORK_OMIT_WINGET_PACKAGES` or the `WITH_*` flags in `setup/windows.sh` |
+| Something one profile should not get | `remove` in `profiles.nix`, and `WORK_OMIT_WINGET_PACKAGES`, `WORK_OMIT_GO_PACKAGES` or the `WITH_*` flags in `setup/windows.sh` |
+| A tool the work profile takes from a fork | `setup/fork-tools.sh` (shared by both platforms), plus `forkTools` in `profiles.nix` and `WITH_FORK_TOOLS` in `setup/windows.sh` |
 | A GUI app or Homebrew formula | `homebrew.casks` / `brews` in `configuration.nix`, and `WINGET_PACKAGES` |
 | A Mac App Store app | `mas-apps.nix`, then re-run `setup/macOS.sh` (not `homebrew.masApps`) |
 | A global npm CLI | `globalNpmPackages` in `home.nix` and `GLOBAL_NPM_PACKAGES` in `setup/windows.sh` |

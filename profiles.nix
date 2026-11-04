@@ -4,7 +4,8 @@
 #   personal  everything in the base. The default whenever nothing selects a
 #             profile, so existing machines and unflagged runs are unchanged.
 #   work      the base minus 1Password and a few tools the work machine does
-#             not get.
+#             not get, with firstmate and no-mistakes taken from andrew-codes'
+#             forks instead of upstream (setup/fork-tools.sh).
 #
 # This is plain data and stays pure -- no files are read at evaluation time.
 # Which profile a machine uses is recorded outside the repo by
@@ -12,7 +13,8 @@
 # rebuild.sh and setup/macOS.sh pick that output.
 #
 # setup/windows.sh cannot evaluate Nix, so it carries the same overlay by hand
-# (WORK_OMIT_WINGET_PACKAGES and the `[ "$PROFILE" = personal ]` guards).
+# (WORK_OMIT_WINGET_PACKAGES, WORK_OMIT_GO_PACKAGES, WITH_FORK_TOOLS and the
+# `[ "$PROFILE" = personal ]` guards).
 # Change both together; setup/windows-parity.md records the mapping.
 let
   # Every list a profile may remove from. Naming them all here keeps a
@@ -23,6 +25,7 @@ let
     masApps = [ ];   # names in mas-apps.nix
     packages = [ ];  # home.packages, by package name (lib.getName)
     zshPlugins = [ ]; # oh-my-zsh plugins whose tool the profile drops
+    goPackages = [ ]; # home.nix goPackages, by module path without the @version
   };
 
   mkProfile =
@@ -31,9 +34,14 @@ let
       # the agent.toml key list and the op-ssh-sign commit signer. A profile
       # without the app must also drop those, or every commit fails to sign.
       onePassword ? true
+    , # firstmate and no-mistakes from the andrew-codes forks, tracking their
+      # `main`. A profile that sets this has home.nix run setup/fork-tools.sh
+      # in place of the pinned upstream `go install` of no-mistakes (list that
+      # in `remove.goPackages` too), and setup/windows.sh does the same.
+      forkTools ? false
     }: {
       remove = noRemovals // remove;
-      inherit onePassword;
+      inherit onePassword forkTools;
     };
 
   overlays = {
@@ -41,6 +49,7 @@ let
 
     work = mkProfile {
       onePassword = false;
+      forkTools = true;
       remove = {
         brews = [
           "weaveworks/tap/gitops"
@@ -53,6 +62,8 @@ let
         masApps = [ "Dynamic Wallpaper Library" ];
         packages = [ "kubeseal" "fluxcd" ];
         zshPlugins = [ "fluxcd" ]; # wraps the flux CLI, which work does not get
+        # Built from the fork's main by setup/fork-tools.sh instead.
+        goPackages = [ "github.com/kunchenguid/no-mistakes/cmd/no-mistakes" ];
       };
     };
   };

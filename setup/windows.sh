@@ -106,13 +106,25 @@ WORK_OMIT_WINGET_PACKAGES=(
   AgileBits.1Password.CLI # cask 1password-cli
   FluxCD.Flux             # pkgs.fluxcd
 )
+# The Go modules the `work` profile does not `go install` (profiles.nix,
+# work.remove.goPackages): it builds no-mistakes from the fork instead, see
+# WITH_FORK_TOOLS. Matched by module path, without the @version.
+WORK_OMIT_GO_PACKAGES=(
+  github.com/kunchenguid/no-mistakes/cmd/no-mistakes # setup/fork-tools.sh
+)
 # Everything 1Password-shaped that is not a winget package, and the pinned
 # kubeseal download. 1 = this profile gets it.
 WITH_1PASSWORD=1 # agent.toml link, OpenSSH client pin, op-ssh-sign signer
 WITH_KUBESEAL=1  # pkgs.kubeseal
+# 0 = upstream's pinned `go install` of no-mistakes, and no firstmate checkout
+# from here. 1 = firstmate and no-mistakes from the andrew-codes forks' main
+# (profiles.nix: forkTools), done by setup/fork-tools.sh in Step 7.
+WITH_FORK_TOOLS=0
+ACTIVE_GO_PACKAGES=()
 if [ "$PROFILE" = work ]; then
   WITH_1PASSWORD=0
   WITH_KUBESEAL=0
+  WITH_FORK_TOOLS=1
   PROFILE_WINGET_PACKAGES=()
   for _id in "${WINGET_PACKAGES[@]}"; do
     _omit=0
@@ -149,6 +161,19 @@ GO_PACKAGES=(
   "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.84.0"
   "github.com/kunchenguid/treehouse@v1.8.0"
 )
+
+# GO_PACKAGES minus what the profile gets from somewhere else, matched by
+# module path like home.nix's activeGoPackages.
+for _pkg in "${GO_PACKAGES[@]}"; do
+  _omit=0
+  if [ "$PROFILE" = work ]; then
+    for _omitted in "${WORK_OMIT_GO_PACKAGES[@]}"; do
+      [ "${_pkg%%@*}" = "$_omitted" ] && _omit=1
+    done
+  fi
+  [ "$_omit" -eq 1 ] || ACTIVE_GO_PACKAGES+=("$_pkg")
+done
+unset _pkg _omit _omitted
 
 # Mirrors secretEnvVars in home.nix.
 SECRET_ENV_VARS=(
@@ -544,7 +569,7 @@ if command -v go >/dev/null 2>&1; then
   # over already in Windows form or Go writes to a "C:\c\Users\..." of its own
   # invention.
   GOBIN_WIN="$(cygpath -w "$HOME/go/bin")"
-  for pkg in "${GO_PACKAGES[@]}"; do
+  for pkg in "${ACTIVE_GO_PACKAGES[@]}"; do
     echo "    go install $pkg"
     # Pinned @<tag> refs go through Go's module system, which verifies against
     # sum.golang.org -- the reason home.nix prefers this over each project's
@@ -553,7 +578,27 @@ if command -v go >/dev/null 2>&1; then
       warn "go install $pkg failed; if it needs cgo, install a C toolchain (winget install MSYS2.MSYS2) and re-run"
   done
 else
-  warn "go is not on PATH; skipped no-mistakes and treehouse"
+  if [ "$WITH_FORK_TOOLS" -eq 1 ]; then
+    warn "go is not on PATH; skipped treehouse and the no-mistakes build"
+  else
+    warn "go is not on PATH; skipped no-mistakes and treehouse"
+  fi
+fi
+
+# The work profile's firstmate and no-mistakes, from the andrew-codes forks.
+# Run even without go on PATH: the firstmate checkout and the no-mistakes clone
+# do not need it, and fork-tools.sh warns on its own about the build it skips.
+# It clones to ~/developer/firstmate and ~/.local/share/devtools/no-mistakes,
+# fast-forwards both (refusing, with a warning, any checkout with local work),
+# and installs no-mistakes into ~/go/bin only when its commit changed. Exit
+# status 3 means it warned about something; the text is above.
+if [ "$WITH_FORK_TOOLS" -eq 1 ]; then
+  echo "    firstmate and no-mistakes from the andrew-codes forks (main)"
+  _fork_status=0
+  bash "$SCRIPT_DIR/setup/fork-tools.sh" || _fork_status=$?
+  [ "$_fork_status" -eq 0 ] ||
+    warn "setup/fork-tools.sh finished with status $_fork_status; see the messages above (a refused checkout is left untouched)"
+  unset _fork_status
 fi
 
 echo "==> Step 8: dotfiles"
