@@ -18,10 +18,13 @@ Everything is reproducible and version controlled. Configuration files are symli
 ```bash
 git clone https://github.com/andrew-codes/devtools.git ~/developer/repos/devtools
 cd ~/developer/repos/devtools
-./setup.sh
+./setup.sh                      # the personal profile, the default
+./setup.sh --profile work       # or the work profile; see Profiles below
 ```
 
 `setup.sh` detects the OS and architecture and dispatches to the matching platform script: `setup/macOS.sh` on Apple Silicon, `setup/windows.sh` on Windows. On any other platform it prints what was detected and exits rather than attempting an install.
+
+Pass `--profile personal` or `--profile work` to pick what the machine gets (see [Profiles](#profiles)). The choice is recorded, so later runs and `devtools-rebuild` need no flag.
 
 On macOS nothing needs to be preinstalled; the setup script bootstraps Nix itself. On Windows, run it from Git for Windows' bash -- you already have that, since it is what cloned this repo.
 
@@ -33,8 +36,8 @@ The macOS script:
 2. Symlinks the repo to `~/.dotfiles`, which every config path resolves through.
 3. Offers to rewrite the `user = "..."` line in `flake.nix` to match your macOS username.
 4. Trusts the Homebrew taps that already have something installed from them, so out-of-band installs survive later rebuilds. On a first-ever run there is no `brew` yet, so this is a no-op.
-5. Acquires the Mac App Store apps listed in `mas-apps.nix` with `mas get`, then waits for each to land on disk.
-6. Runs the first `darwin-rebuild switch` against the flake.
+5. Acquires the Mac App Store apps listed in `mas-apps.nix` that the profile keeps, with `mas get`, then waits for each to land on disk.
+6. Runs the first `darwin-rebuild switch` against the flake's `mac-<profile>` output.
 
 Sign in to the Mac App Store before step 5; `mas` cannot authenticate on its own, and it prompts for an admin password when it has real work to do. App Store apps are acquired here, as the real user in the real login session, rather than through nix-darwin's `homebrew.masApps` -- that option runs outside the per-user launchd session `mas` needs, so it would fail on every rebuild. `homebrew.masApps` is deliberately left empty.
 
@@ -46,9 +49,9 @@ Nix does not run natively on Windows, so `setup/windows.sh` carries by itself wh
 2. Ensures native symlinks are allowed, enabling Developer Mode (one UAC prompt) if they are not. Every dotfile is a symlink into this repo, exactly as on macOS.
 3. Symlinks the repo to `~/.dotfiles`.
 4. Installs applications and CLI tools with `winget`.
-5. Installs the two things winget cannot deliver -- the Hack Nerd Font and `kubeseal` -- from their pinned upstream releases.
+5. Installs the two things winget cannot deliver -- the Hack Nerd Font and `kubeseal` (personal profile only) -- from their pinned upstream releases.
 6. Installs Node via Volta and the global agent CLIs, then the Go CLIs.
-7. Links every dotfile, stubs `~/.env`, merges Claude Code's settings and MCP servers, installs the AXI session hooks, applies the Windows system defaults, installs the Windows OpenSSH client if it is missing (git needs it to reach 1Password's agent), and wires up 1Password commit signing.
+7. Links every dotfile, stubs `~/.env`, merges Claude Code's settings and MCP servers, installs the AXI session hooks, applies the Windows system defaults, and, on the personal profile, installs the Windows OpenSSH client if it is missing (git needs it to reach 1Password's agent) and wires up 1Password commit signing.
 
 Expect UAC prompts during the winget step. Re-running is safe and is the supported way to apply later changes.
 
@@ -64,7 +67,24 @@ After the first install, rebuild from anywhere with:
 devtools-rebuild    # symlinked onto PATH on both platforms
 ```
 
-On macOS that runs `rebuild.sh` (`darwin-rebuild switch`); on Windows it re-runs `setup/windows.sh`, which is idempotent.
+On macOS that runs `rebuild.sh` (`darwin-rebuild switch`); on Windows it re-runs `setup/windows.sh`, which is idempotent. Both read the machine's recorded profile; `devtools-rebuild --profile work` switches it.
+
+### Profiles
+
+Not every machine gets the same tools: a work machine may not be allowed 1Password, for one. A **profile** is a shared base plus a small overlay that only removes things from it.
+
+| Profile | What it is |
+| --- | --- |
+| `personal` | Everything in this repo. The default whenever nothing selects a profile, so existing machines behave as before. |
+| `work` | The base without 1Password and its CLI, gitops, telepresence, Dynamic Wallpaper Library, fluxcd and kubeseal. |
+
+The overlay lives in `profiles.nix` (and is repeated by hand in `setup/windows.sh`, since Nix cannot run there). The `work` profile also drops everything that existed only to serve 1Password: the `SSH_AUTH_SOCK` override, the `~/.config/1Password/ssh/agent.toml` link, the `op-ssh-sign` signer and `core.sshCommand` pin in the OS-specific git config, the 1Password `IdentityAgent` in the OS-specific ssh config, and on Windows the OpenSSH client step and 1Password signing step.
+
+Commit signing stays on for both: `commit.gpgsign` and `gpg.format = ssh` are in the shared `home/.gitconfig`. The `work` profile sets no signer program and no key; the key comes only from `~/.gitconfig.local`, which `~/.gitconfig` includes unconditionally and which is never tracked. Add yours there after setup (the same reminder printed for `personal`).
+
+**Choosing a profile.** `setup.sh`, `setup/macOS.sh`, `setup/windows.sh` and `rebuild.sh` all accept `--profile personal|work` and reject anything else. The choice is written to `~/.config/devtools/profile` (outside the repo, one word) and read back when no flag is given; with neither, it is `personal`. On macOS `rebuild.sh` builds the flake output for that profile -- `mac-personal` or `mac-work`; plain `mac` is kept and is the personal one.
+
+A profile only controls what gets installed and configured. Switching a machine from `personal` to `work` does not uninstall anything that is already there (Homebrew cleanup stays `none`), and a `gpg.ssh.program` that `personal` wrote into `~/.gitconfig.local` on Windows needs removing by hand (setup warns).
 
 ### Required Manual Steps
 
@@ -73,7 +93,8 @@ Two files hold values that are specific to a single machine or are secret, so th
 | File | Purpose |
 | --- | --- |
 | `~/.env` | Secrets. Auto-created with every required key stubbed empty. The shell warns on every startup until each has a value. |
-| `~/.gitconfig.local` | This machine's git SSH signing key. Setup prints a reminder if missing. On Windows it also holds the resolved 1Password signer path. |
+| `~/.gitconfig.local` | This machine's git SSH signing key. Setup prints a reminder if missing. On the personal profile on Windows it also holds the resolved 1Password signer path. |
+| `~/.config/devtools/profile` | The machine's profile, `personal` or `work`. Written by `--profile`; see [Profiles](#profiles). |
 | `~/.ssh/config.local` | Optional. Personal SSH hosts, included from the tracked `~/.ssh/config`. |
 
 > **Note:** Homebrew uses `onActivation.cleanup = "none"`, so packages installed outside this repo are left alone on rebuild. Existing files at a managed path must be moved aside before the first activation; home-manager will not clobber them. `setup/windows.sh` moves them aside itself, to `<name>.bak`.
@@ -104,7 +125,7 @@ Scripts in `home/bin/` are symlinked individually into `~/.local/bin`. They are 
 
 ### CLI Toolchain
 
-Installed from nixpkgs on macOS: `ripgrep`, `fd`, `eza`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font.
+Installed from nixpkgs on macOS: `ripgrep`, `fd`, `eza`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font. The work profile drops `kubeseal` and `fluxcd`.
 
 The same set comes from `winget` on Windows, except `ansible` (no Windows control node), `kubeseal` and the Hack Nerd Font (no winget package -- taken from their pinned upstream releases). `setup/windows-parity.md` lists every id.
 
@@ -117,7 +138,7 @@ Installed via Homebrew and the Mac App Store on macOS, via `winget` on Windows:
 | App | Purpose | Windows |
 | --- | --- | --- |
 | [WezTerm](https://wezterm.org/) | Terminal emulator | Yes, defaulting to bash |
-| [1Password](https://1password.com/) + CLI | Passwords, SSH agent, commit signing | Yes |
+| [1Password](https://1password.com/) + CLI | Passwords, SSH agent, commit signing | Yes. Personal profile only |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Containers | Yes |
 | [Lens](https://k8slens.dev/) | Kubernetes IDE | Yes |
 | [Claude Code](https://www.anthropic.com/claude-code) | Anthropic coding agent | Yes |
@@ -125,8 +146,8 @@ Installed via Homebrew and the Mac App Store on macOS, via `winget` on Windows:
 | [Raycast](https://raycast.com/) | Launcher (replaces Spotlight) | [PowerToys](https://learn.microsoft.com/windows/powertoys/) Run instead |
 | [tmux](https://github.com/tmux/tmux) | Terminal multiplexer | No -- WezTerm's own panes |
 | [herdr](https://herdr.dev/) | Agent session multiplexer | Not yet; Windows is an upstream beta |
-| [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs | No |
-| Dynamic Wallpaper Library | Wallpapers (Mac App Store) | No -- macOS only |
+| [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs. Personal profile only | No |
+| Dynamic Wallpaper Library | Wallpapers (Mac App Store). Personal profile only | No -- macOS only |
 
 Every one of these decisions, with its reason, is in [`setup/windows-parity.md`](setup/windows-parity.md).
 
@@ -178,13 +199,13 @@ Git config is layered so shared settings stay tracked while machine-specific and
 
 ```text
 ~/.gitconfig          tracked, shared settings
-  -> ~/.gitconfig-os      OS-specific (1Password signing paths)
+  -> ~/.gitconfig-os      1Password signing paths (empty for the work profile)
   -> ~/.gitconfig.local   machine-specific signing key, untracked
 ```
 
-`~/.gitconfig-os` points at `home/.gitconfig-macos` or `home/.gitconfig-windows` depending on the platform. SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` and an untracked `~/.ssh/config.local` for personal hosts.
+`~/.gitconfig-os` points at `home/.gitconfig-macos` or `home/.gitconfig-windows` depending on the platform, or at the empty `home/.gitconfig-work` on the work profile. SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` (`config-macos`, `config-windows` or the empty `config-work`) and an untracked `~/.ssh/config.local` for personal hosts.
 
-1Password acts as the SSH agent and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`. On macOS git reaches it through the `SSH_AUTH_SOCK` socket; on Windows it listens on the OpenSSH agent named pipe, which only the native `ssh.exe` can speak, so `.gitconfig-windows` sets `core.sshCommand` to it by absolute path.
+On the personal profile 1Password acts as the SSH agent and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`. On macOS git reaches it through the `SSH_AUTH_SOCK` socket; on Windows it listens on the OpenSSH agent named pipe, which only the native `ssh.exe` can speak, so `.gitconfig-windows` sets `core.sshCommand` to it by absolute path. The work profile has none of this and signs with the key named in `~/.gitconfig.local`.
 
 ### System Defaults
 
@@ -205,11 +226,13 @@ Windows needs native symlinks for any of this, which is why `setup/windows.sh` t
 ## Repo Layout
 
 ```text
-flake.nix              Inputs (nixpkgs, nix-darwin, home-manager, nix-homebrew) and the "mac" host
+flake.nix              Inputs (nixpkgs, nix-darwin, home-manager, nix-homebrew) and the mac-personal / mac-work hosts ("mac" = personal)
+profiles.nix           The per-profile overlay: what the work profile removes from the base
 configuration.nix      System level: macOS defaults, Homebrew formulae and casks
 home.nix               User level: packages, zsh, dotfile symlinks, activation scripts
 mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix-darwin)
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
+setup/profile.sh       Resolves, validates and records the machine's profile
 setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
 setup/windows.sh       Setup and rebuild for Windows; stands in for nix-darwin and home-manager
 setup/windows-parity.md  Every macOS entry mapped to its Windows decision
@@ -230,6 +253,7 @@ Anything that changes what is installed or configured needs a decision on both p
 | To add | Edit |
 | --- | --- |
 | A CLI from nixpkgs | `home.packages` in `home.nix`, and `WINGET_PACKAGES` in `setup/windows.sh` |
+| Something one profile should not get | `remove` in `profiles.nix`, and `WORK_OMIT_WINGET_PACKAGES` or the `WITH_*` flags in `setup/windows.sh` |
 | A GUI app or Homebrew formula | `homebrew.casks` / `brews` in `configuration.nix`, and `WINGET_PACKAGES` |
 | A Mac App Store app | `mas-apps.nix`, then re-run `setup/macOS.sh` (not `homebrew.masApps`) |
 | A global npm CLI | `globalNpmPackages` in `home.nix` and `GLOBAL_NPM_PACKAGES` in `setup/windows.sh` |

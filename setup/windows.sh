@@ -32,6 +32,12 @@ if [ ! -f "$SCRIPT_DIR/setup/windows.sh" ]; then
   exit 1
 fi
 
+# Which profile this machine uses: --profile, else the recorded one, else
+# personal. setup/profile.sh owns the rules and the validation, and records the
+# choice when --profile is given. A rejected value stops the run here, before
+# anything is installed.
+PROFILE="$("$SCRIPT_DIR/setup/profile.sh" "$@")"
+
 # ---------------------------------------------------------------------------
 # What gets installed.
 #
@@ -43,6 +49,10 @@ fi
 # The npm, Go and secret lists are duplicated from home.nix on purpose -- Nix
 # cannot evaluate on Windows, so there is nothing to import. Bump both when you
 # bump either; home.nix carries a comment pointing back here.
+#
+# The lists below are the `personal` profile: everything. The `work` profile is
+# the same minus what profiles.nix removes, repeated by hand in the block after
+# them for the same reason. Nothing here is added for either profile.
 # ---------------------------------------------------------------------------
 
 # winget ids, each verified against the microsoft/winget-pkgs manifests. The
@@ -87,6 +97,34 @@ KUBESEAL_VERSION="0.39.1"      # https://github.com/bitnami-labs/sealed-secrets/
 # Keep in step with twgVersion in home.nix. Installed by Atlassian's install.ps1,
 # which checks the binary against the published SHA256SUMS-v<version> file.
 TWG_VERSION="1.3.5" # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
+
+# The `work` profile's overlay (profiles.nix, work.remove and onePassword = false).
+# Only the pieces that exist on Windows are here: gitops, telepresence, the
+# Mac App Store app and the zsh plugin have no Windows counterpart to drop.
+WORK_OMIT_WINGET_PACKAGES=(
+  AgileBits.1Password     # cask 1password
+  AgileBits.1Password.CLI # cask 1password-cli
+  FluxCD.Flux             # pkgs.fluxcd
+)
+# Everything 1Password-shaped that is not a winget package, and the pinned
+# kubeseal download. 1 = this profile gets it.
+WITH_1PASSWORD=1 # agent.toml link, OpenSSH client pin, op-ssh-sign signer
+WITH_KUBESEAL=1  # pkgs.kubeseal
+if [ "$PROFILE" = work ]; then
+  WITH_1PASSWORD=0
+  WITH_KUBESEAL=0
+  PROFILE_WINGET_PACKAGES=()
+  for _id in "${WINGET_PACKAGES[@]}"; do
+    _omit=0
+    for _omitted in "${WORK_OMIT_WINGET_PACKAGES[@]}"; do
+      [ "$_id" = "$_omitted" ] && _omit=1
+    done
+    [ "$_omit" -eq 1 ] || PROFILE_WINGET_PACKAGES+=("$_id")
+  done
+  unset _id _omit _omitted
+else
+  PROFILE_WINGET_PACKAGES=("${WINGET_PACKAGES[@]}")
+fi
 
 # Mirrors globalNpmPackages in home.nix.
 GLOBAL_NPM_PACKAGES=(
@@ -187,6 +225,8 @@ LOCALAPPDATA_DIR="$(cygpath -u "${LOCALAPPDATA:?LOCALAPPDATA is not set}")"
 TMP_ROOT="$(mktemp -d)"
 cleanup() { rm -rf "$TMP_ROOT"; }
 trap cleanup EXIT
+
+echo "==> Profile: $PROFILE"
 
 echo "==> Step 1: latest Git for Windows"
 # The ticket's one hard requirement about Git: ensure the latest is installed
@@ -303,7 +343,7 @@ echo "==> Step 4: applications and CLI tools (winget)"
 # Install-if-missing, never force-upgrade. That matches macOS, where brew
 # bundle installs what is missing and leaves installed versions alone
 # (homebrew.onActivation.upgrade is off), and it is what keeps a re-run fast.
-for id in "${WINGET_PACKAGES[@]}"; do
+for id in "${PROFILE_WINGET_PACKAGES[@]}"; do
   if winget list --id "$id" --exact --accept-source-agreements >/dev/null 2>&1; then
     echo "    $id (installed)"
     continue
@@ -383,9 +423,12 @@ else
 fi
 
 # kubeseal: no winget package at all, and the upstream release is a single
-# static binary, so drop it next to the other user-scoped commands.
+# static binary, so drop it next to the other user-scoped commands. The work
+# profile does not get it.
 KUBESEAL_BIN="$HOME/.local/bin/kubeseal"
-if have_file "$KUBESEAL_BIN" && "$KUBESEAL_BIN" --version 2>/dev/null | grep -q "$KUBESEAL_VERSION"; then
+if [ "$WITH_KUBESEAL" -eq 0 ]; then
+  echo "    kubeseal (skipped: not part of the $PROFILE profile)"
+elif have_file "$KUBESEAL_BIN" && "$KUBESEAL_BIN" --version 2>/dev/null | grep -q "$KUBESEAL_VERSION"; then
   echo "    kubeseal (installed)"
 else
   echo "    kubeseal (installing v$KUBESEAL_VERSION)"
@@ -553,10 +596,19 @@ link "$DOTFILES/home/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.codex/AGENTS.md"
 link "$DOTFILES/home/gitignore" "$HOME/.gitignore"
 link "$DOTFILES/home/.gitconfig" "$HOME/.gitconfig"
-link "$DOTFILES/home/.gitconfig-windows" "$HOME/.gitconfig-os"
 link "$DOTFILES/home/.ssh/config" "$HOME/.ssh/config"
-link "$DOTFILES/home/.ssh/config-windows" "$HOME/.ssh/config-os"
-link "$DOTFILES/home/.config/1Password/ssh/agent.toml" "$HOME/.config/1Password/ssh/agent.toml"
+# The 1Password halves of git's and ssh's config. A profile without 1Password
+# links the empty -work files instead of leaving the paths alone, so a link left
+# by an earlier `personal` run stops pointing at 1Password's signer and
+# core.sshCommand pin.
+if [ "$WITH_1PASSWORD" -eq 1 ]; then
+  link "$DOTFILES/home/.gitconfig-windows" "$HOME/.gitconfig-os"
+  link "$DOTFILES/home/.ssh/config-windows" "$HOME/.ssh/config-os"
+  link "$DOTFILES/home/.config/1Password/ssh/agent.toml" "$HOME/.config/1Password/ssh/agent.toml"
+else
+  link "$DOTFILES/home/.gitconfig-work" "$HOME/.gitconfig-os"
+  link "$DOTFILES/home/.ssh/config-work" "$HOME/.ssh/config-os"
+fi
 link "$DOTFILES/home/.config/mcp/mcp.json" "$HOME/.config/mcp/mcp.json"
 link "$DOTFILES/home/.config/starship.toml" "$HOME/.config/starship.toml"
 # bash is the shell here, so these two stand in for programs.zsh in home.nix.
@@ -758,9 +810,14 @@ echo "==> Step 13: Windows OpenSSH client"
 # hardcoding C:, and install the inbox capability when it is missing -- not the
 # winget OpenSSH package, which installs somewhere else entirely and would not
 # satisfy the pinned path.
+#
+# This exists only for that pin, so a profile without 1Password skips it: its
+# .gitconfig-work has no core.sshCommand and git uses its own bundled ssh.
 SYSTEM_ROOT_DIR="$(cygpath -u "${SystemRoot:-${SYSTEMROOT:-C:\\Windows}}")"
 OPENSSH_CLIENT="$SYSTEM_ROOT_DIR/System32/OpenSSH/ssh.exe"
-if [ -f "$OPENSSH_CLIENT" ]; then
+if [ "$WITH_1PASSWORD" -eq 0 ]; then
+  echo "    skipped (not part of the $PROFILE profile; only 1Password's agent needs it)"
+elif [ -f "$OPENSSH_CLIENT" ]; then
   echo "    already installed ($OPENSSH_CLIENT)"
 else
   echo "    not installed; enabling the OpenSSH Client capability (expect one UAC prompt)"
@@ -783,17 +840,30 @@ PS1
   fi
 fi
 
-echo "==> Step 14: 1Password commit signing"
-# The signer's path embeds this machine's username, so it belongs in the
-# untracked ~/.gitconfig.local next to the signing key -- not in the tracked
-# .gitconfig-windows. `git config --file` edits that file surgically, so an
-# existing user.signingkey is left alone.
-OP_SSH_SIGN="$LOCALAPPDATA_DIR/1Password/app/8/op-ssh-sign.exe"
-if [ -f "$OP_SSH_SIGN" ]; then
-  git config --file "$HOME/.gitconfig.local" gpg.ssh.program "$(cygpath -m "$OP_SSH_SIGN")"
-  echo "    pointed gpg.ssh.program at $OP_SSH_SIGN"
+echo "==> Step 14: commit signing"
+# Signing is on for every profile (commit.gpgsign and gpg.format = ssh in the
+# tracked .gitconfig); what differs is the signer program.
+if [ "$WITH_1PASSWORD" -eq 1 ]; then
+  # The signer's path embeds this machine's username, so it belongs in the
+  # untracked ~/.gitconfig.local next to the signing key -- not in the tracked
+  # .gitconfig-windows. `git config --file` edits that file surgically, so an
+  # existing user.signingkey is left alone.
+  OP_SSH_SIGN="$LOCALAPPDATA_DIR/1Password/app/8/op-ssh-sign.exe"
+  if [ -f "$OP_SSH_SIGN" ]; then
+    git config --file "$HOME/.gitconfig.local" gpg.ssh.program "$(cygpath -m "$OP_SSH_SIGN")"
+    echo "    pointed gpg.ssh.program at $OP_SSH_SIGN"
+  else
+    warn "1Password's op-ssh-sign.exe is not installed yet; run this script again after signing in to 1Password so commit signing gets wired up"
+  fi
 else
-  warn "1Password's op-ssh-sign.exe is not installed yet; run this script again after signing in to 1Password so commit signing gets wired up"
+  # No signer program is set, so git signs with its default ssh-keygen and the
+  # key comes only from ~/.gitconfig.local. A machine that ran `personal` first
+  # may still carry 1Password's signer there; that file is untracked and
+  # per machine, so say so rather than edit it.
+  echo "    no signer program set for the $PROFILE profile; git signs with ssh-keygen"
+  if git config --file "$HOME/.gitconfig.local" --get gpg.ssh.program 2>/dev/null | grep -qi 1password; then
+    warn "$HOME/.gitconfig.local still sets gpg.ssh.program to 1Password's signer, left over from the personal profile; commits will fail to sign. Remove it: git config --file \"$HOME/.gitconfig.local\" --unset gpg.ssh.program"
+  fi
 fi
 
 if ! git config --file "$HOME/.gitconfig.local" --get user.signingkey >/dev/null 2>&1; then

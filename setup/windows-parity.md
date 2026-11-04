@@ -12,6 +12,47 @@ home-manager carry over there.
 
 When you add something to the macOS path, add a row here.
 
+## Profiles
+
+A machine has a **profile**, `personal` or `work`. `personal` is everything
+installed before profiles existed and is the default whenever nothing selects
+one. `work` is the same base minus an overlay that only removes; nothing is
+added for either profile. `profiles.nix` holds the overlay for macOS, and
+`setup/windows.sh` repeats it by hand (`WORK_OMIT_WINGET_PACKAGES`,
+`WITH_1PASSWORD`, `WITH_KUBESEAL`) because Nix cannot evaluate here. Change both
+together.
+
+The profile is recorded outside the repo in `~/.config/devtools/profile` by
+`setup/profile.sh`, which `setup.sh`, `setup/macOS.sh`, `setup/windows.sh` and
+`rebuild.sh` all call. `--profile personal|work` writes the record; otherwise it
+is read; otherwise `personal`. Any other value is rejected.
+
+| macOS (`work` removes) | Windows (`work` removes) | Decision |
+| --- | --- | --- |
+| casks `1password`, `1password-cli` | `AgileBits.1Password`, `AgileBits.1Password.CLI` | **Implemented.** Both are filtered out of `WINGET_PACKAGES` for `work`. |
+| brews `weaveworks/tap/gitops`, `datawire/blackbird/telepresence` | - | **Skipped** on Windows: neither is installed there under any profile (see Applications). |
+| Mac App Store `Dynamic Wallpaper Library` (`mas-apps.nix`) | - | **Skipped** on Windows: no Mac App Store. `setup/macOS.sh` skips it for `work` through `profiles.masAppLines`. |
+| `home.packages` `fluxcd` | `FluxCD.Flux` | **Implemented.** Filtered out of `WINGET_PACKAGES` for `work`. |
+| `home.packages` `kubeseal` | the pinned `kubeseal` release download (step 5) | **Implemented.** Not downloaded for `work`. |
+| oh-my-zsh `fluxcd` plugin | - | **Skipped** on Windows: it is a zsh plugin (see Shell). On macOS it is dropped for `work`, since it wraps a CLI `work` does not get. |
+| `home.sessionVariables.SSH_AUTH_SOCK` -> 1Password socket | - | **Skipped** on Windows under every profile (see Shell). On macOS it is `personal` only. |
+| `~/.config/1Password/ssh/agent.toml` link | same link | **Implemented.** `personal` only on both platforms. |
+| `~/.gitconfig-os` -> `.gitconfig-macos` / `.gitconfig-windows` (op-ssh-sign, `core.sshCommand`) | same | **Implemented.** `work` links the empty `home/.gitconfig-work` instead, so no signer program and no ssh pin is set. On Windows the link is replaced, so one left by an earlier `personal` run stops pointing at 1Password. |
+| `~/.ssh/config-os` -> `.ssh/config-macos` / `.ssh/config-windows` (1Password `IdentityAgent`) | same | **Implemented.** `work` links the empty `home/.ssh/config-work`. |
+| - | step 13, Windows OpenSSH client | **Implemented.** `personal` only: it exists solely so `core.sshCommand` can reach 1Password's named-pipe agent. `work` has no such pin and git uses its bundled ssh. |
+| - | step 14, 1Password commit signing (`gpg.ssh.program` in `~/.gitconfig.local`) | **Implemented.** `personal` only. `work` sets no signer; if a machine switched profiles and still carries 1Password's signer in `~/.gitconfig.local`, step 14 warns rather than editing that untracked file. |
+
+Commit signing stays on for both profiles: `commit.gpgsign = true` and
+`gpg.format = ssh` are in the shared `home/.gitconfig`, and `work` sets neither a
+signing program nor a key. The key always comes from the untracked
+`~/.gitconfig.local`, which `~/.gitconfig` includes unconditionally, so the
+missing-key reminder (`configuration.nix` on macOS, step 14 on Windows) applies
+to both profiles unchanged.
+
+Not changed by a profile: what is already installed on a machine. Homebrew
+cleanup stays `none` and nothing here uninstalls, so moving a machine from
+`personal` to `work` stops managing the removed items; it does not remove them.
+
 ## Target
 
 Native Windows on x86_64 with **Git for Windows' bash** as the shell -- not
@@ -32,21 +73,23 @@ native Windows.
 | home-manager (`home.nix`) | `setup/windows.sh` steps 6-11 | **Implemented** directly: symlinks, activation-equivalent steps, secrets file. |
 | `flake.nix` / `flake.lock` pinning | pinned version constants in `setup/windows.sh` | **Implemented**, weaker. winget resolves "latest" per package; only the two non-winget downloads are version-pinned. |
 | `~/.dotfiles` symlink | same | **Implemented** (step 3). |
-| `rebuild.sh` -> `devtools-rebuild` | `setup/windows.sh` -> `devtools-rebuild` | **Implemented.** Re-running the setup script *is* the rebuild; it is idempotent by design. |
-| `setup.sh` dispatch | same | **Implemented.** `./setup.sh` detects `msys`/`cygwin` and execs `setup/windows.sh`. |
+| `rebuild.sh` -> `devtools-rebuild` | `setup/windows.sh` -> `devtools-rebuild` | **Implemented.** Re-running the setup script *is* the rebuild; it is idempotent by design. Both take `--profile personal\|work` and otherwise read the recorded profile (see Profiles). |
+| `setup.sh` dispatch | same | **Implemented.** `./setup.sh` detects `msys`/`cygwin` and execs `setup/windows.sh`; `--profile` is passed through. |
+| `setup/profile.sh` (profile flag, record and validation) | same script | **Implemented.** One bash script, shared by both platforms. |
+| `flake.nix` `mac-<profile>` outputs (`mac` stays personal) | - | **Skipped.** Nix-only; `setup/windows.sh` filters its lists directly. |
 | Mac App Store apps (`mas-apps.nix`, `mas`) | - | **Skipped.** No Mac App Store on Windows. The one entry (Dynamic Wallpaper Library) is a wallpaper app, not dev tooling. |
 | Homebrew + `nix-homebrew` | winget | **Implemented.** winget is the default; the two exceptions below say why. |
 | `home.activation.buildDiaSkills` (flattens `write-blog-post` into `~/.config/dia/skills`) | - | **Skipped.** Dia is a macOS-only browser: winget carries only its predecessor Arc (`TheBrowserCompany.Arc`), no Dia package. With no Dia there is nothing to read the generated file. |
 | `preActivation` swap of the `claude-code` cask for `claude-code@latest` | - | **Skipped.** Homebrew-only; winget has a single `Anthropic.ClaudeCode` package, so there is no second channel to conflict with. |
-| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13). `.gitconfig-windows` pins `core.sshCommand` to the literal `C:/Windows/System32/OpenSSH/ssh.exe` (git config takes no environment expansion) because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
+| - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13), `personal` profile only. `.gitconfig-windows` pins `core.sshCommand` to the literal `C:/Windows/System32/OpenSSH/ssh.exe` (git config takes no environment expansion) because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
 
 ## Applications (`configuration.nix` casks and brews)
 
 | macOS | Windows | Decision |
 | --- | --- | --- |
 | `wezterm` | `wez.wezterm` | **Implemented.** Defaults to Git Bash on Windows - see "Shell" below. |
-| `1password` | `AgileBits.1Password` | **Implemented.** |
-| `1password-cli` | `AgileBits.1Password.CLI` | **Implemented.** |
+| `1password` | `AgileBits.1Password` | **Implemented.** `personal` only. |
+| `1password-cli` | `AgileBits.1Password.CLI` | **Implemented.** `personal` only. |
 | `docker-desktop` | `Docker.DockerDesktop` | **Implemented.** |
 | `lens` | `Mirantis.Lens` | **Implemented.** |
 | `logi-options+` | `Logitech.OptionsPlus` | **Implemented.** |
@@ -55,8 +98,8 @@ native Windows.
 | `tmux` | - | **Skipped.** Git for Windows ships no tmux and it needs a POSIX pty. WezTerm's own tabs and panes, plus herdr, cover the use. |
 | `mas` | - | **Skipped.** macOS-only by definition. |
 | `herdr` | - | **Deferred.** Upstream publishes macOS and Linux binaries only; Windows is a beta whose sole install path is an unpinned `irm https://herdr.dev/install.ps1 \| iex`. That is below the bar this repo holds remote installers to (see the `twgVersion` comment in `home.nix`), so the script prints the command instead of running it. Its `~/.config/herdr` config is linked either way. |
-| `weaveworks/tap/gitops` | - | **Deferred.** No winget package, and Weaveworks wound down in 2024. `flux` covers the maintained part of that workflow. |
-| `datawire/blackbird/telepresence` | - | **Deferred.** No winget package; the Windows install needs an elevated daemon service, so run Ambassador's own installer on demand. |
+| `weaveworks/tap/gitops` | - | **Deferred.** No winget package, and Weaveworks wound down in 2024. `flux` covers the maintained part of that workflow. macOS `personal` only. |
+| `datawire/blackbird/telepresence` | - | **Deferred.** macOS `personal` only. No winget package; the Windows install needs an elevated daemon service, so run Ambassador's own installer on demand. |
 
 ## CLI toolchain (`home.packages`)
 
@@ -75,10 +118,10 @@ native Windows.
 | `shfmt` | `mvdan.shfmt` | **Implemented.** |
 | `gh` | `GitHub.cli` | **Implemented.** |
 | `kubectl` | `Kubernetes.kubectl` | **Implemented.** |
-| `fluxcd` | `FluxCD.Flux` | **Implemented.** |
+| `fluxcd` | `FluxCD.Flux` | **Implemented.** `personal` only. |
 | `terraform` | `Hashicorp.Terraform` | **Implemented.** |
 | `volta` | `Volta.Volta` | **Implemented.** `VOLTA_HOME` is forced to `~/.volta` so one path works on both platforms. |
-| `kubeseal` | GitHub release binary | **Implemented, fallback.** No winget package at all. The release is a single static binary, pinned by version in the script. |
+| `kubeseal` | GitHub release binary | **Implemented, fallback.** `personal` only. No winget package at all. The release is a single static binary, pinned by version in the script. |
 | `nerd-fonts.hack` | GitHub release archive | **Implemented, fallback.** winget only carries `SourceFoundry.HackFonts`, which is plain Hack without the patched glyphs starship and eza need. |
 | `ansible` | - | **Skipped.** Ansible does not support Windows as a control node. |
 | `go` (activation-only on macOS) | `GoLang.Go` | **Implemented**, and installed for real: the Go CLIs below need a toolchain on PATH. |
@@ -110,13 +153,13 @@ and what HO-243 requires WezTerm to launch. `home/.bashrc` is the peer of
 | zsh autosuggestions | readline history-search on Up/Down | **Implemented, weaker.** Full ghost-text needs `ble.sh`, a large third-party runtime; history-search covers the common case with what readline already has. |
 | zsh syntax highlighting | - | **Skipped.** No bash equivalent without `ble.sh`. |
 | oh-my-zsh `colored-man-pages` | `LESS_TERMCAP_*` | **Implemented.** |
-| oh-my-zsh `sudo`, `pj`, `docker`, `yarn`, `encode64`, `eza`, `fluxcd`, `gh`, `git-escape-magic` | - | **Skipped.** These are zsh plugins; the binaries they wrap are all installed, only the aliases and completions they add are missing. |
+| oh-my-zsh `sudo`, `pj`, `docker`, `yarn`, `encode64`, `eza`, `fluxcd`, `gh`, `git-escape-magic` | - | **Skipped.** (`fluxcd` is dropped on macOS for the `work` profile.) These are zsh plugins; the binaries they wrap are all installed, only the aliases and completions they add are missing. |
 | `shellAliases` (`..`, `add`, `m`, `cc`, `co`, `zl`) | same aliases in `~/.bashrc` | **Implemented.** `zl` is the Dracula page's always-colored eza alias. |
 | `EZA_COLORS` (Dracula, "universal" value) | page's Windows value, `setx` in `setup/windows.sh` plus `EZA_WINDOWS_ATTRIBUTES` and `EZA_ICONS_AUTO`, and exported in `~/.bashrc` | **Implemented.** Windows deliberately uses the page's shorter Windows set, not the macOS one. |
 | `~/.env` sourcing + unset-secret warning | same in `~/.bashrc` | **Implemented.** |
 | `home.sessionPath` (`~/.local/bin`, `~/.volta/bin`, `~/go/bin`) | same, re-added idempotently in `~/.bashrc` | **Implemented.** The *Windows* user PATH is deliberately left alone; winget and Volta manage their own entries. |
 | `EDITOR`, `REPO_HOME`, `VOLTA_HOME` | same | **Implemented.** |
-| `SSH_AUTH_SOCK` -> 1Password socket | - | **Skipped.** 1Password on Windows serves the OpenSSH agent named pipe, which Git's bundled ssh cannot speak. `.gitconfig-windows` routes git through the native `ssh.exe`, which finds the pipe with no variable set. |
+| `SSH_AUTH_SOCK` -> 1Password socket (macOS `personal` only) | - | **Skipped.** 1Password on Windows serves the OpenSSH agent named pipe, which Git's bundled ssh cannot speak. `.gitconfig-windows` routes git through the native `ssh.exe`, which finds the pipe with no variable set. |
 | `bin-completion` via `bashcompinit` | sourced natively from `~/.config/bash/bin-completion` | **Implemented.** They were already bash `complete -F` scripts. |
 | `home/bin/*` custom commands | same files, linked into `~/.local/bin` | **Implemented.** Their shebangs moved from zsh to bash so they run on both platforms; `aup` and `kaup` gained `netstat`/`taskkill` branches because Windows has no `lsof`. |
 
@@ -128,13 +171,15 @@ config in this repo takes effect with no rebuild - the same contract
 
 | Path | Windows | Decision |
 | --- | --- | --- |
-| `~/.config/wezterm`, `~/.agents/skills`, `~/.claude/{skills,agents,CLAUDE.md}`, `~/.codex/AGENTS.md`, `~/.pi/agent/*`, `~/.gitconfig`, `~/.gitignore`, `~/.ssh/config`, `~/.config/mcp/mcp.json`, `~/.config/1Password/ssh/agent.toml` | identical paths | **Implemented.** |
+| `~/.config/wezterm`, `~/.agents/skills`, `~/.claude/{skills,agents,CLAUDE.md}`, `~/.codex/AGENTS.md`, `~/.pi/agent/*`, `~/.gitconfig`, `~/.gitignore`, `~/.ssh/config`, `~/.config/mcp/mcp.json` | identical paths | **Implemented.** |
+| `~/.config/1Password/ssh/agent.toml` | identical path | **Implemented.** `personal` only. |
 | `~/.config/nvim` | `%LOCALAPPDATA%\nvim` | **Implemented, moved.** Neovim resolves `stdpath('config')` there on Windows. |
 | `~/.config/zsh/bin-completion` | `~/.config/bash/bin-completion` | **Implemented, moved.** bash, not zsh. |
 | `~/.config/herdr` | `~/.config/herdr` only | **Implemented, single link.** herdr's Windows config path is undocumented upstream, but the `%APPDATA%\herdr` candidate is deliberately not linked: `%APPDATA%\<app>` is where a Windows app writes runtime state, and those writes would follow the symlink into this tracked public checkout. If herdr turns out to read `%APPDATA%`, copy the config there rather than linking it. |
-| `~/.gitconfig-os` | `home/.gitconfig-windows` | **Implemented.** Same include scheme as macOS. |
-| `~/.ssh/config-os` | `home/.ssh/config-windows` | **Implemented.** Same include scheme as macOS. |
-| `~/.gitconfig.local` (untracked signing key) | same, plus `gpg.ssh.program` | **Implemented.** The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. |
+| `~/.gitconfig-os` | `home/.gitconfig-windows` (`personal`) or `home/.gitconfig-work` (`work`) | **Implemented.** Same include scheme as macOS. |
+| `~/.ssh/config-os` | `home/.ssh/config-windows` (`personal`) or `home/.ssh/config-work` (`work`) | **Implemented.** Same include scheme as macOS. |
+| `~/.gitconfig.local` (untracked signing key) | same; on `personal` also `gpg.ssh.program` | **Implemented.** The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. `work` writes nothing there; the key is added by hand. |
+| `~/.config/devtools/profile` (the recorded profile) | same | **Implemented.** Written by `setup/profile.sh`; outside the repo, never tracked. |
 | `~/.claude/settings.json` | merged, not linked | **Implemented.** Same reason as macOS. |
 | `~/.claude/themes/dracula.json` (Dracula theme, `dracula/claude-code-cli` pinned commit) | same path, copied | **Implemented, copied.** macOS uses `pkgs.fetchurl` with a fixed hash; Windows has no Nix, so step 8 downloads the same commit and verifies the same sha256 (bump both together). `theme` is set to `custom:dracula` in the shared `home/.config/.claude/settings.json`, which the step 10 merge applies on both platforms. |
 | lazygit Dracula theme (`dracula/lazygit` pinned commit, `home/.config/lazygit/dracula.yml`) | `%APPDATA%\lazygit\config.yml`, merged | **Implemented, merged.** macOS merges into the path `lazygit -cd` reports (`~/Library/Application Support/lazygit` by default) in `home.activation.syncLazygitTheme`; Windows reads `%APPDATA%\lazygit`. Both use mikefarah `yq` to deep-merge with the repo winning, so other keys in the file survive. Not linked: it is app-owned state. Step 10 skips with a warning if `yq` is not yet on PATH. |
@@ -169,10 +214,16 @@ priority order:
 4. **herdr's config path**, if herdr is installed by hand. Only `~/.config/herdr`
    is linked; if the Windows build reads `%APPDATA%\herdr` instead, copy the
    config there - never link it, or herdr's own state writes land in this repo.
-5. **1Password `agent.toml`** names the `andrew-mbp` key item. Add this
-   machine's item to `home/.config/1Password/ssh/agent.toml`.
+5. **1Password `agent.toml`** (`personal` profile) names the `andrew-mbp` key
+   item. Add this machine's item to `home/.config/1Password/ssh/agent.toml`.
 6. **`core.editor = zed --wait`** in the shared `~/.gitconfig` assumes Zed, and
    `home/bin/oproj` calls `code`. Neither editor is installed by the macOS path
    either, so neither is installed here - but on Windows there is no fallback
    `zed` on PATH at all, so `git commit` without `-m` will fail until one is
    installed by hand.
+7. **The `work` profile on Windows** (`--profile work`) was only dry-read, like
+   the rest. Check that the winget list loses exactly the three ids above, that
+   steps 13 and 14 skip, that `~/.gitconfig-os` and `~/.ssh/config-os` end up
+   pointing at the `-work` files, and that a commit signs once
+   `~/.gitconfig.local` has a key -- with no `gpg.ssh.program`, git falls back
+   to the `ssh-keygen` bundled with Git for Windows.

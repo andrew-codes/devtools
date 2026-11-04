@@ -1,6 +1,8 @@
-{ config, lib, pkgs, user, ... }:
+{ config, lib, pkgs, user, profile, ... }:
 
 let
+  profiles = import ./profiles.nix;
+  overlay = profiles.overlay profile;
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
   # Global npm CLIs installed via Volta. Bump a version here to upgrade it;
   # each is a semver range that npm itself resolves and satisfies in place.
@@ -77,7 +79,7 @@ in
   home.username = user;
   home.homeDirectory = "/Users/${user}";
   home.stateVersion = "24.11";
-  home.packages = with pkgs; [
+  home.packages = lib.filter (pkg: !(lib.elem (lib.getName pkg) overlay.remove.packages)) (with pkgs; [
     ripgrep   # fast search
     fd        # fast find
     eza       # modern ls; required by the oh-my-zsh `eza` plugin below, which
@@ -100,7 +102,7 @@ in
     volta      # node.js version management
     # the font everything renders in
     nerd-fonts.hack
-  ];
+  ]);
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.REPO_HOME = "${config.home.homeDirectory}/developer/repos";
@@ -113,7 +115,10 @@ in
     "uu=36" "uR=31" "un=35" "gu=37" "da=2;34" "ur=34" "uw=95" "ux=36" "ue=36"
     "gr=34" "gw=35" "gx=36" "tr=34" "tw=35" "tx=36" "xx=95"
   ];
-  home.sessionVariables.SSH_AUTH_SOCK = "${config.home.homeDirectory}/.1password/agent.sock";
+  # 1Password is the SSH agent on a profile that has it. Without it the
+  # variable stays unset, so ssh falls back to whatever agent the system has.
+  home.sessionVariables.SSH_AUTH_SOCK = lib.mkIf overlay.onePassword
+    "${config.home.homeDirectory}/.1password/agent.sock";
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin" # custom bin/ commands (db, fa, ...) symlinked here
     "${config.home.homeDirectory}/.volta/bin"
@@ -136,7 +141,7 @@ in
       # Kept intentionally conflict-free: the `git` plugin is deliberately
       # omitted because its `gco`/`glg` aliases would shadow the
       # ~/.local/bin scripts of the same name.
-      plugins = [
+      plugins = profiles.without overlay.remove.zshPlugins [
         "sudo"
         "colored-man-pages"
         "pj"
@@ -305,19 +310,24 @@ in
     ".gitignore".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/gitignore";
 
-    # Shared git config, with OS-specific bits (1Password signing path, etc.)
-    # pulled in via its own `[include] path = ~/.gitconfig-os`.
+    # Shared git config, with the 1Password signing bits pulled in via its own
+    # `[include] path = ~/.gitconfig-os`. Signing itself is on in the shared
+    # file for every profile; only the signer program is per-profile, and a
+    # profile without 1Password gets an empty file here (see the .gitconfig-os
+    # note in home/.gitconfig-work). Its key always comes from the untracked
+    # ~/.gitconfig.local.
     ".gitconfig".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.gitconfig";
     ".gitconfig-os".source =
       config.lib.file.mkOutOfStoreSymlink
-        "${dotfiles}/home/${if pkgs.stdenv.isDarwin then ".gitconfig-macos" else ".gitconfig-windows"}";
+        "${dotfiles}/home/${
+          if !overlay.onePassword then ".gitconfig-work"
+          else if pkgs.stdenv.isDarwin then ".gitconfig-macos"
+          else ".gitconfig-windows"}";
 
     ".local/bin/devtools-rebuild".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/rebuild.sh";
 
-    ".config/1Password/ssh/agent.toml".source =
-      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/1Password/ssh/agent.toml";
 
     # MCP servers for pi-mcp-adapter (and anything else that reads the
     # standard ~/.config/mcp/mcp.json location). Secrets are referenced via
@@ -329,12 +339,21 @@ in
     # from here) since this repo is public. OS-specific bits (the 1Password
     # IdentityAgent socket on macOS; on Windows 1Password serves the OpenSSH
     # named pipe instead) come via ~/.ssh/config-os, same split as
-    # .gitconfig-os above.
+    # .gitconfig-os above, and a profile without 1Password gets an empty file.
     ".ssh/config".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.ssh/config";
     ".ssh/config-os".source =
       config.lib.file.mkOutOfStoreSymlink
-        "${dotfiles}/home/.ssh/${if pkgs.stdenv.isDarwin then "config-macos" else "config-windows"}";
+        "${dotfiles}/home/.ssh/${
+          if !overlay.onePassword then "config-work"
+          else if pkgs.stdenv.isDarwin then "config-macos"
+          else "config-windows"}";
+  }
+  # The key list 1Password's SSH agent offers. Only a profile with 1Password
+  # has an agent to read it.
+  // lib.optionalAttrs overlay.onePassword {
+    ".config/1Password/ssh/agent.toml".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/1Password/ssh/agent.toml";
   }
   # Bash utility scripts, symlinked individually into ~/.local/bin (which already
   # holds other unmanaged entries) so home-manager only owns these specific names.
