@@ -13,12 +13,17 @@ arch_type="$(uname -m)"
 
 echo "==> Detected: $os_type / $arch_type"
 
+# `--profile personal|work` selects the machine's profile; the platform script
+# resolves it (flag, else the recorded one, else personal) and rejects anything
+# else. Check it here too so a typo stops before any platform script starts.
+"$SCRIPT_DIR/setup/profile.sh" "$@" >/dev/null
+
 if [[ $os_type == "macos" && $arch_type == "arm64" ]]; then
-  exec "$SCRIPT_DIR/setup/macOS.sh"
+  exec "$SCRIPT_DIR/setup/macOS.sh" "$@"
 fi
 
 if [[ $os_type == "windows" && $arch_type == "x86_64" ]]; then
-  exec "$SCRIPT_DIR/setup/windows.sh"
+  exec "$SCRIPT_DIR/setup/windows.sh" "$@"
 fi
 
 echo "Error: Unsupported platform: $os_type / $arch_type" >&2

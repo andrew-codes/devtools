@@ -5,6 +5,12 @@ set -euo pipefail
 # The repo root, one level up from this script's own directory.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Which profile this machine uses: --profile, else the recorded one, else
+# personal. setup/profile.sh owns the rules and the validation; it also records
+# the choice when --profile is given. A rejected value stops the run here.
+PROFILE="$("$SCRIPT_DIR/setup/profile.sh" "$@")"
+echo "==> Profile: $PROFILE"
+
 echo "==> Step 1: Determinate Nix"
 if command -v nix >/dev/null 2>&1; then
   echo "    nix already installed, skipping"
@@ -84,11 +90,11 @@ MAS_BIN="$(nix build --no-link --print-out-paths --impure --expr \
   "let f = builtins.getFlake \"$SCRIPT_DIR\"; \
    in f.inputs.nixpkgs.legacyPackages.aarch64-darwin.mas")/bin/mas"
 
-# Emit "<id> <name>" per line; empty when mas-apps.nix is an empty set.
-# shellcheck disable=SC2016  # ${n} below is Nix interpolation; the shell must not expand it.
-nix eval --raw --file "$SCRIPT_DIR/mas-apps.nix" \
-  --apply 'apps: builtins.concatStringsSep "\n"
-    (map (n: (toString apps.${n}) + " " + n) (builtins.attrNames apps))' \
+# Emit "<id> <name>" per line; empty when mas-apps.nix is an empty set or the
+# profile drops every app in it. profiles.nix says what each profile drops (the
+# work profile drops Dynamic Wallpaper Library).
+nix eval --raw --file "$SCRIPT_DIR/profiles.nix" masAppLines \
+  --apply "lines: lines \"$PROFILE\"" \
   | while read -r id name || [ -n "$id" ]; do
       # `|| [ -n "$id" ]` above: the nix eval output has no trailing newline,
       # so a plain `read` would discard the final (often only) entry.
@@ -123,10 +129,11 @@ echo "==> Step 6: first darwin-rebuild switch (pinned to nix-darwin-26.05)"
 # freshly installed `nix` would not be found under sudo even though it's
 # on PATH here. Resolve the absolute path first and invoke that instead.
 NIX_BIN="$(command -v nix)"
-# "mac" is the flake host label - if you renamed it, change it in flake.nix
-# and rebuild.sh too.
+# "mac-<profile>" is the flake host label for the profile (flake.nix builds one
+# per profile; plain "mac" is an alias for personal). If you renamed them,
+# change them in flake.nix and rebuild.sh too.
 sudo "$NIX_BIN" run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
-  switch --flake ~/.dotfiles#mac
+  switch --flake ~/.dotfiles#"mac-$PROFILE"
 # If this still fails with "nix: command not found", open a new terminal
 # (Determinate adds nix to new shells' PATH) and re-run ./setup/macOS.sh.
 

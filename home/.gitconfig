@@ -16,7 +16,8 @@
 [init]
 	defaultBranch = main
 [include]
-	# OS-specific bits (1Password signing paths, sshCommand, etc.)
+	# The 1Password bits (op-ssh-sign, sshCommand). Empty for the work profile,
+	# which has no 1Password; signing itself stays on above for both.
 	path = ~/.gitconfig-os
 [include]
 	# Machine-specific signing key: not tracked or symlinked, since each dev

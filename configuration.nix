@@ -1,4 +1,9 @@
-{ user, pkgs, ... }:
+{ user, profile, pkgs, ... }:
+
+let
+  profiles = import ./profiles.nix;
+  overlay = profiles.overlay profile;
+in
 
 {
   # Determinate already manages the Nix daemon, so nix-darwin shouldn't.
@@ -90,7 +95,8 @@
     onActivation.cleanup = "none";
     onActivation.autoUpdate = true;
     onActivation.extraFlags = [ "--force" ];
-    brews = [
+    # What each profile drops from these two lists is in profiles.nix.
+    brews = profiles.without overlay.remove.brews [
       "herdr"
       "weaveworks/tap/gitops"
       "datawire/blackbird/telepresence"
@@ -100,7 +106,7 @@
       # terminal already uses. brew bundle no-ops when it's already installed.
       "tmux"
     ];
-    casks = [
+    casks = profiles.without overlay.remove.casks [
       "wezterm"
       "claude-code@latest"
       "1password"

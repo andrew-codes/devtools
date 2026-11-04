@@ -5,6 +5,14 @@ set -euo pipefail
 # :A resolves symlinks, so this still finds the real repo root when run
 # via the ~/.local/bin/devtools-rebuild symlink.
 SCRIPT_DIR="${0:A:h}"
+
+# Which profile this machine uses: --profile, else the recorded one, else
+# personal. setup/profile.sh owns the rules and the validation, and records the
+# choice when --profile is given. Resolved before anything else runs so a bad
+# value stops here.
+PROFILE="$("$SCRIPT_DIR/setup/profile.sh" "$@")"
+echo "==> Profile: $PROFILE"
+
 ln -sfn "$SCRIPT_DIR" ~/.dotfiles
 
 # Homebrew 6+ ignores formulae/casks from any third-party tap until it's
@@ -22,4 +30,4 @@ if command -v brew >/dev/null 2>&1; then
       done
 fi
 
-exec sudo darwin-rebuild switch --flake ~/.dotfiles#mac
+exec sudo darwin-rebuild switch --flake ~/.dotfiles#"mac-$PROFILE"
