@@ -161,7 +161,8 @@ Installed via Homebrew and the Mac App Store on macOS, via `winget` on Windows:
 | [Lens](https://k8slens.dev/) | Kubernetes IDE | Yes |
 | [Claude Code](https://www.anthropic.com/claude-code) | Anthropic coding agent | Yes |
 | [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) | Logitech device configuration | Yes |
-| [Raycast](https://raycast.com/) | Launcher (replaces Spotlight) | [PowerToys](https://learn.microsoft.com/windows/powertoys/) Run instead |
+| [Raycast](https://raycast.com/) | Launcher (replaces Spotlight on macOS) | Yes, from the Microsoft Store (`9PFXXSHC64H3`, via winget's `msstore` source) |
+| [Dia](https://www.diabrowser.com/) | Browser. Always the latest | Yes, its own installer (no winget package) |
 | [tmux](https://github.com/tmux/tmux) | Terminal multiplexer | No -- WezTerm's own panes |
 | [herdr](https://herdr.dev/) | Agent session multiplexer | Not yet; Windows is an upstream beta |
 | [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs. Personal profile only | No |

@@ -67,9 +67,6 @@ WINGET_PACKAGES=(
   Mirantis.Lens           # cask lens
   Logitech.OptionsPlus    # cask logi-options+
   Anthropic.ClaudeCode    # cask claude-code@latest
-  Microsoft.PowerToys     # stands in for cask raycast; PowerToys Run is the
-                          # keystroke launcher, and Raycast ships no Windows
-                          # package on winget
   BurntSushi.ripgrep.MSVC # pkgs.ripgrep
   sharkdp.fd              # pkgs.fd
   eza-community.eza       # pkgs.eza
@@ -89,6 +86,14 @@ WINGET_PACKAGES=(
   GoLang.Go               # macOS gets go only inside home-manager activation;
                           # here the Go CLIs need a real toolchain on PATH
   Starship.Starship       # programs.starship
+)
+
+# Microsoft Store ids, installed through winget's `msstore` source. Raycast
+# ships for Windows only through the Store (raycast.com/windows links to
+# https://get.microsoft.com/installer/download/9PFXXSHC64H3); the community
+# winget repository has no Raycast package.
+MSSTORE_PACKAGES=(
+  9PFXXSHC64H3            # cask raycast
 )
 
 # Pinned, because winget has no package for either. See Step 5.
@@ -383,6 +388,20 @@ for id in "${PROFILE_WINGET_PACKAGES[@]}"; do
   fi
 done
 
+# Store apps. Unpinned like everything above: the Store keeps them current.
+for id in "${MSSTORE_PACKAGES[@]}"; do
+  if winget list --id "$id" --exact --source msstore --accept-source-agreements >/dev/null 2>&1; then
+    echo "    $id (installed)"
+    continue
+  fi
+  echo "    $id (installing from the Microsoft Store)"
+  if ! winget install --id "$id" --exact --source msstore --silent \
+    --accept-package-agreements --accept-source-agreements \
+    --disable-interactivity; then
+    warn "winget could not install the Microsoft Store app $id"
+  fi
+done
+
 # winget puts its shims in %LOCALAPPDATA%\Microsoft\WinGet\Links and adds that
 # directory to the *Windows* user PATH. This bash process inherited its PATH
 # long before any of that happened, so the rest of this run would not see the
@@ -504,6 +523,25 @@ if [ -f "$TWG_BIN" ] && "$TWG_BIN" -v 2>/dev/null | head -n1 | grep -qF "$TWG_VE
   export PATH
 else
   warn "twg $TWG_VERSION is not installed; Atlassian tooling will be unavailable"
+fi
+
+# Dia: the Browser Company's browser. winget carries only its predecessor Arc,
+# not Dia, so take Dia's own installer from the stable "latest" URL on its
+# download page (diabrowser.com, "Download Dia for Windows"). Unpinned on
+# purpose: that URL always serves the current release, and Dia updates itself.
+# The installer's silent flags are undocumented, so it runs interactively
+# rather than with guessed ones. "Installed" is an uninstall-registry entry
+# whose DisplayName is Dia.
+DIA_INSTALLER_URL="https://releases.diabrowser.com/windows/release/DiaInstaller.exe"
+if powershell.exe -NoProfile -Command \
+  "if (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue | Where-Object DisplayName -eq 'Dia') { exit 0 } else { exit 1 }" \
+  >/dev/null 2>&1; then
+  echo "    Dia (installed)"
+elif curl -fsSL --retry 2 -o "$TMP_ROOT/DiaInstaller.exe" "$DIA_INSTALLER_URL"; then
+  echo "    Dia (running its installer)"
+  "$TMP_ROOT/DiaInstaller.exe" || warn "Dia's installer exited with an error"
+else
+  warn "could not download Dia's installer from $DIA_INSTALLER_URL"
 fi
 
 echo "==> Step 6: Node toolchain and global agent CLIs"
