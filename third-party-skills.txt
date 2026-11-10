@@ -12,9 +12,9 @@ vercel-labs/skills 1d2bf3737cb1112ac82d81d60670ff6a32f60010 find-skills
 # no-mistakes comes from the andrew-codes fork (commit of tag v0.1.0), not upstream.
 andrew-codes/no-mistakes 3e0c3d43ab3ac92de077678bc54c343be93441ba no-mistakes
 
-# Community collection (MIT). Upstream names: proofreading and code-review.
+# Community collection (MIT). Upstream name of proofread is proofreading. Its code-review
+# is deliberately not installed: it collides with Claude Code's built-in /code-review.
 seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b analytics-reporting
-seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b code-review
 seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b proofreading
 seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b refactoring
 seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b social-media-posting
