@@ -4,8 +4,8 @@
 #   personal  everything in the base. The default whenever nothing selects a
 #             profile, so existing machines and unflagged runs are unchanged.
 #   work      the base minus 1Password and a few tools the work machine does
-#             not get, with firstmate and no-mistakes taken from andrew-codes'
-#             forks instead of upstream (setup/fork-tools.sh).
+#             not get, with firstmate taken from andrew-codes' fork
+#             (setup/fork-tools.sh).
 #
 # This is plain data and stays pure -- no files are read at evaluation time.
 # Which profile a machine uses is recorded outside the repo by
@@ -13,7 +13,7 @@
 # rebuild.sh and setup/macOS.sh pick that output.
 #
 # setup/windows.sh cannot evaluate Nix, so it carries the same overlay by hand
-# (WORK_OMIT_WINGET_PACKAGES, WORK_OMIT_GO_PACKAGES, WITH_FORK_TOOLS and the
+# (WORK_OMIT_WINGET_PACKAGES, WITH_FORK_TOOLS and the
 # `[ "$PROFILE" = personal ]` guards).
 # Change both together; setup/windows-parity.md records the mapping.
 let
@@ -34,10 +34,10 @@ let
       # the agent.toml key list and the op-ssh-sign commit signer. A profile
       # without the app must also drop those, or every commit fails to sign.
       onePassword ? true
-    , # firstmate and no-mistakes from the andrew-codes forks, tracking their
-      # `main`. A profile that sets this has home.nix run setup/fork-tools.sh
-      # in place of the pinned upstream `go install` of no-mistakes (list that
-      # in `remove.goPackages` too), and setup/windows.sh does the same.
+    , # firstmate from the andrew-codes fork, tracking its `main`. A profile
+      # that sets this has home.nix (and setup/windows.sh) run
+      # setup/fork-tools.sh. no-mistakes is not part of this: every profile
+      # installs it from the fork's releases.
       forkTools ? false
     }: {
       remove = noRemovals // remove;
@@ -62,8 +62,6 @@ let
         masApps = [ "Dynamic Wallpaper Library" ];
         packages = [ "kubeseal" "fluxcd" ];
         zshPlugins = [ "fluxcd" ]; # wraps the flux CLI, which work does not get
-        # Built from the fork's main by setup/fork-tools.sh instead.
-        goPackages = [ "github.com/kunchenguid/no-mistakes/cmd/no-mistakes" ];
       };
     };
   };

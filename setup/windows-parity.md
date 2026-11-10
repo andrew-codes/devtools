@@ -17,10 +17,10 @@ When you add something to the macOS path, add a row here.
 A machine has a **profile**, `personal` or `work`. `personal` is everything
 installed before profiles existed and is the default whenever nothing selects
 one. `work` is the same base minus an overlay that removes, plus one difference
-that swaps rather than removes: firstmate and no-mistakes come from the
-`andrew-codes` forks (see the rows below). `profiles.nix` holds the overlay for macOS, and
+that swaps rather than removes: firstmate comes from the
+`andrew-codes` fork (see the rows below). `profiles.nix` holds the overlay for macOS, and
 `setup/windows.sh` repeats it by hand (`WORK_OMIT_WINGET_PACKAGES`,
-`WORK_OMIT_GO_PACKAGES`, `WITH_1PASSWORD`, `WITH_KUBESEAL`, `WITH_FORK_TOOLS`) because Nix cannot evaluate here. Change both
+`WITH_1PASSWORD`, `WITH_KUBESEAL`, `WITH_FORK_TOOLS`) because Nix cannot evaluate here. Change both
 together.
 
 The profile is recorded outside the repo in `~/.config/devtools/profile` by
@@ -38,8 +38,8 @@ is read; otherwise `personal`. Any other value is rejected.
 | oh-my-zsh `fluxcd` plugin | - | **Skipped** on Windows: it is a zsh plugin (see Shell). On macOS it is dropped for `work`, since it wraps a CLI `work` does not get. |
 | `home.sessionVariables.SSH_AUTH_SOCK` -> 1Password socket | - | **Skipped** on Windows under every profile (see Shell). On macOS it is `personal` only. |
 | `~/.config/1Password/ssh/agent.toml` link | same link | **Implemented.** `personal` only on both platforms. |
-| `goPackages` `no-mistakes` (pinned upstream `go install`) | `GO_PACKAGES` `no-mistakes` (step 7) | **Implemented.** Not installed for `work`; both platforms filter it by module path (`remove.goPackages`, `WORK_OMIT_GO_PACKAGES`). `work` builds it from the fork instead, next row. |
-| `home.activation.installForkTools` (`work` only): `setup/fork-tools.sh` clones `andrew-codes/no-mistakes` and `andrew-codes/firstmate` (`main`), fast-forwards them, builds no-mistakes into `~/go/bin` | `setup/windows.sh` step 7 runs the same `setup/fork-tools.sh`, `WITH_FORK_TOOLS=1` for `work` | **Implemented.** One bash script shared by both platforms, so the guards and the update logic cannot drift. macOS runs it in home-manager activation beside the Go installs (no network at evaluation, and the `personal` evaluation has no such step); Windows runs it in step 7. Clones: `~/developer/firstmate` and `~/.local/share/devtools/no-mistakes`, over HTTPS. Updates are `git fetch` plus `git merge --ff-only` only, and a checkout with uncommitted changes, on another branch, diverged or ahead, mid merge/rebase, or whose `origin` is not the fork is left untouched with a warning while setup continues. no-mistakes is rebuilt only when its commit changed. On Windows, Go builds `no-mistakes.exe` with `GOEXE`, and a running daemon locks the old binary (the script warns; run `no-mistakes daemon stop` and re-run). Not executed on Windows by the author. |
+| `home.activation.installNoMistakes` (`noMistakesVersion`): `setup/no-mistakes.sh` installs the `andrew-codes/no-mistakes` release binary into `~/go/bin` | `setup/windows.sh` step 7 runs the same `setup/no-mistakes.sh` with `NO_MISTAKES_VERSION` (bump both) | **Implemented**, all profiles. One bash script shared by both platforms: downloads `no-mistakes-v<version>-<os>-<arch>.tar.gz` (`.zip` on Windows, extracted with PowerShell's `Expand-Archive` because Git for Windows has no `unzip`), verifies it against the release's `checksums.txt`, replaces the binary in one rename. Replaces both the old pinned upstream `go install` and the old fork source build; nothing installs `kunchenguid/no-mistakes` any more. On macOS the fork's arm64 binary is ad-hoc signed and its amd64 one unsigned; `curl` sets no quarantine flag and the script re-signs ad hoc if `codesign --verify` fails. A running daemon locks `no-mistakes.exe` on Windows (the script warns; run `no-mistakes daemon stop` and re-run). Windows path not executed by the author. |
+| `home.activation.installForkTools` (`work` only): `setup/fork-tools.sh` clones `andrew-codes/firstmate` (`main`) and fast-forwards it | `setup/windows.sh` step 7 runs the same `setup/fork-tools.sh`, `WITH_FORK_TOOLS=1` for `work` | **Implemented.** One bash script shared by both platforms, so the guards and the update logic cannot drift. macOS runs it in home-manager activation (no network at evaluation, and the `personal` evaluation has no such step); Windows runs it in step 7. Clone: `~/developer/firstmate`, over HTTPS. Updates are `git fetch` plus `git merge --ff-only` only, and a checkout with uncommitted changes, on another branch, diverged or ahead, mid merge/rebase, or whose `origin` is not the fork is left untouched with a warning while setup continues. Not executed on Windows by the author. |
 | `~/developer/firstmate` (assumed by `home/bin/firstmate`, installed by nothing) | same | **Implemented for `work`** by the row above. **Unchanged for `personal`**: devtools still installs nothing there on either platform. |
 | `~/.gitconfig.os` -> `.gitconfig.macos` / `.gitconfig.windows` (op-ssh-sign, `core.sshCommand`) | same | **Implemented.** `work` links the empty `home/.gitconfig.work` instead, so no signer program and no ssh pin is set. On Windows the link is replaced, so one left by an earlier `personal` run stops pointing at 1Password. |
 | `~/.ssh/config-os` -> `.ssh/config-macos` / `.ssh/config-windows` (1Password `IdentityAgent`) | same | **Implemented.** `work` links the empty `home/.ssh/config-work`. |
@@ -52,14 +52,6 @@ signing program nor a key. The key always comes from the untracked
 `~/.gitconfig.local`, which `~/.gitconfig` includes unconditionally, so the
 missing-key reminder (`configuration.nix` on macOS, step 14 on Windows) applies
 to both profiles unchanged.
-
-A source-built no-mistakes reports its version as `main-<short sha>`, which it
-treats as a development build: no background update check, and `no-mistakes
-update` declines instead of swapping in an upstream release. Other installers
-of upstream (its `install.sh`/`install.ps1`, a release `go install`, the
-`personal` profile's setup) would still overwrite it. The way to update in
-`work` is to re-run setup (`devtools-rebuild`), which fast-forwards the fork and
-rebuilds.
 
 Not changed by a profile: what is already installed on a machine. Homebrew
 cleanup stays `none` and nothing here uninstalls, so moving a machine from
@@ -91,7 +83,7 @@ native Windows.
 | `flake.nix` `mac-<profile>` outputs (`mac` stays personal) | - | **Skipped.** Nix-only; `setup/windows.sh` filters its lists directly. |
 | Mac App Store apps (`mas-apps.nix`, `mas`) | - | **Skipped.** No Mac App Store on Windows. The one entry (Dynamic Wallpaper Library) is a wallpaper app, not dev tooling. |
 | Homebrew + `nix-homebrew` | winget | **Implemented.** winget is the default; the two exceptions below say why. |
-| `home.activation.buildDiaSkills` (flattens `write-blog-post` into `~/.config/dia/skills`) | - | **Skipped.** Dia is a macOS-only browser: winget carries only its predecessor Arc (`TheBrowserCompany.Arc`), no Dia package. With no Dia there is nothing to read the generated file. |
+| `home.activation.buildDiaSkills` (flattens `write-blog-post` into `~/.config/dia/skills`) | - | **Deferred.** Dia is installed on Windows now (see the `thebrowsercompany-dia` row), but where its Windows build reads skills from is unverified, so no file is generated. |
 | `preActivation` swap of the `claude-code` cask for `claude-code@latest` | - | **Skipped.** Homebrew-only; winget has a single `Anthropic.ClaudeCode` package, so there is no second channel to conflict with. |
 | - (macOS ships `ssh`) | Windows OpenSSH Client capability | **Implemented** (step 13), `personal` profile only. `.gitconfig.windows` pins `core.sshCommand` to the literal `C:/Windows/System32/OpenSSH/ssh.exe` (git config takes no environment expansion) because only the native client reaches 1Password's named-pipe agent, and that client is an optional feature. The step installs it with `Add-WindowsCapability` (the inbox feature, not the winget package, which lands elsewhere) and warns if it still is not there. |
 
@@ -106,7 +98,8 @@ native Windows.
 | `lens` | `Mirantis.Lens` | **Implemented.** |
 | `logi-options+` | `Logitech.OptionsPlus` | **Implemented.** |
 | `claude-code@latest` | `Anthropic.ClaudeCode` | **Implemented.** `Anthropic.ClaudeCode` has no separate stable/latest split like the two Homebrew casks - it's a single winget package bumped on every release. |
-| `raycast` | `Microsoft.PowerToys` | **Implemented, substituted.** Raycast ships no winget package. PowerToys Run is the equivalent keystroke launcher. |
+| `raycast` | `MSSTORE_PACKAGES` `9PFXXSHC64H3` (step 4) | **Implemented.** Raycast now ships for Windows, through the Microsoft Store only: raycast.com/windows redirects to Store id `9PFXXSHC64H3`, and the community winget repository has no Raycast package (no `manifests/r/Raycast`). Installed with `winget install --id 9PFXXSHC64H3 --source msstore`, unpinned. Replaces the earlier PowerToys substitute. Not executed on Windows by the author. |
+| `thebrowsercompany-dia` (cask, unpinned) | Dia's own installer, `https://releases.diabrowser.com/windows/release/DiaInstaller.exe` (step 5) | **Implemented, fallback.** winget has no Dia package (`TheBrowserCompany` holds only `Arc`), so the script downloads the installer Dia publishes for Windows on diabrowser.com, from its stable "latest" URL, and runs it interactively because its silent flags are undocumented. Detection is an uninstall-registry entry named `Dia`, which is a guess; if the name differs the installer is just offered again on re-run. Not executed on Windows by the author. |
 | `tmux` | - | **Skipped.** Git for Windows ships no tmux and it needs a POSIX pty. WezTerm's own tabs and panes, plus herdr, cover the use. |
 | `mas` | - | **Skipped.** macOS-only by definition. |
 | `herdr` | - | **Deferred.** Upstream publishes macOS and Linux binaries only; Windows is a beta whose sole install path is an unpinned `irm https://herdr.dev/install.ps1 \| iex`. That is below the bar this repo holds remote installers to (see the `twgVersion` comment in `home.nix`), so the script prints the command instead of running it. Its `~/.config/herdr` config is linked either way. |
@@ -143,12 +136,12 @@ native Windows.
 | macOS | Windows | Decision |
 | --- | --- | --- |
 | `globalNpmPackages` via Volta's npm (`pi`, `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi`, `tasks-axi`, `twg-axi`) | same list, same `--ignore-scripts` | **Implemented** (step 6). The list is duplicated from `home.nix` because Nix cannot evaluate here; bump both together. `@andrew-codes/twg-axi` is included; it needs the `twg` CLI, see the row below. `backpass` and its `acpx` dependency are deliberately excluded here: backpass's own README states it supports macOS and Linux only, with no Windows build, so both are skipped on `setup/windows.sh`. |
-| `goPackages` (`no-mistakes`, `treehouse`) | `go install`, same pinned tags | **Implemented** (step 7). If either needs cgo, `go install` fails and the script says which C toolchain to add. `no-mistakes` installs from upstream `kunchenguid/no-mistakes`, pinned to its latest release tag, on `personal`; `work` builds it from the `andrew-codes` fork instead (see Profiles). |
+| `goPackages` (`treehouse`) | `go install`, same pinned tag | **Implemented** (step 7). If it needs cgo, `go install` fails and the script says which C toolchain to add. no-mistakes is no longer a Go package; see the `installNoMistakes` row. |
 | pi extensions (`home/.pi/agent/settings.json`) | same file, linked | **Implemented.** pi installs them itself from the linked settings. |
 | `~/.claude/settings.json` merge | same jq merge | **Implemented** (step 10), for the same reason: the AXI hook installers write into that file and their writes follow symlinks. |
 | `~/.claude.json` MCP merge | same jq merge | **Implemented** (step 10). |
 | AXI `setup hooks` | same | **Implemented** (step 11). |
-| `twg` CLI (`twgVersion`) | `install.ps1` from Atlassian, run with `-Version` pinned to the same number (`TWG_VERSION` in `setup/windows.sh`; bump both) | **Implemented** (step 5). Atlassian's installation page lists Windows (x64, arm64) as supported and `SHA256SUMS-v1.3.5` publishes `twg-windows-x64-v1.3.5.exe` and `twg-windows-arm64-v1.3.5.exe`; `install.ps1` verifies the download against that file. Flags `-SkipLogin -SkipSkills -Yes` mirror the macOS activation script (no interactive OAuth, no skill files written through symlinks into this checkout, terms consent recorded), followed by `twg consent --agree`. Installs to `%LOCALAPPDATA%\Programs\twg\bin`. `twg login` is still a one-time manual step. Not executed on Windows by the author. |
+| `twg` CLI (`twgVersion`) | `install.ps1` from Atlassian, run with `-Version` pinned to the same number (`TWG_VERSION` in `setup/windows.sh`; bump both) | **Implemented** (step 5). Atlassian's installation page lists Windows (x64, arm64) as supported and `SHA256SUMS-v1.4.4` publishes `twg-windows-x64-v1.4.4.exe` and `twg-windows-arm64-v1.4.4.exe`; `install.ps1` verifies the download against that file. Flags `-SkipLogin -SkipSkills -Yes` mirror the macOS activation script (no interactive OAuth, no skill files written through symlinks into this checkout, terms consent recorded), followed by `twg consent --agree`. Installs to `%LOCALAPPDATA%\Programs\twg\bin`. `twg login` is still a one-time manual step. Not executed on Windows by the author. |
 | `@andrew-codes/twg-axi` | same entry in the Windows `GLOBAL_NPM_PACKAGES` | **Implemented** (step 6), alongside `twg` above. |
 | Claude Code hooks running bash | `CLAUDE_CODE_GIT_BASH_PATH` | **Implemented.** Every hook here is a bash script; Claude Code on Windows needs to be told where bash is. Set in the user environment and in `~/.bashrc`. |
 
@@ -184,6 +177,7 @@ config in this repo takes effect with no rebuild - the same contract
 | Path | Windows | Decision |
 | --- | --- | --- |
 | `~/.config/wezterm`, `~/.agents/skills`, `~/.claude/{skills,agents,CLAUDE.md}`, `~/.codex/AGENTS.md`, `~/.pi/agent/*`, `~/.gitconfig`, `~/.gitignore`, `~/.ssh/config`, `~/.config/mcp/mcp.json` | identical paths | **Implemented.** |
+| `home.activation.installCodexAgents`: `setup/codex-agents.sh` generates `~/.codex/agents/<name>.toml` from `home/.pi/agent/agents/*.md` | `setup/windows.sh` step 8 runs the same script | **Implemented.** Codex reads subagents as TOML (`name`, `description`, `developer_instructions`), so they cannot be linked like the Claude Code and pi copies. `tools` has no Codex equivalent beyond `sandbox_mode = "read-only"` for agents with neither Write nor Edit; `model` is dropped. Only files the script generated (marker on line 1) are rewritten or removed; a same-named file that is not ours is left alone with a warning. Codex skills need nothing extra: it reads `~/.agents/skills`, which both platforms already link. Windows path not executed by the author. |
 | `~/.config/1Password/ssh/agent.toml` | identical path | **Implemented.** `personal` only. |
 | `~/.config/nvim` | `%LOCALAPPDATA%\nvim` | **Implemented, moved.** Neovim resolves `stdpath('config')` there on Windows. |
 | `~/.config/zsh/bin-completion` | `~/.config/bash/bin-completion` | **Implemented, moved.** bash, not zsh. |
@@ -219,7 +213,7 @@ priority order:
 1. **Git upgrade under a live Git Bash.** Step 1 may fail to replace files this
    very session has open. The script detects that and prints the manual command;
    confirm which branch it takes.
-2. **`go install` and cgo.** If `no-mistakes` or `treehouse` pull a cgo
+2. **`go install` and cgo.** If `treehouse` pulls a cgo
    dependency, Go needs a C toolchain that Git for Windows does not ship.
 3. **pi on Windows.** `@earendil-works/pi-coding-agent` installs from npm, but
    it is untested here.
@@ -235,11 +229,10 @@ priority order:
    installed by hand.
 7. **The `work` profile on Windows** (`--profile work`) was only dry-read, like
    the rest. Check that the winget list loses exactly the three ids above, that
-   step 7 does not `go install` no-mistakes and instead runs `setup/fork-tools.sh`
-   (clones both forks, then builds `~/go/bin/no-mistakes.exe`; the guard and
-   update logic was tested on macOS against throwaway repositories, the Windows
-   path handling - `cygpath`, `MSYS_NO_PATHCONV`, replacing a running `.exe` -
-   was not run), that steps 13 and 14 skip, that `~/.gitconfig.os` and `~/.ssh/config-os` end up
+   step 7 runs `setup/no-mistakes.sh` (the release `.zip` extracted with
+   PowerShell, `~/go/bin/no-mistakes.exe` replaced; the macOS path was run, the
+   Windows path handling - `cygpath`, `Expand-Archive`, replacing a running
+   `.exe` - was not) and `setup/fork-tools.sh` (clones the firstmate fork), that steps 13 and 14 skip, that `~/.gitconfig.os` and `~/.ssh/config-os` end up
    pointing at the `-work` files, and that a commit signs once
    `~/.gitconfig.local` has a key -- with no `gpg.ssh.program`, git falls back
    to the `ssh-keygen` bundled with Git for Windows.

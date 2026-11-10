@@ -126,6 +126,7 @@ in
       "1password-cli"
       "docker-desktop"
       "raycast"
+      "thebrowsercompany-dia" # Dia; unpinned like every cask, and it updates itself
       "logi-options+"
       "lens"
     ];

@@ -50,7 +50,7 @@ Nix does not run natively on Windows, so `setup/windows.sh` carries by itself wh
 3. Symlinks the repo to `~/.dotfiles`.
 4. Installs applications and CLI tools with `winget`.
 5. Installs the two things winget cannot deliver -- the Hack Nerd Font and `kubeseal` (personal profile only) -- from their pinned upstream releases.
-6. Installs Node via Volta and the global agent CLIs, then the Go CLIs (the work profile gets firstmate and no-mistakes from the forks instead; see [Fork tools](#fork-tools-work-profile)).
+6. Installs Node via Volta and the global agent CLIs, then the Go CLIs and the no-mistakes release binary from the `andrew-codes` fork (see [no-mistakes](#no-mistakes-fork-release-binary); the work profile also gets firstmate from a fork, see [Fork tools](#fork-tools-work-profile)).
 7. Links every dotfile, stubs `~/.env`, merges Claude Code's settings and MCP servers, installs the AXI session hooks, applies the Windows system defaults, and, on the personal profile, installs the Windows OpenSSH client if it is missing (git needs it to reach 1Password's agent) and wires up 1Password commit signing.
 
 Expect UAC prompts during the winget step. Re-running is safe and is the supported way to apply later changes.
@@ -71,12 +71,12 @@ On macOS that runs `rebuild.sh` (`darwin-rebuild switch`); on Windows it re-runs
 
 ### Profiles
 
-Not every machine gets the same tools: a work machine may not be allowed 1Password, for one. A **profile** is a shared base plus a small overlay that removes things from it and, for `work`, takes two tools from forks instead of upstream.
+Not every machine gets the same tools: a work machine may not be allowed 1Password, for one. A **profile** is a shared base plus a small overlay that removes things from it and, for `work`, takes firstmate from a fork.
 
 | Profile | What it is |
 | --- | --- |
 | `personal` | Everything in this repo. The default whenever nothing selects a profile, so existing machines behave as before. |
-| `work` | The base without 1Password and its CLI, gitops, telepresence, Dynamic Wallpaper Library, fluxcd and kubeseal, and with firstmate and no-mistakes taken from the `andrew-codes` forks (see [Fork tools](#fork-tools-work-profile)). |
+| `work` | The base without 1Password and its CLI, gitops, telepresence, Dynamic Wallpaper Library, fluxcd and kubeseal, and with firstmate taken from the `andrew-codes` fork (see [Fork tools](#fork-tools-work-profile)). |
 
 The overlay lives in `profiles.nix` (and is repeated by hand in `setup/windows.sh`, since Nix cannot run there). The `work` profile also drops everything that existed only to serve 1Password: the `SSH_AUTH_SOCK` override, the `~/.config/1Password/ssh/agent.toml` link, the `op-ssh-sign` signer and `core.sshCommand` pin in the OS-specific git config, the 1Password `IdentityAgent` in the OS-specific ssh config, and on Windows the OpenSSH client step and 1Password signing step.
 
@@ -86,20 +86,23 @@ Commit signing stays on for both: `commit.gpgsign` and `gpg.format = ssh` are in
 
 A profile only controls what gets installed and configured. Switching a machine from `personal` to `work` does not uninstall anything that is already there (Homebrew cleanup stays `none`), and a `gpg.ssh.program` that `personal` wrote into `~/.gitconfig.local` on Windows needs removing by hand (setup warns).
 
+#### no-mistakes (fork release binary)
+
+Every profile, on both platforms, installs the no-mistakes release binary from `github.com/andrew-codes/no-mistakes` (GitHub releases), never from upstream `kunchenguid/no-mistakes`. The version is pinned: `noMistakesVersion` in `home.nix` and `NO_MISTAKES_VERSION` in `setup/windows.sh` (bump both). `setup/no-mistakes.sh`, one bash script shared by both platforms, downloads `no-mistakes-v<version>-<os>-<arch>.tar.gz` (`.zip` on Windows), checks it against the release's `checksums.txt`, and replaces `~/go/bin/no-mistakes` (`no-mistakes.exe` on Windows) in one rename. A binary that already reports the pinned version is left alone. On macOS it runs as the `installNoMistakes` step of home-manager's activation; on Windows from Step 7 of `setup/windows.sh`.
+
+The fork's macOS binaries are ad-hoc signed (arm64) or unsigned (amd64). `curl` sets no quarantine flag, so Gatekeeper never sees the download; the script still clears the flag, and re-signs an arm64 binary ad hoc if `codesign --verify` fails. A running daemon keeps its old binary until `no-mistakes daemon restart`; on Windows a running daemon locks the `.exe`, so the script warns (run `no-mistakes daemon stop` and re-run).
+
 #### Fork tools (work profile)
 
-`personal` installs no-mistakes from upstream (`go install` of `kunchenguid/no-mistakes`, pinned to a release tag) and installs no copy of firstmate; `home/bin/firstmate` only expects a checkout at `~/developer/firstmate`. `work` instead tracks the `main` branch of two forks, unpinned:
+`personal` installs no copy of firstmate; `home/bin/firstmate` only expects a checkout at `~/developer/firstmate`. `work` instead tracks the `main` branch of the fork, unpinned:
 
 | Tool | Fork | Where it lives |
 | --- | --- | --- |
 | firstmate | `github.com/andrew-codes/firstmate` | cloned to `~/developer/firstmate` |
-| no-mistakes | `github.com/andrew-codes/no-mistakes` | cloned to `~/.local/share/devtools/no-mistakes` and built into `~/go/bin/no-mistakes`, the same place the personal install lands |
 
-All of it is `setup/fork-tools.sh`, one bash script shared by both platforms. On macOS it runs as the `installForkTools` step of home-manager's activation (`home.nix`, work profile only, next to the Go installs), so `devtools-rebuild` runs it and nothing happens during Nix evaluation, which stays pure. On Windows it runs from Step 7 of `setup/windows.sh`. Clones go over HTTPS (both repositories are public, so there is no credential), never with a token.
+It is `setup/fork-tools.sh`, one bash script shared by both platforms. On macOS it runs as the `installForkTools` step of home-manager's activation (`home.nix`, work profile only), so `devtools-rebuild` runs it and nothing happens during Nix evaluation, which stays pure. On Windows it runs from Step 7 of `setup/windows.sh`. The clone goes over HTTPS (the repository is public, so there is no credential), never with a token.
 
-Every run fast-forwards each clone to the fork's `main` and rebuilds no-mistakes only when its commit changed (or the installed binary is not the one built last time; the record lives in `~/.local/state/devtools/no-mistakes-built`). It never commits, resets, checks out, cleans or forces anything. A checkout is **left exactly as it is, with a warning, while the rest of setup carries on**, when it is not a git checkout of its own, has an `origin` other than the fork, has uncommitted changes (including untracked files), is mid merge or rebase, is not on `main`, or has local commits or has diverged from the fork's `main`. Fix the checkout and re-run.
-
-no-mistakes is built with `go build` from the clone because Go cannot `go install` a fork under a different path than its `go.mod` declares. The binary reports its version as `main-<short sha>` and is built without any telemetry host, as upstream's `go install` is. That string is not a release version, so no-mistakes treats the binary as a development build: it does no background update check, and `no-mistakes update` says self-update is unavailable instead of replacing it. Anything else that installs upstream (its `install.sh`, `go install` of a release, or the personal profile's setup) would overwrite the source-built binary with an upstream release. To update in the work profile, re-run setup (`devtools-rebuild`); it fast-forwards the fork and rebuilds. A running daemon keeps its old binary until `no-mistakes daemon restart`.
+Every run fast-forwards the clone to the fork's `main`. It never commits, resets, checks out, cleans or forces anything. A checkout is **left exactly as it is, with a warning, while the rest of setup carries on**, when it is not a git checkout of its own, has an `origin` other than the fork, has uncommitted changes (including untracked files), is mid merge or rebase, is not on `main`, or has local commits or has diverged from the fork's `main`. Fix the checkout and re-run.
 
 ### Required Manual Steps
 
@@ -158,7 +161,8 @@ Installed via Homebrew and the Mac App Store on macOS, via `winget` on Windows:
 | [Lens](https://k8slens.dev/) | Kubernetes IDE | Yes |
 | [Claude Code](https://www.anthropic.com/claude-code) | Anthropic coding agent | Yes |
 | [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) | Logitech device configuration | Yes |
-| [Raycast](https://raycast.com/) | Launcher (replaces Spotlight) | [PowerToys](https://learn.microsoft.com/windows/powertoys/) Run instead |
+| [Raycast](https://raycast.com/) | Launcher (replaces Spotlight on macOS) | Yes, from the Microsoft Store (`9PFXXSHC64H3`, via winget's `msstore` source) |
+| [Dia](https://www.diabrowser.com/) | Browser. Always the latest | Yes, its own installer (no winget package) |
 | [tmux](https://github.com/tmux/tmux) | Terminal multiplexer | No -- WezTerm's own panes |
 | [herdr](https://herdr.dev/) | Agent session multiplexer | Not yet; Windows is an upstream beta |
 | [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs. Personal profile only | No |
@@ -174,7 +178,7 @@ The environment is built around [pi](https://pi.dev/) as the primary agent harne
 
 - `pi` - the coding agent itself
 - [AXI](https://axi.md/) tools, token-efficient CLIs designed for agent use: `gh-axi`, `chrome-devtools-axi`, `quota-axi`, `npm-axi`, `lavish-axi` (HTML artifacts as a review surface), `tasks-axi` (task and backlog manager)
-- [`no-mistakes`](https://kunchenguid.github.io/no-mistakes/) - AI-gated push pipeline (review, test, lint before code lands)
+- [`no-mistakes`](https://github.com/andrew-codes/no-mistakes) - AI-gated push pipeline (review, test, lint before code lands)
 - [`treehouse`](https://github.com/kunchenguid/treehouse) - pooled, reusable git worktrees
 
 **pi extensions**, declared in `home/.pi/agent/settings.json` and installed by pi itself:
@@ -248,7 +252,9 @@ home.nix               User level: packages, zsh, dotfile symlinks, activation s
 mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix-darwin)
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
 setup/profile.sh       Resolves, validates and records the machine's profile
-setup/fork-tools.sh    The work profile's firstmate and no-mistakes, cloned and kept current from the forks
+setup/codex-agents.sh   Codex subagents (TOML), generated from the shared markdown ones
+setup/no-mistakes.sh   The no-mistakes release binary from the andrew-codes fork, every profile
+setup/fork-tools.sh    The work profile's firstmate, cloned and kept current from the fork
 setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
 setup/windows.sh       Setup and rebuild for Windows; stands in for nix-darwin and home-manager
 setup/windows-parity.md  Every macOS entry mapped to its Windows decision
@@ -269,7 +275,7 @@ Anything that changes what is installed or configured needs a decision on both p
 | To add | Edit |
 | --- | --- |
 | A CLI from nixpkgs | `home.packages` in `home.nix`, and `WINGET_PACKAGES` in `setup/windows.sh` |
-| Something one profile should not get | `remove` in `profiles.nix`, and `WORK_OMIT_WINGET_PACKAGES`, `WORK_OMIT_GO_PACKAGES` or the `WITH_*` flags in `setup/windows.sh` |
+| Something one profile should not get | `remove` in `profiles.nix`, and `WORK_OMIT_WINGET_PACKAGES` or the `WITH_*` flags in `setup/windows.sh` |
 | A tool the work profile takes from a fork | `setup/fork-tools.sh` (shared by both platforms), plus `forkTools` in `profiles.nix` and `WITH_FORK_TOOLS` in `setup/windows.sh` |
 | A GUI app or Homebrew formula | `homebrew.casks` / `brews` in `configuration.nix`, and `WINGET_PACKAGES` |
 | A Mac App Store app | `mas-apps.nix`, then re-run `setup/macOS.sh` (not `homebrew.masApps`) |
@@ -278,6 +284,6 @@ Anything that changes what is installed or configured needs a decision on both p
 | A required secret | `secretEnvVars` in `home.nix` and `SECRET_ENV_VARS` in `setup/windows.sh`; it is stubbed into `~/.env` on the next rebuild, and the shells warn about it until it has a value |
 | A custom command | Drop a bash executable in `home/bin/`; it is picked up automatically on both platforms |
 | A pi extension | `packages` in `home/.pi/agent/settings.json` |
-| An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi and Claude Code |
-| A subagent | Add `home/.pi/agent/agents/<name>.md`; shared by pi and Claude Code |
+| An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi, Claude Code and Codex (all read `~/.agents/skills` or a link to it) |
+| A subagent | Add `home/.pi/agent/agents/<name>.md`; shared by pi and Claude Code by symlink, and converted to `~/.codex/agents/<name>.toml` for Codex by `setup/codex-agents.sh` on every rebuild |
 | The prompt | `home/.config/starship.toml` (shared, edit-in-place) |
