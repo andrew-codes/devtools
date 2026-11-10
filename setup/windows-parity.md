@@ -177,6 +177,7 @@ config in this repo takes effect with no rebuild - the same contract
 | Path | Windows | Decision |
 | --- | --- | --- |
 | `~/.config/wezterm`, `~/.agents/skills`, `~/.claude/{skills,agents,CLAUDE.md}`, `~/.codex/AGENTS.md`, `~/.pi/agent/*`, `~/.gitconfig`, `~/.gitignore`, `~/.ssh/config`, `~/.config/mcp/mcp.json` | identical paths | **Implemented.** |
+| `home.activation.installCodexAgents`: `setup/codex-agents.sh` generates `~/.codex/agents/<name>.toml` from `home/.pi/agent/agents/*.md` | `setup/windows.sh` step 8 runs the same script | **Implemented.** Codex reads subagents as TOML (`name`, `description`, `developer_instructions`), so they cannot be linked like the Claude Code and pi copies. `tools` has no Codex equivalent beyond `sandbox_mode = "read-only"` for agents with neither Write nor Edit; `model` is dropped. Only files the script generated (marker on line 1) are rewritten or removed; a same-named file that is not ours is left alone with a warning. Codex skills need nothing extra: it reads `~/.agents/skills`, which both platforms already link. Windows path not executed by the author. |
 | `~/.config/1Password/ssh/agent.toml` | identical path | **Implemented.** `personal` only. |
 | `~/.config/nvim` | `%LOCALAPPDATA%\nvim` | **Implemented, moved.** Neovim resolves `stdpath('config')` there on Windows. |
 | `~/.config/zsh/bin-completion` | `~/.config/bash/bin-completion` | **Implemented, moved.** bash, not zsh. |

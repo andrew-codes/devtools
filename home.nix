@@ -551,6 +551,24 @@ in
     )
   '';
 
+  # Codex's copy of the shared subagents. Claude Code and pi read
+  # home/.pi/agent/agents/*.md through a symlink; Codex wants
+  # ~/.codex/agents/<name>.toml, a different format, so setup/codex-agents.sh
+  # generates the TOML files (and only ever rewrites files it generated; a
+  # same-named file of someone else's is left alone with a warning). Skills need
+  # nothing here: Codex reads ~/.agents/skills, which is already linked above.
+  # Shared with setup/windows.sh; read through ~/.dotfiles, so editing the
+  # script needs no rebuild.
+  home.activation.installCodexAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    (
+      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/usr/bin:/bin"
+      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/codex-agents.sh" \
+        --source "${dotfiles}/home/.pi/agent/agents" \
+        --dest "${config.home.homeDirectory}/.codex/agents" \
+        || echo "==> WARNING: installCodexAgents finished with warnings (see above); the rest of the switch is unaffected." >&2
+    )
+  '';
+
   # Dia's skill format is plain text with no YAML frontmatter and no external
   # file references, unlike this repo's Claude/pi skills. Flatten the tracked
   # write-blog-post skill (home/.agents/skills/write-blog-post, itself

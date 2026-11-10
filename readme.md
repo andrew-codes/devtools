@@ -252,6 +252,7 @@ home.nix               User level: packages, zsh, dotfile symlinks, activation s
 mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix-darwin)
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
 setup/profile.sh       Resolves, validates and records the machine's profile
+setup/codex-agents.sh   Codex subagents (TOML), generated from the shared markdown ones
 setup/no-mistakes.sh   The no-mistakes release binary from the andrew-codes fork, every profile
 setup/fork-tools.sh    The work profile's firstmate, cloned and kept current from the fork
 setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
@@ -283,6 +284,6 @@ Anything that changes what is installed or configured needs a decision on both p
 | A required secret | `secretEnvVars` in `home.nix` and `SECRET_ENV_VARS` in `setup/windows.sh`; it is stubbed into `~/.env` on the next rebuild, and the shells warn about it until it has a value |
 | A custom command | Drop a bash executable in `home/bin/`; it is picked up automatically on both platforms |
 | A pi extension | `packages` in `home/.pi/agent/settings.json` |
-| An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi and Claude Code |
-| A subagent | Add `home/.pi/agent/agents/<name>.md`; shared by pi and Claude Code |
+| An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi, Claude Code and Codex (all read `~/.agents/skills` or a link to it) |
+| A subagent | Add `home/.pi/agent/agents/<name>.md`; shared by pi and Claude Code by symlink, and converted to `~/.codex/agents/<name>.toml` for Codex by `setup/codex-agents.sh` on every rebuild |
 | The prompt | `home/.config/starship.toml` (shared, edit-in-place) |

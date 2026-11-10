@@ -677,6 +677,11 @@ link "$DOTFILES/home/.pi/agent/hook/hooks.yaml" "$HOME/.pi/agent/hook/hooks.yaml
 link "$DOTFILES/home/.pi/agent/hook/session-start.sh" "$HOME/.pi/agent/hook/session-start.sh"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.codex/AGENTS.md"
+# Codex's subagents are TOML, not the shared markdown, so they are generated
+# rather than linked (skills need nothing: Codex reads ~/.agents/skills, linked
+# above). Exit status 3 means a same-named file that is not ours was left alone.
+bash "$SCRIPT_DIR/setup/codex-agents.sh" --source "$DOTFILES/home/.pi/agent/agents" --dest "$HOME/.codex/agents" ||
+  warn "setup/codex-agents.sh finished with warnings; see the messages above"
 link "$DOTFILES/home/gitignore" "$HOME/.gitignore"
 link "$DOTFILES/home/.gitconfig" "$HOME/.gitconfig"
 # ~/.gitconfig.os used to be ~/.gitconfig-os. Drop the old link, but only when
