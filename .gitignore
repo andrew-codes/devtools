@@ -28,5 +28,11 @@ result-*
 /home/.pi/agent/subagents.json
 /.pi/subagents.json
 
+# Skills used to live in home/.agents/skills, which was symlinked to ~/.agents/skills,
+# so third-party installs landed here. Hand-written skills are now in skills/ and
+# third-party ones are installed outside the repo; anything left at the old path
+# is stale and never tracked.
+/home/.agents/
+
 # no-mistakes local validation state - never commit in this public repo
 .no-mistakes/

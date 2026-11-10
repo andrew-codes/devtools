@@ -226,8 +226,6 @@ in
 
   # Edit-in-place: the real file stays in my repo, ~/.config just points at it.
   home.file = {
-    ".agents/skills".source =
-      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
     ".config/wezterm".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/wezterm";
     ".config/starship.toml".source =
@@ -246,14 +244,10 @@ in
     # path was an out-of-store symlink every hook install landed in the tracked
     # repo file -- rewriting it with a machine-specific absolute path and
     # leaving the checkout permanently dirty.
-    # Claude Code reads the same harness sources as pi: skills and subagents use
-    # a shared on-disk format, so both harnesses symlink to one source of truth.
-    # (MCP servers can't be symlinked into Claude's stateful ~/.claude.json; they
-    # are synced from the same mcp.json by home.activation.syncClaudeMcp below.)
-    ".claude/skills".source =
-      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.agents/skills";
-    ".claude/agents".source =
-      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
+    # Skills and subagents are linked one by one in the generated attrsets at the
+    # end of this block, not as whole directories. (MCP servers can't be
+    # symlinked into Claude's stateful ~/.claude.json; they are synced from the
+    # same mcp.json by home.activation.syncClaudeMcp below.)
     # Dracula theme for Claude Code (needs >= 2.1.118); selected by "theme" in home/.config/.claude/settings.json.
     # Fetched at a pinned commit and linked file by file from the store, not
     # symlinked into a clone: ~/.claude/themes stays a real directory.
@@ -295,12 +289,6 @@ in
     # Claude Code runs it from .claude/settings.json's SessionStart hook.
     ".pi/agent/hook/session-start.sh".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/hook/session-start.sh";
-    # Global subagent definitions: <name>.md files with YAML frontmatter
-    # (description/tools/model/etc.) + a markdown prompt body. This exact format
-    # is shared by pi-subagents and Claude Code, so both harnesses point at this
-    # one source (see the ".claude/agents" symlink below).
-    ".pi/agent/agents".source =
-      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/agents";
 
     ".claude/CLAUDE.md".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
@@ -362,7 +350,25 @@ in
       name = ".local/bin/${name}";
       value.source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/bin/${name}";
     })
-    (builtins.attrNames (builtins.readDir ./home/bin)));
+    (builtins.attrNames (builtins.readDir ./home/bin)))
+  # Hand-written skills (skills/<name>/), linked one by one into every harness.
+  # The parent directories are left real on purpose: `npx skills`, `twg skills
+  # install` and pi packages write third-party skills into them, and through a
+  # whole-directory symlink every such write would land in this tracked, public
+  # checkout. Those third-party skills are installed by
+  # setup/third-party-skills.sh from third-party-skills.txt instead. A skill
+  # added to the repo needs a rebuild to be linked, like a new home/bin script.
+  # Subagents are not linked at all; see home.activation.installSubagents.
+  // builtins.listToAttrs (lib.concatMap
+    (name: map
+      (dir: {
+        name = "${dir}/${name}";
+        value.source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/skills/${name}";
+      })
+      # ~/.agents/skills is what pi and Codex read; Claude Code reads its own.
+      [ ".agents/skills" ".claude/skills" ])
+    (builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills))));
+
 
   # Global npm CLIs (pi.dev's coding agent, plus the AXI tools its
   # session-start hook invokes): none have a nixpkgs package, and their docs
@@ -503,10 +509,9 @@ in
           #   --skip-login  login is an interactive browser OAuth flow; it must
           #     not run inside a rebuild. Run `twg login` once by hand; the
           #     credentials then persist across every later rebuild.
-          #   --skip-skills the installer's agent detection writes skill files
-          #     into ~/.agents/skills and ~/.claude/skills, both of which are
-          #     symlinks into this git repo. Without this it drops untracked
-          #     files into the checkout on every fresh install.
+          #   --skip-skills the skills are installed by installTwgSkills instead,
+          #     on every rebuild and not only on a fresh install, so a machine
+          #     that is already on the pinned version gets them too.
           #
           # setsid is load-bearing, not decoration. After downloading, the
           # installer runs `twg setup finalize`, which asks for terms consent
@@ -551,27 +556,59 @@ in
     )
   '';
 
-  # Codex's copy of the shared subagents. Claude Code and pi read
-  # home/.pi/agent/agents/*.md through a symlink; Codex wants
-  # ~/.codex/agents/<name>.toml, a different format, so setup/codex-agents.sh
-  # generates the TOML files (and only ever rewrites files it generated; a
-  # same-named file of someone else's is left alone with a warning). Skills need
-  # nothing here: Codex reads ~/.agents/skills, which is already linked above.
-  # Shared with setup/windows.sh; read through ~/.dotfiles, so editing the
-  # script needs no rebuild.
-  home.activation.installCodexAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  # Everything below that writes into ~/.agents/skills, ~/.claude/skills or the
+  # subagent directories runs after linkGeneration, not just after writeBoundary.
+  # Until the links are in place, a machine switching over from the old layout
+  # still has those paths as symlinks into this repo checkout, and a write now
+  # would land in tracked files.
+
+  # The twg-* skills ship inside the binary, so they follow the pinned twg
+  # version and need no entry in third-party-skills.txt. They land in the real
+  # ~/.agents/skills and ~/.claude/skills, not in this repo.
+  home.activation.installTwgSkills = lib.hm.dag.entryAfter [ "linkGeneration" "installTwg" ] ''
+    TWG="${config.home.homeDirectory}/.local/bin/twg"
+    if [ -x "$TWG" ]; then
+      $DRY_RUN_CMD "$TWG" skills install --yes --agent claude >/dev/null 2>&1 \
+        || echo "==> WARNING: twg skills install failed; the twg-* skills may be missing or stale." >&2
+    fi
+  '';
+
+  # Each harness's subagent files, generated from the tool-neutral
+  # subagents/<name>.md plus subagents/layers/<tool>.layer: Claude Code and pi
+  # take markdown with different model and tool names, Codex takes TOML. See
+  # setup/subagents.sh; it only ever rewrites files it generated, and leaves a
+  # same-named file of someone else's untouched. Shared with setup/windows.sh and
+  # read through ~/.dotfiles, so editing the script or a layer needs no rebuild
+  # beyond the one that runs it.
+  home.activation.installSubagents = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     (
-      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/usr/bin:/bin"
-      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/codex-agents.sh" \
-        --source "${dotfiles}/home/.pi/agent/agents" \
-        --dest "${config.home.homeDirectory}/.codex/agents" \
-        || echo "==> WARNING: installCodexAgents finished with warnings (see above); the rest of the switch is unaffected." >&2
+      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.gnugrep}/bin:${pkgs.gnused}/bin:/usr/bin:/bin"
+      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/subagents.sh" \
+        --source "${dotfiles}/subagents" \
+        --home "${config.home.homeDirectory}" \
+        || echo "==> WARNING: installSubagents finished with warnings (see above); the rest of the switch is unaffected." >&2
+    )
+  '';
+
+  # Third-party skills (third-party-skills.txt) at their pinned refs, into the
+  # real ~/.agents/skills. The work is in setup/third-party-skills.sh, shared with
+  # setup/windows.sh and read through ~/.dotfiles, so editing it or the manifest
+  # needs no rebuild beyond the one that runs it. It needs npx, which Volta
+  # provides, so it runs after installGlobalNpmPackages has provisioned Node. A
+  # failure warns and the switch carries on.
+  home.activation.installThirdPartySkills = lib.hm.dag.entryAfter [ "linkGeneration" "installGlobalNpmPackages" ] ''
+    (
+      export VOLTA_HOME="${config.home.homeDirectory}/.volta"
+      export PATH="${config.home.homeDirectory}/.volta/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.gawk}/bin:/usr/bin:/bin"
+      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/third-party-skills.sh" \
+        --manifest "${dotfiles}/third-party-skills.txt" \
+        || echo "==> WARNING: installThirdPartySkills finished with warnings (see above); the rest of the switch is unaffected." >&2
     )
   '';
 
   # Dia's skill format is plain text with no YAML frontmatter and no external
   # file references, unlike this repo's Claude/pi skills. Flatten the tracked
-  # write-blog-post skill (home/.agents/skills/write-blog-post, itself
+  # write-blog-post skill (skills/write-blog-post, itself
   # symlinked into ~/.agents/skills above) into one self-contained text file:
   # strip SKILL.md's frontmatter, then append every file under references/ so
   # nothing there needs a second read. Generated into
@@ -580,7 +617,7 @@ in
   # writeBoundary like installTwg: the source is a static tracked file, so no
   # other activation step needs to run first.
   home.activation.buildDiaSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    SKILL_DIR="${dotfiles}/home/.agents/skills/write-blog-post"
+    SKILL_DIR="${dotfiles}/skills/write-blog-post"
     GENERATED_DIR="${config.home.homeDirectory}/.local/state/devtools/generated/dia-skills"
     GENERATED="$GENERATED_DIR/write-blog-post.txt"
     DIA_SKILLS_DIR="${config.home.homeDirectory}/.config/dia/skills"

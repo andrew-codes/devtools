@@ -1,0 +1,23 @@
+# Third-party agent skills, one per line: <owner/repo> <git ref> <skill>
+#
+# Installed into the real ~/.agents/skills (and linked for Claude Code) by
+# setup/third-party-skills.sh on every rebuild, at exactly this ref, so none of
+# their files is ever tracked here. Only hand-written skills live in skills/.
+# To add or bump one, edit its line (use a full commit SHA as the ref) and rebuild.
+# The twg-* skills are not listed: `twg skills install` ships them at the pinned
+# twg version (twgVersion in home.nix, TWG_VERSION in setup/windows.sh).
+
+kunchenguid/axi e030ed4eba2a247875d4170d8299b8616316a2de axi
+vercel-labs/skills 1d2bf3737cb1112ac82d81d60670ff6a32f60010 find-skills
+# no-mistakes comes from the andrew-codes fork (commit of tag v0.1.0), not upstream.
+andrew-codes/no-mistakes 3e0c3d43ab3ac92de077678bc54c343be93441ba no-mistakes
+
+# Community collection (MIT). Upstream name of proofread is proofreading. Its code-review
+# is deliberately not installed: it collides with Claude Code's built-in /code-review.
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b analytics-reporting
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b proofreading
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b refactoring
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b social-media-posting
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b summarization
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b technical-writing
+seb1n/awesome-ai-agent-skills 75865a5d037a4cdaa7f409a4ec14ab9b0292920b version-control
