@@ -6,10 +6,11 @@ default.profraw
 # Logs
 *.log
 
-# herdr runtime artifacts (regenerated at runtime; never commit)
-home/.config/herdr/*.log
-home/.config/herdr/session.json
-home/.config/herdr/*.sock
+# herdr writes its runtime state (sockets, logs, sessions, snapshots,
+# release notes) into the symlinked config dir; only the config is ours
+/home/.config/herdr/*
+!/home/.config/herdr/config.toml
+!/home/.config/herdr/.plugins.lock
 
 # macOS + nix build noise
 .DS_Store
