@@ -351,14 +351,14 @@ in
       value.source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/bin/${name}";
     })
     (builtins.attrNames (builtins.readDir ./home/bin)))
-  # Hand-written skills (skills/<name>/) and subagents (subagents/<name>.md),
-  # linked one by one into every harness. The parent directories are left real
-  # on purpose: `npx skills`, `twg skills install` and pi packages write
-  # third-party skills and subagents into them, and through a whole-directory
-  # symlink every such write would land in this tracked, public checkout. Those
-  # third-party skills are installed by setup/third-party-skills.sh from
-  # third-party-skills.txt instead. A skill or subagent added to the repo needs
-  # a rebuild to be linked, like a new home/bin script.
+  # Hand-written skills (skills/<name>/), linked one by one into every harness.
+  # The parent directories are left real on purpose: `npx skills`, `twg skills
+  # install` and pi packages write third-party skills into them, and through a
+  # whole-directory symlink every such write would land in this tracked, public
+  # checkout. Those third-party skills are installed by
+  # setup/third-party-skills.sh from third-party-skills.txt instead. A skill
+  # added to the repo needs a rebuild to be linked, like a new home/bin script.
+  # Subagents are not linked at all; see home.activation.installSubagents.
   // builtins.listToAttrs (lib.concatMap
     (name: map
       (dir: {
@@ -367,18 +367,8 @@ in
       })
       # ~/.agents/skills is what pi and Codex read; Claude Code reads its own.
       [ ".agents/skills" ".claude/skills" ])
-    (builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills))))
-  # Subagent definitions are <name>.md files with YAML frontmatter plus a
-  # markdown prompt, a format pi-subagents and Claude Code share. Codex needs
-  # TOML, which home.activation.installCodexAgents generates from the same files.
-  // builtins.listToAttrs (lib.concatMap
-    (name: map
-      (dir: {
-        name = "${dir}/${name}";
-        value.source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/subagents/${name}";
-      })
-      [ ".pi/agent/agents" ".claude/agents" ])
-    (builtins.attrNames (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (builtins.readDir ./subagents))));
+    (builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills))));
+
 
   # Global npm CLIs (pi.dev's coding agent, plus the AXI tools its
   # session-start hook invokes): none have a nixpkgs package, and their docs
@@ -519,9 +509,9 @@ in
           #   --skip-login  login is an interactive browser OAuth flow; it must
           #     not run inside a rebuild. Run `twg login` once by hand; the
           #     credentials then persist across every later rebuild.
-          #   --skip-skills the skills are installed below instead, on every
-          #     rebuild and not only on a fresh install, so a machine that is
-          #     already on the pinned version gets them too.
+          #   --skip-skills the skills are installed by installTwgSkills instead,
+          #     on every rebuild and not only on a fresh install, so a machine
+          #     that is already on the pinned version gets them too.
           #
           # setsid is load-bearing, not decoration. After downloading, the
           # installer runs `twg setup finalize`, which asks for terms consent
@@ -556,11 +546,6 @@ in
       case "$INSTALLED" in
         *"${twgVersion}"*)
           "$TWG" consent --agree >/dev/null 2>&1 || true
-          # The twg-* skills ship inside the binary, so they follow the pinned
-          # version and need no entry in third-party-skills.txt. They land in the
-          # real ~/.agents/skills and ~/.claude/skills, not in this repo.
-          "$TWG" skills install --yes --agent claude >/dev/null 2>&1 \
-            || echo "==> WARNING: twg skills install failed; the twg-* skills may be missing or stale." >&2
           ;;
         *)
           # Never fail the switch over this: a network blip or an Atlassian
@@ -571,21 +556,37 @@ in
     )
   '';
 
-  # Codex's copy of the shared subagents. Claude Code and pi read
-  # subagents/*.md through symlinks; Codex wants
-  # ~/.codex/agents/<name>.toml, a different format, so setup/codex-agents.sh
-  # generates the TOML files (and only ever rewrites files it generated; a
-  # same-named file of someone else's is left alone with a warning). Skills need
-  # nothing here: Codex reads ~/.agents/skills, which is already populated above.
-  # Shared with setup/windows.sh; read through ~/.dotfiles, so editing the
-  # script needs no rebuild.
-  home.activation.installCodexAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  # Everything below that writes into ~/.agents/skills, ~/.claude/skills or the
+  # subagent directories runs after linkGeneration, not just after writeBoundary.
+  # Until the links are in place, a machine switching over from the old layout
+  # still has those paths as symlinks into this repo checkout, and a write now
+  # would land in tracked files.
+
+  # The twg-* skills ship inside the binary, so they follow the pinned twg
+  # version and need no entry in third-party-skills.txt. They land in the real
+  # ~/.agents/skills and ~/.claude/skills, not in this repo.
+  home.activation.installTwgSkills = lib.hm.dag.entryAfter [ "linkGeneration" "installTwg" ] ''
+    TWG="${config.home.homeDirectory}/.local/bin/twg"
+    if [ -x "$TWG" ]; then
+      $DRY_RUN_CMD "$TWG" skills install --yes --agent claude >/dev/null 2>&1 \
+        || echo "==> WARNING: twg skills install failed; the twg-* skills may be missing or stale." >&2
+    fi
+  '';
+
+  # Each harness's subagent files, generated from the tool-neutral
+  # subagents/<name>.md plus subagents/layers/<tool>.layer: Claude Code and pi
+  # take markdown with different model and tool names, Codex takes TOML. See
+  # setup/subagents.sh; it only ever rewrites files it generated, and leaves a
+  # same-named file of someone else's untouched. Shared with setup/windows.sh and
+  # read through ~/.dotfiles, so editing the script or a layer needs no rebuild
+  # beyond the one that runs it.
+  home.activation.installSubagents = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     (
-      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/usr/bin:/bin"
-      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/codex-agents.sh" \
+      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.gnugrep}/bin:${pkgs.gnused}/bin:/usr/bin:/bin"
+      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/subagents.sh" \
         --source "${dotfiles}/subagents" \
-        --dest "${config.home.homeDirectory}/.codex/agents" \
-        || echo "==> WARNING: installCodexAgents finished with warnings (see above); the rest of the switch is unaffected." >&2
+        --home "${config.home.homeDirectory}" \
+        || echo "==> WARNING: installSubagents finished with warnings (see above); the rest of the switch is unaffected." >&2
     )
   '';
 
@@ -595,7 +596,7 @@ in
   # needs no rebuild beyond the one that runs it. It needs npx, which Volta
   # provides, so it runs after installGlobalNpmPackages has provisioned Node. A
   # failure warns and the switch carries on.
-  home.activation.installThirdPartySkills = lib.hm.dag.entryAfter [ "writeBoundary" "installGlobalNpmPackages" ] ''
+  home.activation.installThirdPartySkills = lib.hm.dag.entryAfter [ "linkGeneration" "installGlobalNpmPackages" ] ''
     (
       export VOLTA_HOME="${config.home.homeDirectory}/.volta"
       export PATH="${config.home.homeDirectory}/.volta/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.gawk}/bin:/usr/bin:/bin"

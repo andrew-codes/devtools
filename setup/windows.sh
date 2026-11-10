@@ -518,10 +518,6 @@ fi
 if [ -f "$TWG_BIN" ] && "$TWG_BIN" -v 2>/dev/null | head -n1 | grep -qF "$TWG_VERSION"; then
   # Re-running --agree is a no-op; it covers an install that predates -Yes.
   "$TWG_BIN" consent --agree >/dev/null 2>&1 || true
-  # The twg-* skills ship inside the binary, so they follow the pinned version.
-  # They land in the real ~/.agents/skills and ~/.claude/skills, not in this repo.
-  "$TWG_BIN" skills install --yes --agent claude >/dev/null 2>&1 ||
-    warn "twg skills install failed; the twg-* skills may be missing or stale"
   # Step 6's twg-axi needs twg on PATH for its own checks in this session.
   PATH="$TWG_DIR:$PATH"
   export PATH
@@ -649,12 +645,13 @@ echo "==> Step 8: dotfiles"
 
 # Directories.
 link "$DOTFILES/home/.config/wezterm" "$HOME/.config/wezterm"
-# Skills and subagents are linked one by one, not as whole directories, so the
-# directories stay real: `npx skills`, `twg skills install` and pi packages write
+# Skills are linked one by one, not as whole directories, so the directories
+# stay real: `npx skills`, `twg skills install` and pi packages write
 # third-party skills and subagents into them, and through a directory symlink
 # those writes would land in this tracked, public checkout. Mirrors the
 # generated home.file entries in home.nix. pi and Codex read ~/.agents/skills;
-# Claude Code reads ~/.claude/skills.
+# Claude Code reads ~/.claude/skills. Subagents are generated, not linked (see
+# setup/subagents.sh below); their directories are only made real here.
 for _d in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.pi/agent/agents" "$HOME/.claude/agents"; do
   # A link left by an earlier version of this script points at the whole
   # directory; replace it with a real one. Only a link into this checkout goes.
@@ -666,12 +663,15 @@ for _s in "$DOTFILES"/skills/*/; do
   link "$DOTFILES/skills/$_s" "$HOME/.agents/skills/$_s"
   link "$DOTFILES/skills/$_s" "$HOME/.claude/skills/$_s"
 done
-for _a in "$DOTFILES"/subagents/*.md; do
-  _a="$(basename "$_a")"
-  link "$DOTFILES/subagents/$_a" "$HOME/.pi/agent/agents/$_a"
-  link "$DOTFILES/subagents/$_a" "$HOME/.claude/agents/$_a"
-done
-unset _d _s _a
+unset _d _s
+# Everything from here to the end of this block writes into those directories, so
+# it must come after the stale whole-directory links above are gone: until then a
+# write follows the old link into this checkout.
+# The twg-* skills ship inside the binary, so they follow the pinned version.
+if [ -f "$TWG_BIN" ]; then
+  "$TWG_BIN" skills install --yes --agent claude >/dev/null 2>&1 ||
+    warn "twg skills install failed; the twg-* skills may be missing or stale"
+fi
 # Third-party skills, at the refs pinned in third-party-skills.txt. Needs npx.
 bash "$SCRIPT_DIR/setup/third-party-skills.sh" --manifest "$DOTFILES/third-party-skills.txt" ||
   warn "setup/third-party-skills.sh finished with warnings; see the messages above"
@@ -701,11 +701,11 @@ link "$DOTFILES/home/.pi/agent/hook/hooks.yaml" "$HOME/.pi/agent/hook/hooks.yaml
 link "$DOTFILES/home/.pi/agent/hook/session-start.sh" "$HOME/.pi/agent/hook/session-start.sh"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.codex/AGENTS.md"
-# Codex's subagents are TOML, not the shared markdown, so they are generated
-# rather than linked (skills need nothing: Codex reads ~/.agents/skills, populated
-# above). Exit status 3 means a same-named file that is not ours was left alone.
-bash "$SCRIPT_DIR/setup/codex-agents.sh" --source "$DOTFILES/subagents" --dest "$HOME/.codex/agents" ||
-  warn "setup/codex-agents.sh finished with warnings; see the messages above"
+# Every harness's subagents, generated from subagents/ and its per-tool layers
+# (Claude Code and pi take markdown with different model and tool names, Codex
+# takes TOML). Exit status 3 means a source was skipped.
+bash "$SCRIPT_DIR/setup/subagents.sh" --source "$DOTFILES/subagents" --home "$HOME" ||
+  warn "setup/subagents.sh finished with warnings; see the messages above"
 link "$DOTFILES/home/gitignore" "$HOME/.gitignore"
 link "$DOTFILES/home/.gitconfig" "$HOME/.gitconfig"
 # ~/.gitconfig.os used to be ~/.gitconfig-os. Drop the old link, but only when

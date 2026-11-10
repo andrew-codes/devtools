@@ -210,7 +210,7 @@ Because those commands write into `~/.claude/settings.json`, that one file is ap
 
 On Windows, `setup/windows.sh` installs the same pinned `twg` version with Atlassian's `install.ps1`, which verifies the Windows binary against the published checksums, and installs `twg-axi` alongside it. Run `twg login` once by hand there too. If `twg` is missing, the rule in `home/AGENTS.md` still applies: agents say so and stop rather than falling back to an MCP.
 
-**Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Hand-written agent skills live in `skills/` and subagents in `subagents/`, tool-neutral and outside `home/`. Each one is symlinked individually into the directories pi, Claude Code and Codex read, which stay real directories so third-party skills installed there never reach this repo. Those are pinned in `third-party-skills.txt` and installed by `setup/third-party-skills.sh` on every rebuild; the `twg-*` skills come from `twg skills install` at the pinned `twg` version. Only hand-written skills are versioned here. To add a third-party skill, use the `install-skill` skill, which asks firstmate to add its line to the manifest.
+**Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Hand-written agent skills live in `skills/` and subagents in `subagents/`, tool-neutral and outside `home/`. Each skill is symlinked individually into the directories pi, Claude Code and Codex read, which stay real directories so third-party skills installed there never reach this repo. A subagent source holds only what every tool shares (`name`, `description`, the prompt); the model, the tool list and the sandbox differ per tool, so they sit in `subagents/layers/<tool>.layer` and `setup/subagents.sh` generates each tool's file from the two. Those are pinned in `third-party-skills.txt` and installed by `setup/third-party-skills.sh` on every rebuild; the `twg-*` skills come from `twg skills install` at the pinned `twg` version. Only hand-written skills are versioned here. To add a third-party skill, use the `install-skill` skill, which asks firstmate to add its line to the manifest.
 
 ### Git and SSH
 
@@ -252,7 +252,7 @@ home.nix               User level: packages, zsh, dotfile symlinks, activation s
 mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix-darwin)
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
 setup/profile.sh       Resolves, validates and records the machine's profile
-setup/codex-agents.sh   Codex subagents (TOML), generated from the shared markdown ones
+setup/subagents.sh     Every harness's subagent files, generated from subagents/ and its per-tool layers
 setup/third-party-skills.sh  Installs third-party-skills.txt at its pinned refs
 setup/no-mistakes.sh   The no-mistakes release binary from the andrew-codes fork, every profile
 setup/fork-tools.sh    The work profile's firstmate, cloned and kept current from the fork
@@ -272,7 +272,8 @@ Outside `home/`, because they are linked entry by entry rather than mirrored int
 
 ```
 skills/                Hand-written agent skills, one directory each
-subagents/             Subagents, one markdown file each
+subagents/             Tool-neutral subagents, one markdown file each
+  layers/              Per-tool model, tool list and sandbox: claude, pi, codex
 third-party-skills.txt Third-party skills: `<owner/repo> <git ref> <skill>`
 ```
 
@@ -294,5 +295,5 @@ Anything that changes what is installed or configured needs a decision on both p
 | A pi extension | `packages` in `home/.pi/agent/settings.json` |
 | An agent skill you wrote | Add `skills/<name>/SKILL.md`; rebuild links it for pi, Claude Code and Codex |
 | A third-party agent skill | A line in `third-party-skills.txt` pinned to a commit SHA; never copy its files into `skills/` |
-| A subagent | Add `subagents/<name>.md`; shared by pi and Claude Code by symlink, and converted to `~/.codex/agents/<name>.toml` for Codex by `setup/codex-agents.sh` on every rebuild |
+| A subagent | Add `subagents/<name>.md` (`name`, `description`, prompt) and, per tool that needs one, its `<name> model ...` and `<name> tools ...` lines in `subagents/layers/<tool>.layer`; `setup/subagents.sh` generates the Claude Code, pi and Codex files on every rebuild. `<name> skip` in a layer keeps it out of that tool |
 | The prompt | `home/.config/starship.toml` (shared, edit-in-place) |
