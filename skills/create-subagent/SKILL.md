@@ -18,13 +18,20 @@ anything below looks out of date; they are the source of truth for the format.
 
 ```
 subagents/<name>.md             name, description, prompt body. No model, no tools.
-subagents/layers/claude.layer   -> ~/.claude/agents/<name>.md
-subagents/layers/pi.layer       -> ~/.pi/agent/agents/<name>.md
-subagents/layers/codex.layer    -> ~/.codex/agents/<name>.toml
+subagents/layers/claude.yaml   -> ~/.claude/agents/<name>.md
+subagents/layers/pi.yaml       -> ~/.pi/agent/agents/<name>.md
+subagents/layers/codex.yaml    -> ~/.codex/agents/<name>.toml
 ```
 
-A layer line is `<agent> <key> <value>`. For Claude Code and pi it becomes a frontmatter line
-`key: value`; for Codex it becomes `key = "value"`. `<agent> skip` keeps the agent out of that tool.
+A layer is YAML: one block per agent, keyed by agent name, with scalar settings. For Claude Code and pi each
+key becomes a frontmatter line `key: value`; for Codex it becomes `key = "value"`. `skip: true` in the
+agent's block keeps it out of that tool. Keep `tools` as one comma-separated string.
+
+```yaml
+code-reviewer:
+  model: opus
+  tools: Read, Grep, Glob, Bash
+```
 
 ## 1. Work out what the subagent is
 
@@ -42,20 +49,20 @@ Ask the user, one short question at a time, and stop asking once you can write i
 ## 2. Ask which tools it applies to
 
 Ask which of pi, Claude Code and Codex should get it. Default to all three. For each tool that is not
-wanted, add `<name> skip` to that tool's layer (an unlisted agent is still generated, with no model or
+wanted, add a `<name>:` block with `skip: true` to that tool's layer (an unlisted agent is still generated, with no model or
 tool restriction, so skipping must be explicit).
 
 ## 3. Collect the per-tool details
 
-- **Claude Code** (`claude.layer`): `model` is `opus`, `sonnet`, `haiku`, `inherit` or a full Claude
+- **Claude Code** (`claude.yaml`): `model` is `opus`, `sonnet`, `haiku`, `inherit` or a full Claude
   model id; `tools` is a comma list of Claude tool names (`Read, Write, Edit, Bash, Glob, Grep,
   WebFetch, WebSearch`, or `mcp__...` names). Omit `tools` for all tools.
-- **pi** (`pi.layer`): `model` is `provider/id` or a fuzzy name such as `sonnet` or `opus`; `tools` uses
+- **pi** (`pi.yaml`): `model` is `provider/id` or a fuzzy name such as `sonnet` or `opus`; `tools` uses
   pi's built-ins `read, bash, edit, write, grep, find, ls` (so `Glob` is `find`). pi has no built-in
   web tools. Omit `tools` for all.
-- **Codex** (`codex.layer`): there is no per-agent tool list, and Anthropic model names mean nothing
-  to it, so normally write nothing. Add `<name> sandbox_mode read-only` for an agent that must not edit.
-  Add `<name> model <openai id>` only if the user wants a specific Codex model.
+- **Codex** (`codex.yaml`): there is no per-agent tool list, and Anthropic model names mean nothing
+  to it, so normally write nothing. Add `sandbox_mode: read-only` to its block for an agent that must not edit.
+  Add `model: <openai id>` only if the user wants a specific Codex model.
 
 If the user does not know a model, suggest `sonnet` for routine work and `opus` for review, debugging or
 security reasoning, and say it is a suggestion.
@@ -66,14 +73,14 @@ Work in the devtools checkout on a branch, not directly on the default branch.
 
 1. Write `subagents/<name>.md`. Frontmatter is only `name` and `description` (quote the description if it
    contains a colon), then `---`, a blank line, and the prompt body.
-2. Append the lines to each wanted tool's layer, keeping each layer grouped by agent.
+2. Append a `<name>:` block to each wanted tool's layer file (`subagents/layers/<tool>.yaml`).
 3. Run `bash setup/subagents.sh --home "$(mktemp -d)"` and confirm the summary lines count the new agent
    for every wanted tool. This writes into a scratch directory, not the real home.
 4. Run `shellcheck` only if you changed a script. Do not run `devtools-rebuild` yourself.
 
 ## 5. Tell the user how to apply it
 
-State what you wrote (the file and the layer lines) and that the subagent arrives with the next
+State what you wrote (the file and the layer blocks) and that the subagent arrives with the next
 `devtools-rebuild` on macOS (or `setup/windows.sh` on Windows) once the change is merged, and that it
 needs no other setup. An agent with the same name already in `~/.codex/agents`, `~/.claude/agents` or
 `~/.pi/agent/agents` that this repo did not generate is left alone, so a name clash shows up as a
@@ -81,5 +88,5 @@ needs no other setup. An agent with the same name already in `~/.codex/agents`, 
 
 ## Changing or removing one
 
-Edit the same files. To remove an agent, delete `subagents/<name>.md` and its layer lines; the next
+Edit the same files. To remove an agent, delete `subagents/<name>.md` and its layer blocks; the next
 rebuild deletes the files it generated.

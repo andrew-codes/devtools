@@ -703,9 +703,14 @@ link "$DOTFILES/home/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.codex/AGENTS.md"
 # Every harness's subagents, generated from subagents/ and its per-tool layers
 # (Claude Code and pi take markdown with different model and tool names, Codex
-# takes TOML). Exit status 3 means a source was skipped.
-bash "$SCRIPT_DIR/setup/subagents.sh" --source "$DOTFILES/subagents" --home "$HOME" ||
-  warn "setup/subagents.sh finished with warnings; see the messages above"
+# takes TOML). The layers are YAML, read with mikefarah yq. Exit status 3 means a
+# source was skipped.
+if ! command -v yq >/dev/null 2>&1; then
+  warn "yq is not on PATH (open a new shell after the winget installs); skipped the subagents"
+else
+  bash "$SCRIPT_DIR/setup/subagents.sh" --source "$DOTFILES/subagents" --home "$HOME" ||
+    warn "setup/subagents.sh finished with warnings; see the messages above"
+fi
 link "$DOTFILES/home/gitignore" "$HOME/.gitignore"
 link "$DOTFILES/home/.gitconfig" "$HOME/.gitconfig"
 # ~/.gitconfig.os used to be ~/.gitconfig-os. Drop the old link, but only when

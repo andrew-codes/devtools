@@ -574,7 +574,7 @@ in
   '';
 
   # Each harness's subagent files, generated from the tool-neutral
-  # subagents/<name>.md plus subagents/layers/<tool>.layer: Claude Code and pi
+  # subagents/<name>.md plus subagents/layers/<tool>.yaml: Claude Code and pi
   # take markdown with different model and tool names, Codex takes TOML. See
   # setup/subagents.sh; it only ever rewrites files it generated, and leaves a
   # same-named file of someone else's untouched. Shared with setup/windows.sh and
@@ -582,7 +582,7 @@ in
   # beyond the one that runs it.
   home.activation.installSubagents = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     (
-      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.gnugrep}/bin:${pkgs.gnused}/bin:/usr/bin:/bin"
+      export PATH="${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.gnugrep}/bin:${pkgs.gnused}/bin:${pkgs.yq-go}/bin:/usr/bin:/bin"
       $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/subagents.sh" \
         --source "${dotfiles}/subagents" \
         --home "${config.home.homeDirectory}" \

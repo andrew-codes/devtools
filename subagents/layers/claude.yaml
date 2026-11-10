@@ -1,0 +1,56 @@
+# Claude Code layer: what differs from the tool-neutral subagents/<name>.md for Claude Code.
+# One block per agent; each key becomes a frontmatter line `key: value` in the generated
+# file. setup/subagents.sh applies it.
+# model: opus, sonnet, haiku or a full Claude model id. tools: Claude Code tool names.
+
+accessibility-tester:
+  model: sonnet
+  tools: Read, Grep, Glob, Bash
+andrew-voice-writer:
+  model: opus
+  tools: Read, Write, Edit, Glob, Grep
+architect-reviewer:
+  model: opus
+  tools: Read, Grep, Glob, Bash
+code-reviewer:
+  model: opus
+  tools: Read, Grep, Glob, Bash
+csharp-developer:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+debugger:
+  model: opus
+  tools: Read, Write, Edit, Bash, Glob, Grep
+electron-pro:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+finance-analyst:
+  model: sonnet
+  tools: Read, Write, mcp__claude_ai_YNAB__ynab_list_budgets, mcp__claude_ai_YNAB__ynab_budget_summary, mcp__claude_ai_YNAB__ynab_list_categories, mcp__claude_ai_YNAB__ynab_list_transactions, mcp__claude_ai_YNAB__ynab_get_unapproved_transactions, mcp__claude_ai_YNAB__ynab_list_scheduled_transactions, mcp__claude_ai_YNAB__ynab_analyze_spending_patterns, mcp__claude_ai_YNAB__ynab_cash_flow_forecast, mcp__claude_ai_YNAB__ynab_category_performance_review, mcp__claude_ai_YNAB__ynab_goal_progress_report, mcp__claude_ai_YNAB__ynab_net_worth_analysis, mcp__claude_ai_YNAB__ynab_update_transaction
+performance-engineer:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+powershell-expert:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+react-specialist:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+refactoring-specialist:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+research-analyst:
+  model: sonnet
+  tools: Read, Grep, Glob, WebFetch, WebSearch
+security-auditor:
+  model: opus
+  tools: Read, Grep, Glob
+technical-writer:
+  model: sonnet
+  tools: Read, Write, Edit, Glob, Grep, WebFetch, WebSearch
+test-automator:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
+typescript-pro:
+  model: sonnet
+  tools: Read, Write, Edit, Bash, Glob, Grep
