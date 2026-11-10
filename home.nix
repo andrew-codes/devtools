@@ -11,16 +11,16 @@ let
   # there is nothing for it to import. Bump both together. The same goes for
   # axiAmbientContextTools, goPackages and secretEnvVars below.
   globalNpmPackages = [
-    "@earendil-works/pi-coding-agent@^0.84.2" # https://www.npmjs.com/package/@earendil-works/pi-coding-agent
-    "gh-axi@^0.1.30"                          # https://www.npmjs.com/package/gh-axi
-    "chrome-devtools-axi@^0.1.29"             # https://www.npmjs.com/package/chrome-devtools-axi
-    "quota-axi@^0.1.29"                       # https://www.npmjs.com/package/quota-axi
+    "@earendil-works/pi-coding-agent@^1.5.2" # https://www.npmjs.com/package/@earendil-works/pi-coding-agent
+    "gh-axi@^0.1.51"                          # https://www.npmjs.com/package/gh-axi
+    "chrome-devtools-axi@^0.1.46"             # https://www.npmjs.com/package/chrome-devtools-axi
+    "quota-axi@^0.1.69"                       # https://www.npmjs.com/package/quota-axi
     "npm-axi@^0.1.1"                          # https://www.npmjs.com/package/npm-axi
-    "lavish-axi@^0.1.53"                      # https://www.npmjs.com/package/lavish-axi
-    "tasks-axi@^0.2.5"                        # https://www.npmjs.com/package/tasks-axi
-    "@andrew-codes/twg-axi@^0.1.0"            # https://www.npmjs.com/package/@andrew-codes/twg-axi
-    "backpass@^0.1.28"                        # https://www.npmjs.com/package/backpass
-    "acpx@^0.19.3"                            # https://www.npmjs.com/package/acpx
+    "lavish-axi@^0.1.96"                      # https://www.npmjs.com/package/lavish-axi
+    "tasks-axi@^0.2.6"                        # https://www.npmjs.com/package/tasks-axi
+    "@andrew-codes/twg-axi@^0.2.2"            # https://www.npmjs.com/package/@andrew-codes/twg-axi
+    "backpass@^0.1.44"                        # https://www.npmjs.com/package/backpass
+    "acpx@^0.22.0"                            # https://www.npmjs.com/package/acpx
   ];
   # The subset of the AXI CLIs above that ship an `axi <tool> setup hooks`
   # command: it installs a SessionStart hook so the tool's ambient context
@@ -36,19 +36,8 @@ let
   # verification; `go install @<tag>` instead goes through Go's module
   # system, which verifies against sum.golang.org.
   goPackages = [
-    # Pinned to v1.84.0, upstream's latest tag: `go install @<tag>` verifies
-    # against sum.golang.org, unlike an unpinned `curl | sh` installer.
-    "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.84.0" # https://github.com/kunchenguid/no-mistakes/releases
-    # Pinned to v1.8.0: every v2.x tag (through at least v2.1.1, the latest
-    # tag as of 2026-08-12) is broken upstream -- they tagged v2 releases
-    # without bumping go.mod's module path to ".../treehouse/v2" as Go's
-    # semantic import versioning requires, so `go install` rejects every
-    # v2.x ref with "invalid version: module contains a go.mod file, so
-    # module path must match major version". Checked go.mod on both v2.0.0
-    # and v2.1.1 via the GitHub contents API; both still declare module
-    # "github.com/kunchenguid/treehouse" with no /v2 suffix, so this is
-    # still broken. Bump this once upstream fixes go.mod on a new tag.
-    "github.com/kunchenguid/treehouse@v1.8.0"                     # https://github.com/kunchenguid/treehouse/releases
+    # v3 is a new major version, so the module path carries a /v3 suffix.
+    "github.com/kunchenguid/treehouse/v3@v3.1.8" # https://github.com/kunchenguid/treehouse/releases
   ];
   # goPackages minus whatever the profile takes from somewhere else. Entries are
   # matched by module path, so the pinned @version can change without touching
@@ -69,6 +58,11 @@ let
     "CONTEXT7_API_KEY"   # mcp.json: context7 headers
     "HA_TOKEN"           # read from the environment by a tool, not an MCP server
   ];
+  # The no-mistakes release binary, from the andrew-codes fork's GitHub releases
+  # (never upstream kunchenguid's). Installed by setup/no-mistakes.sh, which
+  # checks the archive against the release's checksums.txt. Bump this to
+  # upgrade, and bump NO_MISTAKES_VERSION in setup/windows.sh with it.
+  noMistakesVersion = "0.1.0"; # https://github.com/andrew-codes/no-mistakes/releases
   # Atlassian's Teamwork Graph CLI. Agents use this for every Jira and
   # Confluence operation instead of an Atlassian MCP server -- see the rule in
   # home/AGENTS.md. Atlassian ships no nixpkgs package, npm package, or Go
@@ -78,7 +72,7 @@ let
   # against Atlassian's published SHA256SUMS for that same version, so nothing
   # floating or unchecked is executed. Bump this to upgrade, and bump TWG_VERSION
   # in setup/windows.sh with it.
-  twgVersion = "1.3.5"; # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
+  twgVersion = "1.4.4"; # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
 in
 
 {
@@ -128,7 +122,7 @@ in
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin" # custom bin/ commands (db, fa, ...) symlinked here
     "${config.home.homeDirectory}/.volta/bin"
-    "${config.home.homeDirectory}/go/bin" # go install targets, e.g. no-mistakes
+    "${config.home.homeDirectory}/go/bin" # go install targets, and the no-mistakes binary
   ];
 
   programs.zsh = {
@@ -266,8 +260,8 @@ in
     # setup/windows.sh pins the same revision and hash. To bump: change rev,
     # then `nix store prefetch-file --json <raw url>` for the new hash.
     ".claude/themes/dracula.json".source = pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/dracula/claude-code-cli/2575775736ad2a53fde1734fde0b4fcb59bd509f/Dracula.json";
-      hash = "sha256-rXA4pUULwLNrHNs1mvlc0vhbluZJwUs7fuasZW76iZ4=";
+      url = "https://raw.githubusercontent.com/dracula/claude-code-cli/5e7044877a25296e7f4fc8ec9a4bd0ea5a8cafb8/Dracula.json";
+      hash = "sha256-zBGGv7l07Tw4Ig0R02uw77Bv/lITceQxZ8OH3ot/BSE=";
     };
 
     # Dracula theme for pi, selected by "theme" in home/.pi/agent/settings.json.
@@ -434,31 +428,42 @@ in
     )
   '';
 
-  # The work profile's firstmate and no-mistakes, from the andrew-codes forks
-  # (`forkTools` in profiles.nix; the personal profile has no such step at all,
-  # so its evaluation is unchanged). Runs here, in activation, with the other
-  # developer tools -- not at evaluation time: cloning and building need the
-  # network, which a pure evaluation never has. The work is in
-  # setup/fork-tools.sh, shared with setup/windows.sh; it is read through
-  # ~/.dotfiles, not copied into the store, so editing it needs no rebuild.
+  # no-mistakes, from the andrew-codes fork's release assets, on every profile.
+  # Not a `go install`: the fork's go.mod still declares upstream's module path,
+  # so Go cannot install it by path, and a release binary reports a real
+  # version where a source build would not. The work is in
+  # setup/no-mistakes.sh, shared with setup/windows.sh and read through
+  # ~/.dotfiles, so editing it needs no rebuild. Lands in ~/go/bin, already on
+  # PATH. A failure warns and the switch carries on.
+  home.activation.installNoMistakes = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    (
+      export PATH="${pkgs.curl}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:${pkgs.gawk}/bin:/usr/bin:/bin"
+      $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/no-mistakes.sh" \
+        --version "${noMistakesVersion}" \
+        --bindir "${config.home.homeDirectory}/go/bin" \
+        || echo "==> WARNING: installNoMistakes finished with warnings (see above); the rest of the switch is unaffected." >&2
+    )
+  '';
+
+  # The work profile's firstmate, from the andrew-codes fork (`forkTools` in
+  # profiles.nix; the personal profile has no such step at all, so its
+  # evaluation is unchanged). Runs here, in activation, with the other
+  # developer tools -- not at evaluation time: cloning needs the network, which
+  # a pure evaluation never has. The work is in setup/fork-tools.sh, shared with
+  # setup/windows.sh; it is read through ~/.dotfiles, not copied into the
+  # store, so editing it needs no rebuild.
   #
-  # It keeps ~/developer/firstmate (which home/bin/firstmate launches in) and
-  # ~/.local/share/devtools/no-mistakes fast-forwarded to the forks' `main`,
-  # refuses to touch a checkout with local work, and rebuilds no-mistakes into
-  # ~/go/bin only when its commit changed. A refusal warns and the switch
-  # carries on: nothing here may fail a rebuild.
+  # It keeps ~/developer/firstmate (which home/bin/firstmate launches in)
+  # fast-forwarded to the fork's `main` and refuses to touch a checkout with
+  # local work. A refusal warns and the switch carries on: nothing here may
+  # fail a rebuild.
   home.activation.installForkTools = lib.mkIf overlay.forkTools
     (lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      # Same environment as installGoPackages: go shells out to git and, for
-      # cgo dependencies, a C compiler, and activation does not inherit the
-      # interactive PATH. Subshell so it stays contained.
+      # Subshell so the PATH below stays contained.
       (
-        export PATH="${pkgs.git}/bin:${pkgs.go}/bin:${pkgs.coreutils}/bin:/usr/bin:/bin"
+        export PATH="${pkgs.git}/bin:${pkgs.coreutils}/bin:/usr/bin:/bin"
         $DRY_RUN_CMD ${pkgs.bash}/bin/bash "${dotfiles}/setup/fork-tools.sh" \
           --firstmate-dir "${config.home.homeDirectory}/developer/firstmate" \
-          --no-mistakes-dir "${config.home.homeDirectory}/.local/share/devtools/no-mistakes" \
-          --gobin "${config.home.homeDirectory}/go/bin" \
-          --state-dir "${config.home.homeDirectory}/.local/state/devtools" \
           || echo "==> WARNING: installForkTools finished with warnings (see above); the rest of the switch is unaffected." >&2
       )
     '');

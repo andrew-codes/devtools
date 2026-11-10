@@ -92,11 +92,11 @@ WINGET_PACKAGES=(
 )
 
 # Pinned, because winget has no package for either. See Step 5.
-HACK_NERD_FONT_VERSION="3.5.0" # https://github.com/ryanoasis/nerd-fonts/releases
-KUBESEAL_VERSION="0.39.1"      # https://github.com/bitnami-labs/sealed-secrets/releases
+HACK_NERD_FONT_VERSION="3.5.1" # https://github.com/ryanoasis/nerd-fonts/releases
+KUBESEAL_VERSION="0.41.2"      # https://github.com/bitnami-labs/sealed-secrets/releases
 # Keep in step with twgVersion in home.nix. Installed by Atlassian's install.ps1,
 # which checks the binary against the published SHA256SUMS-v<version> file.
-TWG_VERSION="1.3.5" # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
+TWG_VERSION="1.4.4" # https://developer.atlassian.com/cloud/twg-cli/getting-started/installation/
 
 # The `work` profile's overlay (profiles.nix, work.remove and onePassword = false).
 # Only the pieces that exist on Windows are here: gitops, telepresence, the
@@ -106,21 +106,13 @@ WORK_OMIT_WINGET_PACKAGES=(
   AgileBits.1Password.CLI # cask 1password-cli
   FluxCD.Flux             # pkgs.fluxcd
 )
-# The Go modules the `work` profile does not `go install` (profiles.nix,
-# work.remove.goPackages): it builds no-mistakes from the fork instead, see
-# WITH_FORK_TOOLS. Matched by module path, without the @version.
-WORK_OMIT_GO_PACKAGES=(
-  github.com/kunchenguid/no-mistakes/cmd/no-mistakes # setup/fork-tools.sh
-)
 # Everything 1Password-shaped that is not a winget package, and the pinned
 # kubeseal download. 1 = this profile gets it.
 WITH_1PASSWORD=1 # agent.toml link, OpenSSH client pin, op-ssh-sign signer
 WITH_KUBESEAL=1  # pkgs.kubeseal
-# 0 = upstream's pinned `go install` of no-mistakes, and no firstmate checkout
-# from here. 1 = firstmate and no-mistakes from the andrew-codes forks' main
-# (profiles.nix: forkTools), done by setup/fork-tools.sh in Step 7.
+# 0 = no firstmate checkout from here. 1 = firstmate from the andrew-codes
+# fork's main (profiles.nix: forkTools), done by setup/fork-tools.sh in Step 7.
 WITH_FORK_TOOLS=0
-ACTIVE_GO_PACKAGES=()
 if [ "$PROFILE" = work ]; then
   WITH_1PASSWORD=0
   WITH_KUBESEAL=0
@@ -140,14 +132,14 @@ fi
 
 # Mirrors globalNpmPackages in home.nix.
 GLOBAL_NPM_PACKAGES=(
-  "@earendil-works/pi-coding-agent@^0.84.2"
-  "gh-axi@^0.1.30"
-  "chrome-devtools-axi@^0.1.29"
-  "quota-axi@^0.1.29"
+  "@earendil-works/pi-coding-agent@^1.5.2"
+  "gh-axi@^0.1.51"
+  "chrome-devtools-axi@^0.1.46"
+  "quota-axi@^0.1.69"
   "npm-axi@^0.1.1"
-  "lavish-axi@^0.1.53"
-  "tasks-axi@^0.2.5"
-  "@andrew-codes/twg-axi@^0.1.0"
+  "lavish-axi@^0.1.96"
+  "tasks-axi@^0.2.6"
+  "@andrew-codes/twg-axi@^0.2.2"
 )
 # backpass and its acpx dependency are macOS/Linux only per backpass's own
 # README, so they are deliberately excluded here -- see the globalNpmPackages
@@ -158,22 +150,12 @@ AXI_AMBIENT_CONTEXT_TOOLS=(lavish-axi tasks-axi)
 
 # Mirrors goPackages in home.nix.
 GO_PACKAGES=(
-  "github.com/kunchenguid/no-mistakes/cmd/no-mistakes@v1.84.0"
-  "github.com/kunchenguid/treehouse@v1.8.0"
+  "github.com/kunchenguid/treehouse/v3@v3.1.8"
 )
 
-# GO_PACKAGES minus what the profile gets from somewhere else, matched by
-# module path like home.nix's activeGoPackages.
-for _pkg in "${GO_PACKAGES[@]}"; do
-  _omit=0
-  if [ "$PROFILE" = work ]; then
-    for _omitted in "${WORK_OMIT_GO_PACKAGES[@]}"; do
-      [ "${_pkg%%@*}" = "$_omitted" ] && _omit=1
-    done
-  fi
-  [ "$_omit" -eq 1 ] || ACTIVE_GO_PACKAGES+=("$_pkg")
-done
-unset _pkg _omit _omitted
+# Mirrors noMistakesVersion in home.nix. The release binary comes from the
+# andrew-codes fork, via setup/no-mistakes.sh (Step 7).
+NO_MISTAKES_VERSION="0.1.0" # https://github.com/andrew-codes/no-mistakes/releases
 
 # Mirrors secretEnvVars in home.nix.
 SECRET_ENV_VARS=(
@@ -581,7 +563,7 @@ if have_file "$VOLTA_HOME/bin/npm"; then
   done
 fi
 
-echo "==> Step 7: Go CLIs"
+echo "==> Step 7: Go CLIs and no-mistakes"
 if command -v go >/dev/null 2>&1; then
   mkdir -p "$HOME/go/bin"
   # go.exe is a native Windows program, and MSYS rewrites arguments that look
@@ -589,7 +571,7 @@ if command -v go >/dev/null 2>&1; then
   # over already in Windows form or Go writes to a "C:\c\Users\..." of its own
   # invention.
   GOBIN_WIN="$(cygpath -w "$HOME/go/bin")"
-  for pkg in "${ACTIVE_GO_PACKAGES[@]}"; do
+  for pkg in "${GO_PACKAGES[@]}"; do
     echo "    go install $pkg"
     # Pinned @<tag> refs go through Go's module system, which verifies against
     # sum.golang.org -- the reason home.nix prefers this over each project's
@@ -598,22 +580,20 @@ if command -v go >/dev/null 2>&1; then
       warn "go install $pkg failed; if it needs cgo, install a C toolchain (winget install MSYS2.MSYS2) and re-run"
   done
 else
-  if [ "$WITH_FORK_TOOLS" -eq 1 ]; then
-    warn "go is not on PATH; skipped treehouse and the no-mistakes build"
-  else
-    warn "go is not on PATH; skipped no-mistakes and treehouse"
-  fi
+  warn "go is not on PATH; skipped treehouse"
 fi
 
-# The work profile's firstmate and no-mistakes, from the andrew-codes forks.
-# Run even without go on PATH: the firstmate checkout and the no-mistakes clone
-# do not need it, and fork-tools.sh warns on its own about the build it skips.
-# It clones to ~/developer/firstmate and ~/.local/share/devtools/no-mistakes,
-# fast-forwards both (refusing, with a warning, any checkout with local work),
-# and installs no-mistakes into ~/go/bin only when its commit changed. Exit
-# status 3 means it warned about something; the text is above.
+# no-mistakes: the fork's release binary, checksum-verified, into ~/go/bin.
+# Needs no Go toolchain. Exit status 1 means it warned; the text is above.
+bash "$SCRIPT_DIR/setup/no-mistakes.sh" --version "$NO_MISTAKES_VERSION" --bindir "$HOME/go/bin" ||
+  warn "setup/no-mistakes.sh could not install no-mistakes $NO_MISTAKES_VERSION; see the messages above"
+
+# The work profile's firstmate, from the andrew-codes fork. It clones to
+# ~/developer/firstmate and fast-forwards it (refusing, with a warning, a
+# checkout with local work). Exit status 3 means it warned about something; the
+# text is above.
 if [ "$WITH_FORK_TOOLS" -eq 1 ]; then
-  echo "    firstmate and no-mistakes from the andrew-codes forks (main)"
+  echo "    firstmate from the andrew-codes fork (main)"
   _fork_status=0
   bash "$SCRIPT_DIR/setup/fork-tools.sh" || _fork_status=$?
   [ "$_fork_status" -eq 0 ] ||
@@ -687,8 +667,8 @@ link "$DOTFILES/home/.bashrc" "$HOME/.bashrc"
 # pkgs.fetchurl; Windows has no Nix, so download the same pinned revision and
 # verify the same hash. A copy, not a link: the theme is not a repo file.
 # Keep DRACULA_CLAUDE_REV and DRACULA_CLAUDE_SHA256 in step with home.nix.
-DRACULA_CLAUDE_REV=2575775736ad2a53fde1734fde0b4fcb59bd509f
-DRACULA_CLAUDE_SHA256=ad7038a5450bc0b36b1cdb359af95cd2f85b96e649c14b3b7ee6ac656efa899e
+DRACULA_CLAUDE_REV=5e7044877a25296e7f4fc8ec9a4bd0ea5a8cafb8
+DRACULA_CLAUDE_SHA256=cc1186bfb974ed3c38220d11d36bb0efb06ffe521371e43167c387de8b7f0521
 DRACULA_CLAUDE_DEST="$HOME/.claude/themes/dracula.json"
 if [ -f "$DRACULA_CLAUDE_DEST" ] &&
   [ "$(sha256sum "$DRACULA_CLAUDE_DEST" | cut -d' ' -f1)" = "$DRACULA_CLAUDE_SHA256" ]; then
