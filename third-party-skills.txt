@@ -1,0 +1,11 @@
+# Third-party agent skills, one per line: <owner/repo> <git ref> <skill>
+#
+# Installed into the real ~/.agents/skills (and linked for Claude Code) by
+# setup/third-party-skills.sh on every rebuild, at exactly this ref, so none of
+# their files is ever tracked here. Only hand-written skills live in skills/.
+# To add or bump one, edit its line (use a full commit SHA as the ref) and rebuild.
+# The twg-* skills are not listed: `twg skills install` ships them at the pinned
+# twg version (twgVersion in home.nix, TWG_VERSION in setup/windows.sh).
+
+kunchenguid/axi e030ed4eba2a247875d4170d8299b8616316a2de axi
+vercel-labs/skills 1d2bf3737cb1112ac82d81d60670ff6a32f60010 find-skills

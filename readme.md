@@ -210,7 +210,7 @@ Because those commands write into `~/.claude/settings.json`, that one file is ap
 
 On Windows, `setup/windows.sh` installs the same pinned `twg` version with Atlassian's `install.ps1`, which verifies the Windows binary against the published checksums, and installs `twg-axi` alongside it. Run `twg login` once by hand there too. If `twg` is missing, the rule in `home/AGENTS.md` still applies: agents say so and stop rather than falling back to an MCP.
 
-**Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Global agent skills live in `home/.agents/skills/`.
+**Shared agent context.** A single `home/AGENTS.md` is symlinked to both `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`, so every harness follows the same instructions. Hand-written agent skills live in `skills/` and subagents in `subagents/`, tool-neutral and outside `home/`. Each one is symlinked individually into the directories pi, Claude Code and Codex read, which stay real directories so third-party skills installed there never reach this repo. Those are pinned in `third-party-skills.txt` and installed by `setup/third-party-skills.sh` on every rebuild; the `twg-*` skills come from `twg skills install` at the pinned `twg` version. Only hand-written skills are versioned here. To add a third-party skill, use the `install-skill` skill, which asks firstmate to add its line to the manifest.
 
 ### Git and SSH
 
@@ -253,6 +253,7 @@ mas-apps.nix           Mac App Store apps, applied by setup/macOS.sh (not by nix
 setup.sh               Detects OS/arch, dispatches to the matching setup/ script
 setup/profile.sh       Resolves, validates and records the machine's profile
 setup/codex-agents.sh   Codex subagents (TOML), generated from the shared markdown ones
+setup/third-party-skills.sh  Installs third-party-skills.txt at its pinned refs
 setup/no-mistakes.sh   The no-mistakes release binary from the andrew-codes fork, every profile
 setup/fork-tools.sh    The work profile's firstmate, cloned and kept current from the fork
 setup/macOS.sh         First-time bootstrap for macOS on Apple Silicon
@@ -265,7 +266,14 @@ home/                  Every tracked dotfile, symlinked into place
   .bashrc              The Windows shell, peer of programs.zsh in home.nix
   .pi/agent/           pi harness config
   .config/mcp/         MCP server definitions
-  .agents/skills/      Global agent skills
+```
+
+Outside `home/`, because they are linked entry by entry rather than mirrored into `~`:
+
+```
+skills/                Hand-written agent skills, one directory each
+subagents/             Subagents, one markdown file each
+third-party-skills.txt Third-party skills: `<owner/repo> <git ref> <skill>`
 ```
 
 ## Customizing
@@ -284,6 +292,7 @@ Anything that changes what is installed or configured needs a decision on both p
 | A required secret | `secretEnvVars` in `home.nix` and `SECRET_ENV_VARS` in `setup/windows.sh`; it is stubbed into `~/.env` on the next rebuild, and the shells warn about it until it has a value |
 | A custom command | Drop a bash executable in `home/bin/`; it is picked up automatically on both platforms |
 | A pi extension | `packages` in `home/.pi/agent/settings.json` |
-| An agent skill | Add `home/.agents/skills/<name>/SKILL.md`; shared by pi, Claude Code and Codex (all read `~/.agents/skills` or a link to it) |
-| A subagent | Add `home/.pi/agent/agents/<name>.md`; shared by pi and Claude Code by symlink, and converted to `~/.codex/agents/<name>.toml` for Codex by `setup/codex-agents.sh` on every rebuild |
+| An agent skill you wrote | Add `skills/<name>/SKILL.md`; rebuild links it for pi, Claude Code and Codex |
+| A third-party agent skill | A line in `third-party-skills.txt` pinned to a commit SHA; never copy its files into `skills/` |
+| A subagent | Add `subagents/<name>.md`; shared by pi and Claude Code by symlink, and converted to `~/.codex/agents/<name>.toml` for Codex by `setup/codex-agents.sh` on every rebuild |
 | The prompt | `home/.config/starship.toml` (shared, edit-in-place) |

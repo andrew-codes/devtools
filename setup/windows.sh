@@ -497,9 +497,9 @@ fi
 # relies on. It lands in %LOCALAPPDATA%\Programs\twg\bin and adds that to the
 # user PATH. Flags mirror home.nix's installTwg: -SkipLogin because login is an
 # interactive browser OAuth flow (run `twg login` once by hand), -SkipSkills
-# because the skill files it writes would follow ~/.agents/skills and
-# ~/.claude/skills symlinks into this checkout, and -Yes, which the installer
-# only honours alongside those two, to record terms consent without a prompt.
+# because the skills are installed explicitly below (`twg skills install`, on
+# every run), and -Yes, which the installer only honours alongside those two, to
+# record terms consent without a prompt.
 TWG_DIR="$LOCALAPPDATA_DIR/Programs/twg/bin"
 TWG_BIN="$TWG_DIR/twg.exe"
 if [ -f "$TWG_BIN" ] && "$TWG_BIN" -v 2>/dev/null | head -n1 | grep -qF "$TWG_VERSION"; then
@@ -518,6 +518,10 @@ fi
 if [ -f "$TWG_BIN" ] && "$TWG_BIN" -v 2>/dev/null | head -n1 | grep -qF "$TWG_VERSION"; then
   # Re-running --agree is a no-op; it covers an install that predates -Yes.
   "$TWG_BIN" consent --agree >/dev/null 2>&1 || true
+  # The twg-* skills ship inside the binary, so they follow the pinned version.
+  # They land in the real ~/.agents/skills and ~/.claude/skills, not in this repo.
+  "$TWG_BIN" skills install --yes --agent claude >/dev/null 2>&1 ||
+    warn "twg skills install failed; the twg-* skills may be missing or stale"
   # Step 6's twg-axi needs twg on PATH for its own checks in this session.
   PATH="$TWG_DIR:$PATH"
   export PATH
@@ -644,13 +648,33 @@ echo "==> Step 8: dotfiles"
 # macOS says why on the spot.
 
 # Directories.
-link "$DOTFILES/home/.agents/skills" "$HOME/.agents/skills"
 link "$DOTFILES/home/.config/wezterm" "$HOME/.config/wezterm"
-link "$DOTFILES/home/.pi/agent/agents" "$HOME/.pi/agent/agents"
-# Claude Code reads the same harness sources as pi: one source of truth, two
-# harnesses pointing at it.
-link "$DOTFILES/home/.agents/skills" "$HOME/.claude/skills"
-link "$DOTFILES/home/.pi/agent/agents" "$HOME/.claude/agents"
+# Skills and subagents are linked one by one, not as whole directories, so the
+# directories stay real: `npx skills`, `twg skills install` and pi packages write
+# third-party skills and subagents into them, and through a directory symlink
+# those writes would land in this tracked, public checkout. Mirrors the
+# generated home.file entries in home.nix. pi and Codex read ~/.agents/skills;
+# Claude Code reads ~/.claude/skills.
+for _d in "$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.pi/agent/agents" "$HOME/.claude/agents"; do
+  # A link left by an earlier version of this script points at the whole
+  # directory; replace it with a real one. Only a link into this checkout goes.
+  [ ! -L "$_d" ] || remove_stale_link "$_d" "$DOTFILES"
+  mkdir -p "$_d"
+done
+for _s in "$DOTFILES"/skills/*/; do
+  _s="$(basename "$_s")"
+  link "$DOTFILES/skills/$_s" "$HOME/.agents/skills/$_s"
+  link "$DOTFILES/skills/$_s" "$HOME/.claude/skills/$_s"
+done
+for _a in "$DOTFILES"/subagents/*.md; do
+  _a="$(basename "$_a")"
+  link "$DOTFILES/subagents/$_a" "$HOME/.pi/agent/agents/$_a"
+  link "$DOTFILES/subagents/$_a" "$HOME/.claude/agents/$_a"
+done
+unset _d _s _a
+# Third-party skills, at the refs pinned in third-party-skills.txt. Needs npx.
+bash "$SCRIPT_DIR/setup/third-party-skills.sh" --manifest "$DOTFILES/third-party-skills.txt" ||
+  warn "setup/third-party-skills.sh finished with warnings; see the messages above"
 # Neovim on Windows resolves stdpath('config') to %LOCALAPPDATA%\nvim, not
 # ~/.config/nvim, so this is the one config directory that moves.
 link "$DOTFILES/home/.config/nvim" "$LOCALAPPDATA_DIR/nvim"
@@ -678,9 +702,9 @@ link "$DOTFILES/home/.pi/agent/hook/session-start.sh" "$HOME/.pi/agent/hook/sess
 link "$DOTFILES/home/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link "$DOTFILES/home/AGENTS.md" "$HOME/.codex/AGENTS.md"
 # Codex's subagents are TOML, not the shared markdown, so they are generated
-# rather than linked (skills need nothing: Codex reads ~/.agents/skills, linked
+# rather than linked (skills need nothing: Codex reads ~/.agents/skills, populated
 # above). Exit status 3 means a same-named file that is not ours was left alone.
-bash "$SCRIPT_DIR/setup/codex-agents.sh" --source "$DOTFILES/home/.pi/agent/agents" --dest "$HOME/.codex/agents" ||
+bash "$SCRIPT_DIR/setup/codex-agents.sh" --source "$DOTFILES/subagents" --dest "$HOME/.codex/agents" ||
   warn "setup/codex-agents.sh finished with warnings; see the messages above"
 link "$DOTFILES/home/gitignore" "$HOME/.gitignore"
 link "$DOTFILES/home/.gitconfig" "$HOME/.gitconfig"
