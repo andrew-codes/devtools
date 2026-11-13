@@ -122,6 +122,10 @@ in
     casks = profiles.without overlay.remove.casks [
       "wezterm"
       "claude-code@latest"
+      "claude"    # Claude Desktop; personal only
+      # Codex desktop now ships inside the ChatGPT app; Homebrew's separate
+      # codex-app cask is deprecated in favor of it.
+      "chatgpt"   # personal only
       "1password"
       "1password-cli"
       "docker-desktop"
