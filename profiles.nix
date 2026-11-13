@@ -58,6 +58,8 @@ let
         casks = [
           "1password"
           "1password-cli"
+          "claude"
+          "chatgpt"
         ];
         masApps = [ "Dynamic Wallpaper Library" ];
         packages = [ "kubeseal" "fluxcd" ];

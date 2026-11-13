@@ -31,6 +31,8 @@ is read; otherwise `personal`. Any other value is rejected.
 | macOS (`work` removes) | Windows (`work` removes) | Decision |
 | --- | --- | --- |
 | casks `1password`, `1password-cli` | `AgileBits.1Password`, `AgileBits.1Password.CLI` | **Implemented.** Both are filtered out of `WINGET_PACKAGES` for `work`. |
+| cask `claude` (Claude Desktop) | `Anthropic.Claude` | **Implemented.** `personal` only; filtered out of `WINGET_PACKAGES` for `work`. Id verified against `microsoft/winget-pkgs` (`Anthropic.Claude`, "Your AI partner on desktop"). |
+| cask `chatgpt` (ChatGPT app, which carries Codex desktop) | - | **Deferred** on Windows, `personal` only on macOS. `OpenAI.Codex` on winget is the Codex CLI, and `OpenAI.ChatGPT` exists in winget-pkgs but has not been checked to include Codex desktop. Replaces Homebrew's deprecated `codex-app` cask. |
 | brews `weaveworks/tap/gitops`, `datawire/blackbird/telepresence` | - | **Skipped** on Windows: neither is installed there under any profile (see Applications). |
 | Mac App Store `Dynamic Wallpaper Library` (`mas-apps.nix`) | - | **Skipped** on Windows: no Mac App Store. `setup/macOS.sh` skips it for `work` through `profiles.masAppLines`. |
 | `home.packages` `fluxcd` | `FluxCD.Flux` | **Implemented.** Filtered out of `WINGET_PACKAGES` for `work`. |
@@ -122,6 +124,7 @@ native Windows.
 | `tree-sitter` | `tree-sitter.tree-sitter-cli` | **Implemented.** CLI nvim-treesitter needs to build parsers (`home/.config/nvim`, used for MDX highlighting among others). |
 | `uv` | `astral-sh.uv` | **Implemented.** |
 | `shfmt` | `mvdan.shfmt` | **Implemented.** |
+| `shellcheck` | `koalaman.shellcheck` | **Implemented.** Id verified against `microsoft/winget-pkgs`. |
 | `gh` | `GitHub.cli` | **Implemented.** |
 | `kubectl` | `Kubernetes.kubectl` | **Implemented.** |
 | `fluxcd` | `FluxCD.Flux` | **Implemented.** `personal` only. |

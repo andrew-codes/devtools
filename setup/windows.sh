@@ -68,6 +68,7 @@ WINGET_PACKAGES=(
   ZedIndustries.Zed       # cask zed; core.editor = zed --wait
   Logitech.OptionsPlus    # cask logi-options+
   Anthropic.ClaudeCode    # cask claude-code@latest
+  Anthropic.Claude        # cask claude (Claude Desktop); personal only
   BurntSushi.ripgrep.MSVC # pkgs.ripgrep
   sharkdp.fd              # pkgs.fd
   eza-community.eza       # pkgs.eza
@@ -79,6 +80,7 @@ WINGET_PACKAGES=(
   tree-sitter.tree-sitter-cli # pkgs.tree-sitter; nvim-treesitter needs it to build parsers
   astral-sh.uv            # pkgs.uv
   mvdan.shfmt             # pkgs.shfmt
+  koalaman.shellcheck     # pkgs.shellcheck
   GitHub.cli              # pkgs.gh
   Kubernetes.kubectl      # pkgs.kubectl
   FluxCD.Flux             # pkgs.fluxcd
@@ -110,6 +112,7 @@ TWG_VERSION="1.4.4" # https://developer.atlassian.com/cloud/twg-cli/getting-star
 WORK_OMIT_WINGET_PACKAGES=(
   AgileBits.1Password     # cask 1password
   AgileBits.1Password.CLI # cask 1password-cli
+  Anthropic.Claude        # cask claude
   FluxCD.Flux             # pkgs.fluxcd
 )
 # Everything 1Password-shaped that is not a winget package, and the pinned

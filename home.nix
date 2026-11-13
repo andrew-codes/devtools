@@ -93,6 +93,7 @@ in
     yq
     uv
     shfmt
+    shellcheck
     kubeseal
     gh
     fluxcd     # flux CLI
