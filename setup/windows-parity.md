@@ -96,6 +96,7 @@ native Windows.
 | `1password-cli` | `AgileBits.1Password.CLI` | **Implemented.** `personal` only. |
 | `docker-desktop` | `Docker.DockerDesktop` | **Implemented.** |
 | `lens` | `Mirantis.Lens` | **Implemented.** |
+| `zed` | `ZedIndustries.Zed` | **Implemented.** Id checked against `microsoft/winget-pkgs`. |
 | `logi-options+` | `Logitech.OptionsPlus` | **Implemented.** |
 | `claude-code@latest` | `Anthropic.ClaudeCode` | **Implemented.** `Anthropic.ClaudeCode` has no separate stable/latest split like the two Homebrew casks - it's a single winget package bumped on every release. |
 | `raycast` | `MSSTORE_PACKAGES` `9PFXXSHC64H3` (step 4) | **Implemented.** Raycast now ships for Windows, through the Microsoft Store only: raycast.com/windows redirects to Store id `9PFXXSHC64H3`, and the community winget repository has no Raycast package (no `manifests/r/Raycast`). Installed with `winget install --id 9PFXXSHC64H3 --source msstore`, unpinned. Replaces the earlier PowerToys substitute. Not executed on Windows by the author. |
@@ -127,7 +128,7 @@ native Windows.
 | `terraform` | `Hashicorp.Terraform` | **Implemented.** |
 | `volta` | `Volta.Volta` | **Implemented.** `VOLTA_HOME` is forced to `~/.volta` so one path works on both platforms. |
 | `kubeseal` | GitHub release binary | **Implemented, fallback.** `personal` only. No winget package at all. The release is a single static binary, pinned by version in the script. |
-| `nerd-fonts.hack` | GitHub release archive | **Implemented, fallback.** winget only carries `SourceFoundry.HackFonts`, which is plain Hack without the patched glyphs starship and eza need. |
+| `font-hack-nerd-font` (cask) | GitHub release archive | **Implemented, fallback.** winget only carries `SourceFoundry.HackFonts`, which is plain Hack without the patched glyphs starship and eza need. |
 | `ansible` | - | **Skipped.** Ansible does not support Windows as a control node. |
 | `go` (activation-only on macOS) | `GoLang.Go` | **Implemented**, and installed for real: the Go CLIs below need a toolchain on PATH. |
 
@@ -225,11 +226,10 @@ priority order:
    config there - never link it, or herdr's own state writes land in this repo.
 5. **1Password `agent.toml`** (`personal` profile) names the `andrew-mbp` key
    item. Add this machine's item to `home/.config/1Password/ssh/agent.toml`.
-6. **`core.editor = zed --wait`** in the shared `~/.gitconfig` assumes Zed, and
-   `home/bin/oproj` calls `code`. Neither editor is installed by the macOS path
-   either, so neither is installed here - but on Windows there is no fallback
-   `zed` on PATH at all, so `git commit` without `-m` will fail until one is
-   installed by hand.
+6. **`core.editor = zed --wait`** in the shared `~/.gitconfig` assumes Zed,
+   which both platforms now install. `home/bin/oproj` calls `code`, which
+   neither installs. Open a new shell on Windows after setup so the `zed` shim
+   is on PATH.
 7. **The `work` profile on Windows** (`--profile work`) was only dry-read, like
    the rest. Check that the winget list loses exactly the three ids above, that
    step 7 runs `setup/no-mistakes.sh` (the release `.zip` extracted with

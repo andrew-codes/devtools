@@ -129,6 +129,10 @@ in
       "thebrowsercompany-dia" # Dia; unpinned like every cask, and it updates itself
       "logi-options+"
       "lens"
+      "zed"
+      # The font everything renders in. A cask, not nixpkgs: home-manager's copy
+      # lands in a nested ~/Library/Fonts/HomeManager folder macOS never indexed.
+      "font-hack-nerd-font"
     ];
     # No `masApps` here on purpose -- brew bundle can't install Mac App Store
     # apps from inside activation. The app list lives in mas-apps.nix and is

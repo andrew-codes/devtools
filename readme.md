@@ -143,7 +143,7 @@ Scripts in `home/bin/` are symlinked individually into `~/.local/bin`. They are 
 
 ### CLI Toolchain
 
-Installed from nixpkgs on macOS: `ripgrep`, `fd`, `eza`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`, plus the Hack Nerd Font. The work profile drops `kubeseal` and `fluxcd`.
+Installed from nixpkgs on macOS: `ripgrep`, `fd`, `eza`, `fzf`, `jq`, `yq`, `lazygit`, `neovim`, `uv`, `shfmt`, `gh`, `kubectl`, `kubeseal`, `fluxcd`, `terraform`, `ansible`, `volta`. The Hack Nerd Font comes from the `font-hack-nerd-font` Homebrew cask. The work profile drops `kubeseal` and `fluxcd`.
 
 The same set comes from `winget` on Windows, except `ansible` (no Windows control node), `kubeseal` and the Hack Nerd Font (no winget package -- taken from their pinned upstream releases). `setup/windows-parity.md` lists every id.
 
@@ -159,6 +159,7 @@ Installed via Homebrew and the Mac App Store on macOS, via `winget` on Windows:
 | [1Password](https://1password.com/) + CLI | Passwords, SSH agent, commit signing | Yes. Personal profile only |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Containers | Yes |
 | [Lens](https://k8slens.dev/) | Kubernetes IDE | Yes |
+| [Zed](https://zed.dev/) | Editor, `core.editor` for git | Yes |
 | [Claude Code](https://www.anthropic.com/claude-code) | Anthropic coding agent | Yes |
 | [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) | Logitech device configuration | Yes |
 | [Raycast](https://raycast.com/) | Launcher (replaces Spotlight on macOS) | Yes, from the Microsoft Store (`9PFXXSHC64H3`, via winget's `msstore` source) |

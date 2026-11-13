@@ -65,6 +65,7 @@ WINGET_PACKAGES=(
   AgileBits.1Password.CLI # cask 1password-cli
   Docker.DockerDesktop    # cask docker-desktop
   Mirantis.Lens           # cask lens
+  ZedIndustries.Zed       # cask zed; core.editor = zed --wait
   Logitech.OptionsPlus    # cask logi-options+
   Anthropic.ClaudeCode    # cask claude-code@latest
   BurntSushi.ripgrep.MSVC # pkgs.ripgrep

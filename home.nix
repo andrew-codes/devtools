@@ -100,10 +100,7 @@ in
     terraform
     ansible
     volta      # node.js version management
-    # the font everything renders in
-    nerd-fonts.hack
   ]);
-  fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.REPO_HOME = "${config.home.homeDirectory}/developer/repos";
   home.sessionVariables.VOLTA_HOME = "${config.home.homeDirectory}/.volta";
@@ -512,26 +509,17 @@ in
           #   --skip-skills the skills are installed by installTwgSkills instead,
           #     on every rebuild and not only on a fresh install, so a machine
           #     that is already on the pinned version gets them too.
-          #
-          # setsid is load-bearing, not decoration. After downloading, the
-          # installer runs `twg setup finalize`, which asks for terms consent
-          # with a "Continue? [yes/no]" prompt. It reads that prompt from
-          # /dev/tty rather than stdin, so redirecting stdin does not suppress
-          # it -- and `sudo darwin-rebuild switch` runs from a real terminal,
-          # where it would sit there blocking the whole switch on a keypress.
-          # Running in a new session with no controlling terminal makes the
-          # installer's own `: < /dev/tty` probe fail, so it takes its
-          # non-interactive branch instead. Consent is then recorded below.
-          #
-          # The finalize step still exits non-zero because it could not ask
-          # about consent, so its status says nothing about whether the install
-          # worked. Ignore it and judge on the artifact: the binary is
-          # downloaded and checksum-verified against Atlassian's published
-          # SHA256SUMS well before finalize runs, so it lands either way.
+          #   --yes         records terms consent. Load-bearing: the installer
+          #     runs `twg setup finalize` after downloading, and if finalize
+          #     fails the installer ROLLS BACK and deletes the binary. Without
+          #     consent finalize tries to prompt, fails with no controlling
+          #     terminal, and nothing is left installed. The installer only
+          #     forwards consent to finalize when --yes, --skip-login and
+          #     --skip-skills are all given, so all three must stay together.
           ${pkgs.curl}/bin/curl -fsSL --retry 2 \
               https://teamwork-graph.atlassian.com/cli/install \
-            | ${pkgs.util-linux}/bin/setsid --wait ${pkgs.bash}/bin/bash -s -- \
-                --version "${twgVersion}" --skip-login --skip-skills \
+            | ${pkgs.bash}/bin/bash -s -- \
+                --version "${twgVersion}" --yes --skip-login --skip-skills \
             || true
           ;;
       esac
