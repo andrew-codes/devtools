@@ -133,7 +133,7 @@ native Windows.
 | `kubeseal` | GitHub release binary | **Implemented, fallback.** `personal` only. No winget package at all. The release is a single static binary, pinned by version in the script. |
 | `font-hack-nerd-font` (cask) | GitHub release archive | **Implemented, fallback.** winget only carries `SourceFoundry.HackFonts`, which is plain Hack without the patched glyphs starship and eza need. |
 | `ansible` | - | **Skipped.** Ansible does not support Windows as a control node. |
-| `go` (activation-only on macOS) | `GoLang.Go` | **Implemented**, and installed for real: the Go CLIs below need a toolchain on PATH. |
+| `go` (`pkgs.go` in `home.packages`) | `GoLang.Go` | **Implemented** on both sides: a real toolchain on the user's PATH, which the Go CLIs below and Go projects need. macOS used to have go only inside home-manager activation. |
 
 ## Agent harness
 

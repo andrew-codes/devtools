@@ -86,8 +86,7 @@ WINGET_PACKAGES=(
   FluxCD.Flux             # pkgs.fluxcd
   Hashicorp.Terraform     # pkgs.terraform
   Volta.Volta             # pkgs.volta
-  GoLang.Go               # macOS gets go only inside home-manager activation;
-                          # here the Go CLIs need a real toolchain on PATH
+  GoLang.Go               # pkgs.go on macOS; the Go CLIs need a real toolchain on PATH
   Starship.Starship       # programs.starship
 )
 
