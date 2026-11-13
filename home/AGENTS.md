@@ -26,6 +26,13 @@
   inline smart link cards (`data-card-appearance="inline"`) for links to other Confluence pages, status lozenges, panels, expand blocks, and tables.
   Link to Confluence pages by the site's own host, not another host, so links open in the same tab.
   Do not use `--format md` for new or updated Confluence content.
+- When you are the session talking directly to me, and not a Firstmate crewmate, scout or secondmate, deliver any question that needs my feedback or decision through `lavish-axi`.
+  That means a Lavish page with the options, one recommendation and a Queue answer control.
+  This includes a single yes-or-no, a merge approval and a design pick. Still give the outcome summary in chat.
+  This rule overrides a project instruction that says to use plain chat for small decisions.
+- When spawned as a Firstmate crewmate, scout or secondmate, never open a Lavish page or ask me directly.
+  Send questions to Firstmate through the channel your brief names.
+  A Lavish review loop is allowed only when your brief offers it.
 - When spawned as a Firstmate crewmate, use the firstmate-crew-model-fit skill once near the start of a task to check whether your assigned model fits the task.
 - For any screenshot, browser automation, or visual/UI verification task, ALWAYS use the `chrome-devtools-axi` CLI.
   It runs headless by default and captures via the DevTools Protocol, never the real screen.
