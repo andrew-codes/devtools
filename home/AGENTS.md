@@ -29,6 +29,10 @@
 - When you are the session talking directly to me, and not a Firstmate crewmate, scout or secondmate, deliver any question that needs my feedback or decision through `lavish-axi`.
   That means a Lavish page with the options, one recommendation and a Queue answer control.
   This includes a single yes-or-no, a merge approval and a design pick. Still give the outcome summary in chat.
+  After you open or update a Lavish question page, listen for my answer with `lavish-axi poll <file>`.
+  Run the poll through the harness's tracked background-job facility (in Claude Code, a background Bash run whose completion re-invokes the session), so other work and supervision are not blocked.
+  Do not rely on `lavish-axi reply` alone: it does not wait for or receive feedback.
+  When the poll completes, process the answer it returns. If it times out or returns `browser_disconnected`, run the poll again.
   This rule overrides a project instruction that says to use plain chat for small decisions.
 - When spawned as a Firstmate crewmate, scout or secondmate, never open a Lavish page or ask me directly.
   Send questions to Firstmate through the channel your brief names.
