@@ -234,6 +234,44 @@ The 2014 Jest post fails the em dash check with its single occurrence. That is t
 behavior: the no-typos exception means the skill is stricter than the corpus on this one mark, and
 the rule stays at zero.
 
+## ASD-STE100 layer: where the corpus agrees and where it does not
+
+The clarity floor in `SKILL.md` was calibrated against the same five prose-carrying posts. These
+figures come from a throwaway regular-expression pass over running prose, so they are approximate:
+the passive and perfect counts include adjective uses such as "is considered", and tokenization
+differs slightly from the sentence-length table above. Treat them as orders of magnitude, not exact
+counts.
+
+| Feature | Count in 214 sentences | Share | What it means for the STE layer |
+| :------ | ---------------------: | ----: | :------------------------------ |
+| Over 20 words | 45 | 21% | A hard 20-word cap would reject about one sentence in five. Not adopted for blog prose. |
+| Over 25 words | 17 | 8% | Roughly the 25-plus share in the table above. A soft ceiling near 25, with about one in ten allowed over. |
+| Over 30 words | 7 | 3% | The self-check ceiling of 35 and 40 stays. |
+| Passive-looking construction | 23 | 11% | Mostly agentless ("is considered", "are pulled from"). Active by default, passive for an unknown actor. |
+| Present perfect | 9 | 4% | Mostly first person ("I have come across", "I've written"). Kept as voice. |
+| Participial tail after a comma | 13 | 6% | His appended tail. Kept as voice. STE forbids it. |
+| "should" | 5 | 2% | Present but rare. Preferred alternatives: "can", "must". |
+| "may" | 6 | 3% | Real possibility. May stay when he then bounds it. |
+| "would" | 3 | 1% | Rare. |
+| "can", "will", "cannot" | 15, 13, 4 | 7%, 6%, 2% | The approved modals are already his most common. |
+| "however" | 9 | 4% | His workhorse connective. STE prefers "but". Voice wins. |
+| "since" meaning because | 0 | 0% | Absent from the posts. His commit messages use it. |
+| Plain-verb misses (utilize, leverage, perform, in order to, prior to, ensure) | 1 | 0.5% | One "leverage" in 214 sentences. The layer matches his habit. |
+| Paragraphs over six sentences | 4 | 6% of 62 | STE caps paragraphs at six. His run uneven, so the cap is not adopted for blog prose. |
+
+Two readings follow. First, his prose already sits close to STE where it counts for clarity: a
+median of 15 words, few plain-verb misses, few hedges, and defined terms. The layer mostly names
+what he does. Second, STE's hard limits and its ban on participial tails would delete the
+appended-tail construction that this skill identifies as his most distinctive sentence shape. That
+is the reason the blog skill uses STE as a floor and keeps the limits for procedural passages only.
+
+The key-term rule has a corpus anchor too. The two agility posts define *estimate* and *forecast*
+as separate things and then keep them separate, which is the one-word-one-meaning rule applied by
+hand.
+
+The STE material in both skills paraphrases the public standard. ASD-STE100 is a registered
+trademark of ASD, and the standard and its dictionary are not reproduced here.
+
 ## How to re-derive
 
 The measurements above came from reading all seven posts in full and from four throwaway analysis

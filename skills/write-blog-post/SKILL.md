@@ -55,6 +55,61 @@ Use a semicolon only where he uses one correctly, joining two independent clause
 one breath: "Writing software is hard; writing software that provides continual value to end-users
 is even more challenging." "Mastery is not static; it is a continual work in progress."
 
+## Clarity floor: Simplified Technical English (light)
+
+ASD-STE100 Simplified Technical English is the controlled language that aerospace maintenance
+manuals use so that a rushed reader cannot misread an instruction. It exists for procedures. A blog
+post is opinionated, first-person prose, so this skill applies STE as a floor for clarity and never
+as a ceiling on personality. The sentence-level rules below hold in every post. The standard's hard
+limits do not, because his own prose breaks them: roughly one sentence in five runs over 20 words
+and one in ten runs 25 or more, and his signature appended tail is often a participial phrase that
+STE forbids. Measurements are in `references/corpus-evidence.md`. The standard is a
+public, free document. Never claim that a post is STE-compliant.
+
+Hold these in every post (STE):
+
+- **Active voice by default.** Name who acts: "I chose", "we cannot compare two tasks". Use the
+  passive when the actor is unknown or does not matter, as in "timelines are often adjusted to meet
+  deadlines".
+- **One word, one meaning.** He already treats *estimate* and *forecast* as two distinct things and
+  defines each. Do the same for every key term: decide what it names, then keep that name for that
+  thing, and never use two words for one idea to avoid repeating yourself.
+- **Plain verbs.** "Use", not "utilize" or "leverage". "Do", not "perform". "To", not "in order
+  to". "Before", not "prior to". Each of the first two appears once in 4,175 words of his, so treat
+  them as lapses and not as habit.
+- **Noun clusters of three words or fewer.** Break a longer stack with "of", "for" or "in": "the
+  timeout value for the connection pool".
+- **Complete grammar.** Keep articles and "that". The one exception is the staccato
+  question-and-answer run described above, where a fragment answers a question.
+- **State the fact, not its importance.** If a sentence says something is crucial or notable and
+  names no fact, replace it with the fact.
+- **Keep sentences near 25 words or fewer.** About one in ten may run longer, and each of those is an
+  appended-tail sentence whose main clause stands on its own. The hard ceiling in the self-check
+  below is unchanged.
+- **Procedural passages follow STE strictly.** When a post walks the reader through setup steps, as
+  the presence detection post does, write each step in the imperative, one instruction per sentence,
+  condition first, at most 20 words, and put a warning's command before its risk.
+
+Where his voice wins over STE:
+
+- **The appended tail.** A participial tail that adds a fact stays, as in "...as a device tracker,
+  ignoring any guest devices that are already registered." STE would split it. Cut only a tail that
+  restates the main clause ("..., making it easy to review").
+- **Contractions.** STE avoids them. The contraction rule above stands.
+- **The present perfect in the first person.** "I have come across various directory structures"
+  is how he reports his own experience. Keep it.
+- **"However".** STE prefers "but". It is his workhorse connective, so keep it.
+- **Semicolons.** STE bans them. The two or three correct ones in the corpus stay, under the rule
+  above.
+- **Paragraph length.** STE caps a paragraph at six sentences. His run uneven, and a handful pass six.
+  Keep one idea per paragraph and let the length vary.
+- **Opinion and flat assertion.** STE has no view on stance. The rule that bounds each claim with a
+  named limit stands.
+- **Dry asides and concrete figures of speech.** "Like 68 degrees cold" is idiom, and a controlled
+  language would cut it. It stays, because it is rare, short and tied to a concrete detail.
+- **Modals.** "Should", "may" and "would" appear a few times each in his prose. Prefer "can", "will"
+  and "must", but a real possibility that he then bounds may keep its "may".
+
 ## Punctuation habits
 
 **Never use an em dash or an en dash.** One em dash appears in his own prose across 3,944 words, in
@@ -267,3 +322,13 @@ Run every item. Fix what fails, then report the numbers for items 1 through 4 al
     corpus.
 13. **Read the opening and closing paragraph aloud.** If either sounds like it introduces or
     concludes an essay rather than telling you something, rewrite it.
+14. **Sentences over 25 words (STE):** at most about one in ten, and each is an appended-tail
+    sentence whose main clause stands alone.
+15. **Active voice (STE):** search for "is", "are", "was", "were" and "been" followed by a past
+    participle. For each hit, confirm that the actor is unknown or irrelevant. Otherwise name it.
+16. **One word, one meaning (STE):** list the key terms and confirm that each names one thing and
+    that no second word names it.
+17. **Procedural passages (STE):** every step is imperative, one instruction per sentence, condition
+    first, at most 20 words.
+18. **Voice survived:** the STE layer must not flatten the draft. If the opinion, the dry aside or
+    the uneven rhythm is gone, restore it. The layer cuts clutter and leaves the voice.
