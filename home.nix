@@ -101,6 +101,9 @@ in
     terraform
     ansible
     volta      # node.js version management
+    go         # on the profile PATH so ordinary processes (e.g. the no-mistakes
+               # daemon's agents) can build and test Go; the pinned nixpkgs
+               # ships a release newer than the go.mod of no-mistakes and treehouse
   ]);
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.REPO_HOME = "${config.home.homeDirectory}/developer/repos";
