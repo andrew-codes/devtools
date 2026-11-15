@@ -87,6 +87,7 @@ in
               # the binary is missing
     fzf       # fuzzy finder
     jq        # json on the command line
+    terminal-notifier # macOS notifications; used by home/.claude/hooks/fm-notify.sh
     lazygit
     neovim
     tree-sitter # CLI nvim-treesitter needs to build parsers (nvim's config lives in home/.config/nvim)
@@ -290,6 +291,12 @@ in
     # Claude Code runs it from .claude/settings.json's SessionStart hook.
     ".pi/agent/hook/session-start.sh".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/hook/session-start.sh";
+
+    # Notification hook for firstmate only; registered per project in the
+    # firstmate checkout, never in the global settings. One file, so
+    # ~/.claude/hooks stays a real directory.
+    ".claude/hooks/fm-notify.sh".source =
+      config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.claude/hooks/fm-notify.sh";
 
     ".claude/CLAUDE.md".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";

@@ -22,8 +22,10 @@ show_agent_labels_on_pane_borders = true
 name = "dracula"
 auto_switch = false
 
+# Notifications come from firstmate alone (home/.claude/hooks/fm-notify.sh),
+# so herdr stays silent for every agent.
 [ui.toast]
-delivery = "system"
+delivery = "off"
 
 [ui.sound]
-enabled = true
+enabled = false
