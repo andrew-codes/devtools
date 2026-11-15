@@ -118,6 +118,7 @@ native Windows.
 | `eza` | `eza-community.eza` | **Implemented.** |
 | `fzf` | `junegunn.fzf` | **Implemented.** |
 | `jq` | `jqlang.jq` | **Implemented.** |
+| `terminal-notifier` | - | **Skipped.** macOS-only; it posts to Notification Center. Used only by `fm-notify.sh` below. |
 | `yq` | `MikeFarah.yq` | **Implemented.** |
 | `lazygit` | `JesseDuffield.lazygit` | **Implemented.** |
 | `neovim` | `Neovim.Neovim` | **Implemented.** |
@@ -189,6 +190,7 @@ config in this repo takes effect with no rebuild - the same contract
 | `~/.config/nvim` | `%LOCALAPPDATA%\nvim` | **Implemented, moved.** Neovim resolves `stdpath('config')` there on Windows. |
 | `~/.config/zsh/bin-completion` | `~/.config/bash/bin-completion` | **Implemented, moved.** bash, not zsh. |
 | `~/.config/herdr` | `~/.config/herdr` only | **Implemented, single link.** herdr's Windows config path is undocumented upstream, but the `%APPDATA%\herdr` candidate is deliberately not linked: `%APPDATA%\<app>` is where a Windows app writes runtime state, and those writes would follow the symlink into this tracked public checkout. If herdr turns out to read `%APPDATA%`, copy the config there rather than linking it. |
+| `~/.claude/hooks/fm-notify.sh` (Notification hook that notifies only for the firstmate session; registered per project in the firstmate checkout, never globally) | - | **Skipped.** macOS-only: it needs `terminal-notifier` and WezTerm's macOS bundle id, and exits quietly on any other OS. It is deliberately not linked on Windows. The herdr `toast`/`sound` settings that silence every other sender live in `~/.config/herdr/config.toml`, which is linked on both platforms. |
 | `~/.gitconfig.os` | `home/.gitconfig.windows` (`personal`) or `home/.gitconfig.work` (`work`) | **Implemented.** Same include scheme as macOS. The file was `~/.gitconfig-os` (and `home/.gitconfig-*`) before the rename; step 8 removes a stale `~/.gitconfig-os` only when it is a link into this repo's `home/`, and otherwise warns and leaves it. |
 | `~/.ssh/config-os` | `home/.ssh/config-windows` (`personal`) or `home/.ssh/config-work` (`work`) | **Implemented.** Same include scheme as macOS. |
 | `~/.gitconfig.local` (untracked signing key and `user.email`) | same; on `personal` also `gpg.ssh.program` | **Implemented.** The tracked `.gitconfig` sets no `user.email`; step 14 prints a reminder with the `git config --file` command when the file lacks one. The 1Password signer path embeds the username, so the script resolves and writes it there rather than tracking it. `work` writes nothing there; the key is added by hand. |
