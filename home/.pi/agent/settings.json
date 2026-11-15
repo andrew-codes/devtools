@@ -19,8 +19,13 @@
     "npm:pi-mcp-adapter@2.17.0",
     "npm:pi-yaml-hooks"
   ],
-  "lastChangelogVersion": "0.83.0",
+  "lastChangelogVersion": "1.5.2",
   "defaultProvider": "anthropic",
   "defaultModel": "claude-sonnet-5",
-  "defaultThinkingLevel": "medium"
+  "defaultThinkingLevel": "medium",
+  "extensionChangelogVersions": {
+    "{\"source\":\"git:github.com/algal/pi-openai-server-compaction@c6d593087709e9481223dc6c6c2269b371b5e055\",\"scope\":\"user\"}": "0.1.0",
+    "{\"source\":\"npm:@tintinweb/pi-subagents@0.14.3\",\"scope\":\"user\"}": "0.14.3",
+    "{\"source\":\"npm:pi-mcp-adapter@2.17.0\",\"scope\":\"user\"}": "2.17.0"
+  }
 }
