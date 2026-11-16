@@ -164,6 +164,7 @@ Installed via Homebrew and the Mac App Store on macOS, via `winget` on Windows:
 | [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) | Logitech device configuration | Yes |
 | [Raycast](https://raycast.com/) | Launcher (replaces Spotlight on macOS) | Yes, from the Microsoft Store (`9PFXXSHC64H3`, via winget's `msstore` source) |
 | [Dia](https://www.diabrowser.com/) | Browser. Always the latest | Yes, its own installer (no winget package) |
+| [Google Chrome](https://www.google.com/chrome/) | Browser `chrome-devtools-axi` drives for screenshots and UI checks | Yes (`Google.Chrome`) |
 | [tmux](https://github.com/tmux/tmux) | Terminal multiplexer | No -- WezTerm's own panes |
 | [herdr](https://herdr.dev/) | Agent session multiplexer | Not yet; Windows is an upstream beta |
 | [gitops](https://github.com/weaveworks/weave-gitops) / [telepresence](https://www.telepresence.io/) | Kubernetes workflow CLIs. Personal profile only | No |

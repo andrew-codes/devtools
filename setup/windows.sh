@@ -68,6 +68,7 @@ WINGET_PACKAGES=(
   ZedIndustries.Zed       # cask zed; core.editor = zed --wait
   Logitech.OptionsPlus    # cask logi-options+
   Anthropic.ClaudeCode    # cask claude-code@latest
+  Google.Chrome           # cask google-chrome; the browser chrome-devtools-axi launches
   Anthropic.Claude        # cask claude (Claude Desktop); personal only
   BurntSushi.ripgrep.MSVC # pkgs.ripgrep
   sharkdp.fd              # pkgs.fd

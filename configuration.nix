@@ -136,6 +136,11 @@ in
       "docker-desktop"
       "raycast"
       "thebrowsercompany-dia" # Dia; unpinned like every cask, and it updates itself
+      # Chrome stable, at /Applications/Google Chrome.app. chrome-devtools-axi
+      # launches the installed stable channel by default and has nothing else to
+      # fall back on, so without this every screenshot fails with
+      # BRIDGE_NOT_READY. Self-updating, so unpinned like Dia.
+      "google-chrome"
       "logi-options+"
       "lens"
       "zed"
