@@ -9,8 +9,9 @@
 #
 # macOS only. Elsewhere there is no terminal-notifier, and this exits quietly.
 
-# Hooks inherit a minimal PATH; jq and terminal-notifier live in the nix profile.
-PATH="$HOME/.nix-profile/bin:/etc/profiles/per-user/${USER:-$(id -un)}/bin:/run/current-system/sw/bin:$PATH"
+# Hooks inherit a minimal PATH. jq lives in the nix profile; terminal-notifier
+# is Homebrew's (nixpkgs only repackages the Intel-only upstream binary).
+PATH="/opt/homebrew/bin:$HOME/.nix-profile/bin:/etc/profiles/per-user/${USER:-$(id -un)}/bin:/run/current-system/sw/bin:$PATH"
 
 [ "$(uname -s)" = "Darwin" ] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
