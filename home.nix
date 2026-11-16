@@ -351,6 +351,15 @@ in
     ".config/1Password/ssh/agent.toml".source =
       config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/1Password/ssh/agent.toml";
   }
+  # SSH_AUTH_SOCK points at ~/.1password/agent.sock, which 1Password never
+  # creates. Link it to the real macOS socket; 1Password's docs suggest this
+  # alias to avoid the space in the real path. It dangles while 1Password is
+  # not running, which is fine.
+  // lib.optionalAttrs (overlay.onePassword && pkgs.stdenv.isDarwin) {
+    ".1password/agent.sock".source =
+      config.lib.file.mkOutOfStoreSymlink
+        "${config.home.homeDirectory}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock";
+  }
   # Bash utility scripts, symlinked individually into ~/.local/bin (which already
   # holds other unmanaged entries) so home-manager only owns these specific names.
   // builtins.listToAttrs (map
