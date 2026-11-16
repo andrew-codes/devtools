@@ -78,7 +78,7 @@ Not every machine gets the same tools: a work machine may not be allowed 1Passwo
 | `personal` | Everything in this repo. The default whenever nothing selects a profile, so existing machines behave as before. |
 | `work` | The base without 1Password and its CLI, gitops, telepresence, Dynamic Wallpaper Library, fluxcd and kubeseal, and with firstmate taken from the `andrew-codes` fork (see [Fork tools](#fork-tools-work-profile)). |
 
-The overlay lives in `profiles.nix` (and is repeated by hand in `setup/windows.sh`, since Nix cannot run there). The `work` profile also drops everything that existed only to serve 1Password: the `SSH_AUTH_SOCK` override, the `~/.config/1Password/ssh/agent.toml` link, the `op-ssh-sign` signer and `core.sshCommand` pin in the OS-specific git config, the 1Password `IdentityAgent` in the OS-specific ssh config, and on Windows the OpenSSH client step and 1Password signing step.
+The overlay lives in `profiles.nix` (and is repeated by hand in `setup/windows.sh`, since Nix cannot run there). The `work` profile also drops everything that existed only to serve 1Password: the `SSH_AUTH_SOCK` override, the `~/.1password/agent.sock` link, the `~/.config/1Password/ssh/agent.toml` link, the `op-ssh-sign` signer and `core.sshCommand` pin in the OS-specific git config, the 1Password `IdentityAgent` in the OS-specific ssh config, and on Windows the OpenSSH client step and 1Password signing step.
 
 Commit signing stays on for both: `commit.gpgsign` and `gpg.format = ssh` are in the shared `home/.gitconfig`. The `work` profile sets no signer program and no key; the key comes only from `~/.gitconfig.local`, which `~/.gitconfig` includes unconditionally and which is never tracked. Add yours there after setup (the same reminder printed for `personal`).
 
@@ -225,7 +225,7 @@ Git config is layered so shared settings stay tracked while machine-specific and
 
 `~/.gitconfig.os` points at `home/.gitconfig.macos` or `home/.gitconfig.windows` depending on the platform, or at the empty `home/.gitconfig.work` on the work profile. SSH follows the same pattern: a tracked `~/.ssh/config` includes `~/.ssh/config-os` (`config-macos`, `config-windows` or the empty `config-work`) and an untracked `~/.ssh/config.local` for personal hosts.
 
-On the personal profile 1Password acts as the SSH agent and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`. On macOS git reaches it through the `SSH_AUTH_SOCK` socket; on Windows it listens on the OpenSSH agent named pipe, which only the native `ssh.exe` can speak, so `.gitconfig.windows` sets `core.sshCommand` to it by absolute path. The work profile has none of this and signs with the key named in `~/.gitconfig.local`.
+On the personal profile 1Password acts as the SSH agent and signs commits, with the offered key declared in `home/.config/1Password/ssh/agent.toml`. On macOS git reaches it through the `SSH_AUTH_SOCK` socket, `~/.1password/agent.sock`, which devtools links to 1Password's real socket under `~/Library/Group Containers` (the link dangles while 1Password is not running); on Windows it listens on the OpenSSH agent named pipe, which only the native `ssh.exe` can speak, so `.gitconfig.windows` sets `core.sshCommand` to it by absolute path. The work profile has none of this and signs with the key named in `~/.gitconfig.local`.
 
 ### System Defaults
 
