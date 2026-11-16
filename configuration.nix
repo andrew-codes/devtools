@@ -118,6 +118,11 @@ in
       # upstream releases closely and builds against the system libraries the
       # terminal already uses. brew bundle no-ops when it's already installed.
       "tmux"
+      # macOS notifications, used by home/.claude/hooks/fm-notify.sh. Homebrew
+      # rather than nixpkgs: nixpkgs repackages upstream's Intel-only binary,
+      # which fails with "Bad CPU type" on Apple Silicon without Rosetta, while
+      # the formula ships a native arm64 bottle.
+      "terminal-notifier"
     ];
     casks = profiles.without overlay.remove.casks [
       "wezterm"

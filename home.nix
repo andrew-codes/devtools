@@ -87,7 +87,6 @@ in
               # the binary is missing
     fzf       # fuzzy finder
     jq        # json on the command line
-    terminal-notifier # macOS notifications; used by home/.claude/hooks/fm-notify.sh
     lazygit
     neovim
     tree-sitter # CLI nvim-treesitter needs to build parsers (nvim's config lives in home/.config/nvim)

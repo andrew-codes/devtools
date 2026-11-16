@@ -119,7 +119,7 @@ native Windows.
 | `eza` | `eza-community.eza` | **Implemented.** |
 | `fzf` | `junegunn.fzf` | **Implemented.** |
 | `jq` | `jqlang.jq` | **Implemented.** |
-| `terminal-notifier` | - | **Skipped.** macOS-only; it posts to Notification Center. Used only by `fm-notify.sh` below. |
+| `terminal-notifier` (Homebrew brew, not nixpkgs: the nixpkgs build is Intel-only) | - | **Skipped.** macOS-only; it posts to Notification Center. Used only by `fm-notify.sh` below. |
 | `yq` | `MikeFarah.yq` | **Implemented.** |
 | `lazygit` | `JesseDuffield.lazygit` | **Implemented.** |
 | `neovim` | `Neovim.Neovim` | **Implemented.** |
