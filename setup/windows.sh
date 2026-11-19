@@ -109,12 +109,18 @@ TWG_VERSION="1.4.4" # https://developer.atlassian.com/cloud/twg-cli/getting-star
 # The `work` profile's overlay (profiles.nix, work.remove and onePassword = false).
 # Only the pieces that exist on Windows are here: gitops, telepresence, the
 # Mac App Store app and the zsh plugin have no Windows counterpart to drop.
+# gcx is the exception: a `go install` in Step 7, guarded by PROFILE.
 WORK_OMIT_WINGET_PACKAGES=(
   AgileBits.1Password     # cask 1password
   AgileBits.1Password.CLI # cask 1password-cli
   Anthropic.Claude        # cask claude
   FluxCD.Flux             # pkgs.fluxcd
 )
+# gcx (Grafana CLI) has no winget package, so Windows builds it with `go install`
+# at a pinned tag. Personal only (profiles.nix: work removes the gcx brew).
+# Version matches the Homebrew formula; bump when it moves.
+GCX_GO_PACKAGE="github.com/grafana/gcx/cmd/gcx@v1.8.0" # https://github.com/grafana/gcx/releases
+
 # Everything 1Password-shaped that is not a winget package, and the pinned
 # kubeseal download. 1 = this profile gets it.
 WITH_1PASSWORD=1 # agent.toml link, OpenSSH client pin, op-ssh-sign signer
@@ -621,8 +627,13 @@ if command -v go >/dev/null 2>&1; then
     GOBIN="$GOBIN_WIN" go install "$pkg" ||
       warn "go install $pkg failed; if it needs cgo, install a C toolchain (winget install MSYS2.MSYS2) and re-run"
   done
+  if [ "$PROFILE" = personal ]; then
+    echo "    go install $GCX_GO_PACKAGE"
+    GOBIN="$GOBIN_WIN" go install "$GCX_GO_PACKAGE" ||
+      warn "go install $GCX_GO_PACKAGE failed; gcx needs a recent Go (go.mod requires 1.27.3), update GoLang.Go and re-run"
+  fi
 else
-  warn "go is not on PATH; skipped treehouse"
+  warn "go is not on PATH; skipped treehouse and gcx"
 fi
 
 # no-mistakes: the fork's release binary, checksum-verified, into ~/go/bin.

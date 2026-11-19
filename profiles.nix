@@ -54,6 +54,7 @@ let
         brews = [
           "weaveworks/tap/gitops"
           "datawire/blackbird/telepresence"
+          "gcx"
         ];
         casks = [
           "1password"
