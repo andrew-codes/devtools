@@ -109,6 +109,7 @@ native Windows.
 | `mas` | - | **Skipped.** macOS-only by definition. |
 | `herdr` | - | **Deferred.** Upstream publishes macOS and Linux binaries only; Windows is a beta whose sole install path is an unpinned `irm https://herdr.dev/install.ps1 \| iex`. That is below the bar this repo holds remote installers to (see the `twgVersion` comment in `home.nix`), so the script prints the command instead of running it. Its `~/.config/herdr` config is linked either way. |
 | `weaveworks/tap/gitops` | - | **Deferred.** No winget package, and Weaveworks wound down in 2024. `flux` covers the maintained part of that workflow. macOS `personal` only. |
+| `gcx` (Homebrew core brew, Grafana CLI) | `go install github.com/grafana/gcx/cmd/gcx@v1.8.0` (step 7, `GCX_GO_PACKAGE`) | **Implemented**, `personal` only; `work` removes the brew and skips the `go install`. No winget package exists (`manifests/g/Grafana` is absent from `microsoft/winget-pkgs`). Upstream's release zip is not used because this repo prefers Go's checksum-verified module path. The pin is duplicated by hand from the Homebrew version; bump together. `go install` does not stamp `gcx version` via ldflags like the release build. The service account token is held in the OS credential store on both platforms. Windows path not executed by the author. |
 | `datawire/blackbird/telepresence` | - | **Deferred.** macOS `personal` only. No winget package; the Windows install needs an elevated daemon service, so run Ambassador's own installer on demand. |
 
 ## CLI toolchain (`home.packages`)

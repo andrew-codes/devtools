@@ -123,6 +123,10 @@ in
       # which fails with "Bad CPU type" on Apple Silicon without Rosetta, while
       # the formula ships a native arm64 bottle.
       "terminal-notifier"
+      # Grafana's CLI; personal only. Homebrew core ships a bottle with the
+      # release version stamped in, and `brew upgrade` tracks upstream. Its
+      # service account token lives in the OS keychain, not in this repo.
+      "gcx"
     ];
     casks = profiles.without overlay.remove.casks [
       "wezterm"
