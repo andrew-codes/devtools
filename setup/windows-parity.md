@@ -168,6 +168,7 @@ and what HO-243 requires WezTerm to launch. `home/.bashrc` is the peer of
 | oh-my-zsh `colored-man-pages` | `LESS_TERMCAP_*` | **Implemented.** |
 | oh-my-zsh `sudo`, `pj`, `docker`, `yarn`, `encode64`, `eza`, `fluxcd`, `gh`, `git-escape-magic` | - | **Skipped.** (`fluxcd` is dropped on macOS for the `work` profile.) These are zsh plugins; the binaries they wrap are all installed, only the aliases and completions they add are missing. |
 | `shellAliases` (`..`, `add`, `m`, `cc`, `co`, `zl`) | same aliases in `~/.bashrc` | **Implemented.** `zl` is the Dracula page's always-colored eza alias. |
+| Personal-profile `cc` function (loads `OP_SERVICE_ACCOUNT_TOKEN` from the login keychain item `op-agents-sa` for the claude process only) | plain `cc` alias in `~/.bashrc` | **Skipped.** The macOS login keychain has no Windows equivalent here; `cc` stays the plain alias. |
 | `EZA_COLORS` (Dracula, "universal" value) | page's Windows value, `setx` in `setup/windows.sh` plus `EZA_WINDOWS_ATTRIBUTES` and `EZA_ICONS_AUTO`, and exported in `~/.bashrc` | **Implemented.** Windows deliberately uses the page's shorter Windows set, not the macOS one. |
 | `~/.env` sourcing + unset-secret warning | same in `~/.bashrc` | **Implemented.** |
 | `home.sessionPath` (`~/.local/bin`, `~/.volta/bin`, `~/go/bin`) | same, re-added idempotently in `~/.bashrc` | **Implemented.** The *Windows* user PATH is deliberately left alone; winget and Volta manage their own entries. |
