@@ -4,23 +4,6 @@ let
   profiles = import ./profiles.nix;
   overlay = profiles.overlay profile;
 
-  # Personal profile: start claude with the read-only 1Password service
-  # account token for the agents vault, so agent `op read` calls stop
-  # prompting. The token lives in the login keychain and is read at invocation
-  # time into this one process's environment - never into a profile, file or
-  # the shell's own environment. If the item is missing, claude still starts,
-  # without the variable. Windows has no keychain and no equivalent.
-  ccFunction = ''
-    cc() {
-      local token
-      if token="$(security find-generic-password -a "$USER" -s op-agents-sa -w 2>/dev/null)" && [[ -n "$token" ]]; then
-        OP_SERVICE_ACCOUNT_TOKEN="$token" claude --dangerously-skip-permissions --remote-control "$@"
-      else
-        print -u2 "cc: op-agents-sa keychain item unavailable; starting without OP_SERVICE_ACCOUNT_TOKEN"
-        claude --dangerously-skip-permissions --remote-control "$@"
-      fi
-    }
-  '';
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
   # Global npm CLIs installed via Volta. Bump a version here to upgrade it;
   # each is a semver range that npm itself resolves and satisfies in place.
@@ -75,6 +58,11 @@ let
   secretEnvVars = [
     "CONTEXT7_API_KEY"   # mcp.json: context7 headers
     "HA_TOKEN"           # read from the environment by a tool, not an MCP server
+  ] ++ lib.optionals overlay.onePassword [
+    # Read-only 1Password service account token for the agents vault, so agent
+    # `op read` calls stop prompting. Personal profile only (the work profile
+    # has no 1Password); every shell, and so every claude, inherits it from ~/.env.
+    "OP_SERVICE_ACCOUNT_TOKEN"
   ];
   # The no-mistakes release binary, from the andrew-codes fork's GitHub releases
   # (never upstream kunchenguid's). Installed by setup/no-mistakes.sh, which
@@ -193,8 +181,6 @@ in
 
       bindkey '^f' autosuggest-accept
 
-      ${lib.optionalString overlay.onePassword ccFunction}
-
       # Completions for the custom bin/ commands are written as bash-style
       # `complete -F` scripts; bashcompinit lets zsh load them unchanged.
       autoload -U +X bashcompinit && bashcompinit
@@ -235,9 +221,6 @@ in
       # purpose: plain `eza` and the oh-my-zsh eza plugin's aliases (ls, ll, la,
       # lS, ...) keep eza's automatic color, which turns itself off in pipes.
       zl = "eza -lagX --icons --color=always";
-    } // lib.optionalAttrs (!overlay.onePassword) {
-      # Work keeps the plain alias; the personal profile defines a `cc`
-      # function in initContent instead (an alias cannot scope an env var).
       cc = "claude --dangerously-skip-permissions --remote-control";
     };
   };
