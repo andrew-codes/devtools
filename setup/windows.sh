@@ -177,6 +177,11 @@ SECRET_ENV_VARS=(
   CONTEXT7_API_KEY # mcp.json: context7 headers
   HA_TOKEN # read from the environment by a tool, not an MCP server
 )
+# Personal profile only (home.nix: overlay.onePassword): the read-only
+# 1Password service account token for the agents vault.
+if [ "$PROFILE" = personal ]; then
+  SECRET_ENV_VARS+=(OP_SERVICE_ACCOUNT_TOKEN)
+fi
 
 # ---------------------------------------------------------------------------
 # Helpers

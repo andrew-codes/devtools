@@ -110,7 +110,7 @@ Two files hold values that are specific to a single machine or are secret, so th
 
 | File | Purpose |
 | --- | --- |
-| `~/.env` | Secrets. Auto-created with every required key stubbed empty. The shell warns on every startup until each has a value. |
+| `~/.env` | Secrets. Auto-created with every required key stubbed empty. The shell warns on every startup until each has a value. On the personal profile that includes `OP_SERVICE_ACCOUNT_TOKEN` (the agents vault's 1Password service account token); set it in `~/.env` and every shell, including `cc`, inherits it. |
 | `~/.gitconfig.local` | This machine's git SSH signing key and author email (`git config --file ~/.gitconfig.local user.email you@example.com`); the tracked config sets neither. Setup prints a reminder if either is missing. On the personal profile on Windows it also holds the resolved 1Password signer path. |
 | `~/.config/devtools/profile` | The machine's profile, `personal` or `work`. Written by `--profile`; see [Profiles](#profiles). |
 | `~/.ssh/config.local` | Optional. Personal SSH hosts, included from the tracked `~/.ssh/config`. |
